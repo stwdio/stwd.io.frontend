@@ -1,9 +1,9 @@
 import type React from "react"
 import "./globals.css"
 import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Header } from "@/components/header"
 import { Toaster } from "@/components/ui/toaster"
+import { ClientLayout } from "@/components/client-layout"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -19,20 +19,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="dark" 
-          enableSystem={false} 
-          disableTransitionOnChange
-        >
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        <ClientLayout>
           <div className="min-h-screen bg-black text-white">
             <Header />
             <main>{children}</main>
           </div>
           <Toaster />
-        </ThemeProvider>
+        </ClientLayout>
       </body>
     </html>
   )

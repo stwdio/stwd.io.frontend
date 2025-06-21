@@ -22,7 +22,6 @@ export function Header() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [authOpen, setAuthOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Get initial session
@@ -31,7 +30,6 @@ export function Header() {
       if (session?.user) {
         fetchProfile(session.user.id)
       }
-      setIsLoading(false)
     })
 
     // Listen for auth changes
@@ -80,7 +78,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/60">
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-4 w-full">
         <Link href="/" className="text-2xl font-bold text-white">
           stwd.io
         </Link>
@@ -95,11 +93,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center space-x-4">
-          {isLoading ? (
-            <Button variant="outline" className="bg-black text-white border-gray-700 hover:bg-gray-900">
-              Sign In
-            </Button>
-          ) : user ? (
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">

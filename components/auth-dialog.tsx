@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,29 +20,72 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [fullName, setFullName] = useState("")
+  const [connectionStatus, setConnectionStatus] = useState<string>("checking")
   const { toast } = useToast()
+
+  useEffect(() => {
+    // Test Supabase connection on component mount
+    const testConnection = async () => {
+      try {
+        console.log("Testing Supabase connection...")
+        console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+        console.log("Has Anon Key:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+        const { data, error } = await supabase.from("profiles").select("count").limit(1)
+
+        if (error) {
+          console.error("Connection test failed:", error)
+          setConnectionStatus(`Error: ${error.message}`)
+        } else {
+          console.log("Connection test successful:", data)
+          setConnectionStatus("Connected")
+        }
+      } catch (err) {
+        console.error("Connection test exception:", err)
+        setConnectionStatus(`Exception: ${err}`)
+      }
+    }
+
+    testConnection()
+  }, [])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    console.log("Attempting to sign in with:", email)
+    console.log("Connection status:", connectionStatus)
 
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      console.log("Sign in response:", { data, error })
+
+      if (error) {
+        console.error("Sign in error:", error)
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        })
+      } else {
+        console.log("Sign in successful:", data)
+        toast({
+          title: "Success",
+          description: "Signed in successfully!",
+        })
+        onClose()
+      }
+    } catch (err) {
+      console.error("Unexpected sign in error:", err)
       toast({
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred during sign in.",
         variant: "destructive",
       })
-    } else {
-      toast({
-        title: "Success",
-        description: "Signed in successfully!",
-      })
-      onClose()
     }
 
     setLoading(false)
@@ -97,6 +140,9 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
     <div className="space-y-6">
       <DialogHeader>
         <DialogTitle className="text-center text-2xl font-bold">Welcome To Stwd.io</DialogTitle>
+        {connectionStatus !== "Connected" && (
+          <div className="text-sm text-center text-muted-foreground">Connection: {connectionStatus}</div>
+        )}
       </DialogHeader>
 
       <Tabs defaultValue="signin" className="w-full">
@@ -121,7 +167,7 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || connectionStatus !== "Connected"}>
               {loading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
@@ -154,7 +200,7 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
                 minLength={6}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || connectionStatus !== "Connected"}>
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>

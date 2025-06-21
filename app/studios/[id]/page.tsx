@@ -12,13 +12,13 @@ import { supabase } from "@/lib/supabase"
 import { generateIdenticon } from "@/lib/identicon"
 
 interface Studio {
-  id: string
+  id: number
   name: string
   description: string
-  hourly_rate: number
   location: string
+  hourly_rate: number
   gear: any
-  owner_id: string
+  owner_id: number
   created_at: string
 }
 
@@ -56,39 +56,75 @@ export default function StudioDetailPage() {
 
   const fetchStudioData = async () => {
     // Fetch studio details
-    const { data: studioData } = await supabase.from("studios").select("*").eq("id", studioId).single()
+    const { data: studioData, error: studioError } = await supabase
+      .from("studios")
+      .select("*")
+      .eq("id", studioId)
+      .single()
+
+    if (studioError) {
+      console.error("Error fetching studio:", studioError)
+      setLoading(false)
+      return
+    }
 
     if (studioData) {
       setStudio(studioData)
     }
 
-    // Fetch reviews
-    const { data: reviewsData } = await supabase
+    // Fetch reviews through bookings (since reviews are linked to bookings, not directly to studios)
+    const { data: reviewsData, error: reviewsError } = await supabase
       .from("reviews")
       .select(`
         *,
-        profiles (full_name, avatar_url, id)
+        bookings!inner (
+          studio_id,
+          creator_id,
+          profiles!bookings_creator_id_fkey (full_name, avatar_url, id)
+        )
       `)
-      .eq("studio_id", studioId)
+      .eq("bookings.studio_id", studioId)
       .order("created_at", { ascending: false })
 
+    if (reviewsError) {
+      console.error("Error fetching reviews:", reviewsError)
+    }
+
     if (reviewsData) {
-      setReviews(reviewsData)
+      // Transform the data to match the expected format
+      const transformedReviews = reviewsData.map((review) => ({
+        ...review,
+        profiles: review.bookings.profiles
+      }))
+      setReviews(transformedReviews)
       const avgRating =
-        reviewsData.length > 0 ? reviewsData.reduce((sum, review) => sum + review.rating, 0) / reviewsData.length : 0
+        transformedReviews.length > 0 
+          ? transformedReviews.reduce((sum, review) => sum + review.rating, 0) / transformedReviews.length 
+          : 0
       setAverageRating(avgRating)
+    } else {
+      setReviews([])
+      setAverageRating(0)
     }
 
     // Fetch amenities
-    const { data: amenitiesData } = await supabase
+    const { data: amenitiesData, error: amenitiesError } = await supabase
       .from("studio_amenities")
       .select(`
         amenities (name)
       `)
       .eq("studio_id", studioId)
 
+    if (amenitiesError) {
+      console.error("Error fetching amenities:", amenitiesError)
+    }
+
     if (amenitiesData) {
-      setAmenities(amenitiesData.map((item) => item.amenities))
+      const amenitiesList: Amenity[] = amenitiesData
+        .map((item: any) => item.amenities)
+        .filter((amenity: any) => amenity && amenity.name)
+        .map((amenity: any) => ({ name: amenity.name }))
+      setAmenities(amenitiesList)
     }
 
     setLoading(false)
@@ -199,7 +235,7 @@ export default function StudioDetailPage() {
                             </Badge>
                           ))
                         ) : (
-                          <Badge variant="secondary">{items}</Badge>
+                          <Badge variant="secondary">{String(items)}</Badge>
                         )}
                       </div>
                     </div>

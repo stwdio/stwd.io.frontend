@@ -96,7 +96,7 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
   return (
     <div className="space-y-6">
       <DialogHeader>
-        <DialogTitle className="text-center text-2xl font-bold">Welcome to stwd.io</DialogTitle>
+        <DialogTitle className="text-center text-2xl font-bold">Welcome To Stwd.io</DialogTitle>
       </DialogHeader>
 
       <Tabs defaultValue="signin" className="w-full">

@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 interface Studio {
   id: number
   name: string
+  location: string
   hourly_rate: number
 }
 
@@ -161,7 +162,7 @@ export function BookingWidget({ studio }: BookingWidgetProps) {
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start text-left font-normal bg-black border-gray-700">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : "Select date"}
+                {date ? format(date, "PPP") : "Select Date"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -204,10 +205,10 @@ export function BookingWidget({ studio }: BookingWidgetProps) {
 
         {/* Book Button */}
         <Button onClick={handleBooking} className="w-full" disabled={loading || !date || !startTime || !endTime}>
-          {loading ? "Processing..." : "Request to Book"}
+          {loading ? "Processing..." : "Request To Book"}
         </Button>
 
-        {!user && <p className="text-sm text-gray-400 text-center">Sign in to make a booking</p>}
+        {!user && <p className="text-sm text-gray-400 text-center">Sign In To Make A Booking</p>}
       </CardContent>
     </Card>
   )

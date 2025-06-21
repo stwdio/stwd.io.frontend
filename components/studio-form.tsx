@@ -242,7 +242,7 @@ export function StudioForm({ studio, onSaved, ownerId }: StudioFormProps) {
               checked={formData.published}
               onCheckedChange={(checked) => handleInputChange("published", checked)}
             />
-            <Label htmlFor="published">Publish immediately</Label>
+            <Label htmlFor="published">Publish Immediately</Label>
           </div>
         </TabsContent>
 

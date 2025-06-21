@@ -105,7 +105,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Studio Dashboard</h1>
-          <p className="text-gray-400 mt-2">Manage your recording studios</p>
+          <p className="text-gray-400 mt-2">Manage Your Recording Studios</p>
         </div>
         <Dialog open={formOpen} onOpenChange={setFormOpen}>
           <DialogTrigger asChild>
@@ -210,8 +210,8 @@ export default function DashboardPage() {
             </Table>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-400 text-lg mb-4">No studios yet</p>
-              <p className="text-gray-500 mb-6">Create your first studio to get started</p>
+              <p className="text-gray-400 text-lg mb-4">No Studios Yet</p>
+              <p className="text-gray-500 mb-6">Create Your First Studio To Get Started</p>
               <Button onClick={() => setFormOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Studio

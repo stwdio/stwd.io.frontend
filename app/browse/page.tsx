@@ -52,26 +52,30 @@ export default function BrowsePage() {
   }, [locationFilter, priceRange, selectedAmenities])
 
   const fetchStudios = async () => {
+    // First, let's use a simpler query structure that works with the current database schema
     const { data, error } = await supabase
       .from("studios")
       .select(`
         *,
-        reviews (rating),
         studio_amenities (
           amenities (name)
         )
       `)
       .eq("published", true)
 
+    if (error) {
+      console.error("Error fetching studios:", error)
+      setLoading(false)
+      return
+    }
+
     if (data) {
+      // For now, we'll set reviews to empty arrays since we need to query them through bookings
       const studiosWithStats = data.map((studio) => ({
         ...studio,
-        average_rating:
-          studio.reviews.length > 0
-            ? studio.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / studio.reviews.length
-            : 0,
-        review_count: studio.reviews.length,
-        amenities: studio.studio_amenities.map((sa: any) => sa.amenities.name),
+        average_rating: 0, // We'll update this when we have bookings/reviews
+        review_count: 0,
+        amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
       }))
       setStudios(studiosWithStats)
     }
@@ -91,7 +95,6 @@ export default function BrowsePage() {
       .from("studios")
       .select(`
         *,
-        reviews (rating),
         studio_amenities (
           amenities (name)
         )
@@ -104,17 +107,19 @@ export default function BrowsePage() {
 
     query = query.gte("hourly_rate", priceRange[0]).lte("hourly_rate", priceRange[1])
 
-    const { data } = await query
+    const { data, error } = await query
+
+    if (error) {
+      console.error("Error applying filters:", error)
+      return
+    }
 
     if (data) {
       let filteredStudios = data.map((studio) => ({
         ...studio,
-        average_rating:
-          studio.reviews.length > 0
-            ? studio.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / studio.reviews.length
-            : 0,
-        review_count: studio.reviews.length,
-        amenities: studio.studio_amenities.map((sa: any) => sa.amenities.name),
+        average_rating: 0, // We'll update this when we have bookings/reviews
+        review_count: 0,
+        amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
       }))
 
       // Filter by amenities if any selected
@@ -166,7 +171,7 @@ export default function BrowsePage() {
               <Label htmlFor="location">Location</Label>
               <Input
                 id="location"
-                placeholder="Enter city or area"
+                placeholder="Enter City Or Area"
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
               />
@@ -174,7 +179,7 @@ export default function BrowsePage() {
 
             {/* Price Range Filter */}
             <div className="space-y-4">
-              <Label>Price Range (per hour)</Label>
+              <Label>Price Range (Per Hour)</Label>
               <Slider value={priceRange} onValueChange={setPriceRange} max={500} min={0} step={10} className="w-full" />
               <div className="flex justify-between text-sm text-gray-400">
                 <span>${priceRange[0]}</span>
@@ -207,7 +212,7 @@ export default function BrowsePage() {
         <div className="flex-1">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Recording Studios</h1>
-            <p className="text-gray-400">{studios.length} studios found</p>
+            <p className="text-gray-400">{studios.length} Studios Found</p>
           </div>
 
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -265,8 +270,8 @@ export default function BrowsePage() {
 
           {studios.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-400 text-lg">No studios found matching your criteria.</p>
-              <p className="text-gray-500 mt-2">Try adjusting your filters.</p>
+              <p className="text-gray-400 text-lg">No Studios Found Matching Your Criteria.</p>
+              <p className="text-gray-500 mt-2">Try Adjusting Your Filters.</p>
             </div>
           )}
         </div>

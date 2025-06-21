@@ -5,6 +5,45 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Helper function to fetch studio reviews through bookings
+export async function getStudioReviews(studioId: number) {
+  const { data, error } = await supabase
+    .from("reviews")
+    .select(`
+      *,
+      bookings!inner (
+        studio_id,
+        creator_id,
+        profiles!bookings_creator_id_fkey (full_name, avatar_url, id)
+      )
+    `)
+    .eq("bookings.studio_id", studioId)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching studio reviews:", error)
+    return { reviews: [], averageRating: 0, reviewCount: 0 }
+  }
+
+  if (!data || data.length === 0) {
+    return { reviews: [], averageRating: 0, reviewCount: 0 }
+  }
+
+  // Transform the data to match the expected format
+  const reviews = data.map((review) => ({
+    ...review,
+    profiles: review.bookings.profiles
+  }))
+
+  const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+
+  return {
+    reviews,
+    averageRating,
+    reviewCount: reviews.length
+  }
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -40,6 +79,7 @@ export type Database = {
           owner_id: number
           name: string
           description: string | null
+          location: string | null
           hourly_rate: number
           published: boolean
           verified: boolean
@@ -52,6 +92,7 @@ export type Database = {
           owner_id: number
           name: string
           description?: string | null
+          location?: string | null
           hourly_rate: number
           published?: boolean
           verified?: boolean
@@ -64,6 +105,7 @@ export type Database = {
           owner_id?: number
           name?: string
           description?: string | null
+          location?: string | null
           hourly_rate?: number
           published?: boolean
           verified?: boolean

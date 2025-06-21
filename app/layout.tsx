@@ -10,7 +10,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: "stwd.io - Professional Recording Studios",
   description: "Book professional recording studios worldwide",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({

@@ -11,8 +11,6 @@ const nextConfig = {
   },
   // Disable source maps in production to prevent source map errors
   productionBrowserSourceMaps: false,
-  // Optimize for better performance
-  swcMinify: true,
   // Handle source map issues in development
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {

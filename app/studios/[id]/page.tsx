@@ -29,8 +29,8 @@ interface Amenity {
   name: string
 }
 
-export default async function StudioDetailPage({ params }: { params: { id: string } }) {
-  const studioId = params.id
+export default async function StudioDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: studioId } = await params
 
   // Fetch studio details server-side
   const { data: studioData, error: studioError } = await supabase

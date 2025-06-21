@@ -216,10 +216,16 @@ export default function BrowsePage() {
           </div>
 
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {studios.map((studio) => (
+            {studios.map((studio, index) => (
               <Card key={studio.id} className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-colors">
                 <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                  <Image src="/placeholder.svg?height=200&width=300" alt={studio.name} fill className="object-cover" />
+                  <Image 
+                    src="/placeholder.svg?height=200&width=300" 
+                    alt={studio.name} 
+                    fill 
+                    className="object-cover"
+                    priority={index < 6} // Add priority to first 6 images (above the fold)
+                  />
                 </div>
                 <CardContent className="p-6">
                   <div className="space-y-3">

@@ -219,10 +219,10 @@ export default function BrowsePage() {
             {studios.map((studio, index) => (
               <Card key={studio.id} className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-colors">
                 <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                  <Image 
-                    src="/placeholder.svg?height=200&width=300" 
-                    alt={studio.name} 
-                    fill 
+                  <Image
+                    src="/placeholder.svg?height=200&width=300"
+                    alt={studio.name}
+                    fill
                     className="object-cover"
                     priority={index < 6} // Add priority to first 6 images (above the fold)
                   />
@@ -237,10 +237,10 @@ export default function BrowsePage() {
                       </div>
                     </div>
 
-                    <p className="text-gray-300 text-sm line-clamp-2">{studio.description}</p>
+                    <p className="text-gray-300 text-sm line-clamp-2 h-10">{studio.description}</p>
 
-                    {studio.amenities && studio.amenities.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
+                    {studio.amenities && studio.amenities.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 h-8">
                         {studio.amenities.slice(0, 3).map((amenity) => (
                           <Badge key={amenity} variant="secondary" className="text-xs">
                             {amenity}
@@ -252,6 +252,8 @@ export default function BrowsePage() {
                           </Badge>
                         )}
                       </div>
+                    ) : (
+                      <div className="h-8"></div>
                     )}
 
                     <div className="flex items-center justify-between">
@@ -264,11 +266,11 @@ export default function BrowsePage() {
                         <div className="text-xs text-gray-400">per hour</div>
                       </div>
                     </div>
-
-                    <Button asChild className="w-full">
-                      <Link href={`/studios/${studio.id}`}>View Details</Link>
-                    </Button>
                   </div>
+
+                  <Button asChild className="w-full mt-4">
+                    <Link href={`/studios/${studio.id}`}>View Details</Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}

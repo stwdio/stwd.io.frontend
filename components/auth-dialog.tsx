@@ -19,9 +19,68 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [fullName, setFullName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [username, setUsername] = useState("")
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle")
   const [connectionStatus, setConnectionStatus] = useState<string>("checking")
   const { toast } = useToast()
+
+  // Username validation function
+  const checkUsernameAvailability = async (usernameToCheck: string) => {
+    if (!usernameToCheck || usernameToCheck.length < 3) {
+      setUsernameStatus("invalid")
+      return
+    }
+
+    // Check format: lowercase letters, numbers, single underscores only
+    const usernameRegex = /^[a-z0-9_]{3,}$/
+    const hasDoubleUnderscore = usernameToCheck.includes('__')
+    
+    if (!usernameRegex.test(usernameToCheck) || hasDoubleUnderscore) {
+      setUsernameStatus("invalid")
+      return
+    }
+
+    setUsernameStatus("checking")
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("username", usernameToCheck)
+        .limit(1)
+
+      if (error) {
+        console.error("Username check error:", error)
+        setUsernameStatus("idle")
+        return
+      }
+
+      if (data && data.length > 0) {
+        setUsernameStatus("taken")
+      } else {
+        setUsernameStatus("available")
+      }
+    } catch (err) {
+      console.error("Username check exception:", err)
+      setUsernameStatus("idle")
+    }
+  }
+
+  // Debounced username checking
+  useEffect(() => {
+    if (username.length >= 3) {
+      const timeoutId = setTimeout(() => {
+        checkUsernameAvailability(username)
+      }, 500)
+      return () => clearTimeout(timeoutId)
+    } else if (username.length > 0) {
+      setUsernameStatus("invalid")
+    } else {
+      setUsernameStatus("idle")
+    }
+  }, [username])
 
   useEffect(() => {
     // Test Supabase connection on component mount
@@ -95,13 +154,36 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
     e.preventDefault()
     setLoading(true)
 
+    // Validate required fields
+    if (!firstName.trim() || !lastName.trim() || !username.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
+
+    // Validate username availability
+    if (usernameStatus !== "available") {
+      toast({
+        title: "Error", 
+        description: "Please choose a valid and available username.",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
+
     try {
+      // Step 1: Create the auth user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName,
+            display_name: `${firstName.trim()} ${lastName.trim()}`,
           },
         },
       })
@@ -114,6 +196,34 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
         })
         setLoading(false)
         return
+      }
+
+      if (data.user) {
+        // Step 2: Update the profile with detailed information
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            username: username.trim().toLowerCase(),
+          })
+          .eq("user_id", data.user.id)
+
+        if (profileError) {
+          console.error("Profile update error:", profileError)
+          toast({
+            title: "Warning",
+            description: "Account created but profile setup incomplete. Please contact support.",
+            variant: "destructive",
+          })
+        }
+
+        // Step 3: Update auth user metadata
+        await supabase.auth.updateUser({
+          data: {
+            display_name: `${firstName.trim()} ${lastName.trim()}`,
+          },
+        })
       }
 
       toast({
@@ -175,15 +285,50 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
 
         <TabsContent value="signup" className="space-y-4">
           <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="signup-firstname">First Name</Label>
+                <Input
+                  id="signup-firstname"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-lastname">Last Name</Label>
+                <Input
+                  id="signup-lastname"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="signup-name">Full Name</Label>
+              <Label htmlFor="signup-username">Username</Label>
               <Input
-                id="signup-name"
+                id="signup-username"
                 type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                placeholder="3+ characters, letters, numbers, underscores"
                 required
               />
+              {usernameStatus === "checking" && (
+                <p className="text-sm text-gray-500">Checking availability...</p>
+              )}
+              {usernameStatus === "available" && (
+                <p className="text-sm text-green-600">✓ Username available!</p>
+              )}
+              {usernameStatus === "taken" && (
+                <p className="text-sm text-red-600">✗ Username already taken</p>
+              )}
+              {usernameStatus === "invalid" && (
+                <p className="text-sm text-red-600">✗ Username must be 3+ characters, lowercase letters, numbers, single underscores only</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="signup-email">Email</Label>
@@ -200,7 +345,11 @@ export function AuthDialog({ onClose }: AuthDialogProps) {
                 minLength={6}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading || connectionStatus !== "Connected"}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || connectionStatus !== "Connected" || usernameStatus !== "available"}
+            >
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>

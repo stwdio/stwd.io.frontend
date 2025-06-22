@@ -62,7 +62,10 @@ export type Database = {
           user_id: string | null
           role: "creator" | "owner" | "admin" | null
           stripe_customer_id: string | null
-          full_name: string | null
+          first_name: string | null
+          middle_name: string | null
+          last_name: string | null
+          username: string
           avatar_url: string | null
           created_at: string
           updated_at: string
@@ -72,7 +75,10 @@ export type Database = {
           user_id?: string | null
           role?: "creator" | "owner" | "admin" | null
           stripe_customer_id?: string | null
-          full_name?: string | null
+          first_name?: string | null
+          middle_name?: string | null
+          last_name?: string | null
+          username: string
           avatar_url?: string | null
           created_at?: string
           updated_at?: string
@@ -82,7 +88,10 @@ export type Database = {
           user_id?: string | null
           role?: "creator" | "owner" | "admin" | null
           stripe_customer_id?: string | null
-          full_name?: string | null
+          first_name?: string | null
+          middle_name?: string | null
+          last_name?: string | null
+          username?: string
           avatar_url?: string | null
           created_at?: string
           updated_at?: string

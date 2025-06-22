@@ -109,6 +109,28 @@ export function StudioFormDialog({ studio, onSaved, ownerId }: StudioFormDialogP
     setLoading(true)
 
     try {
+      // Verify authentication before submission
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error("Authentication required. Please log in again.")
+      }
+
+      // Verify profile exists
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .single()
+
+      if (!profileData) {
+        throw new Error("Profile not found. Please complete your profile setup.")
+      }
+
+      // Ensure ownerId matches the authenticated user's profile
+      if (ownerId !== profileData.id) {
+        throw new Error("Authorization error: You can only create studios for your own profile.")
+      }
+
       let gearData
       try {
         gearData = formData.gear ? JSON.parse(formData.gear) : null

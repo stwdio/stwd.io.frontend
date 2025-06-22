@@ -14,6 +14,11 @@ interface Profile {
   user_id: string
   role: "creator" | "owner" | "admin" | null
   stripe_customer_id: string | null
+  first_name: string | null
+  middle_name: string | null
+  last_name: string | null
+  username: string
+  avatar_url: string | null
 }
 
 export function Header() {
@@ -71,6 +76,18 @@ export function Header() {
     return generateIdenticon(profile?.user_id || "")
   }
 
+  const getDisplayName = () => {
+    // For frictionless signup, show username first
+    if (profile?.username) {
+      return profile.username
+    }
+    // Fallback to full name if available
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`
+    }
+    return profile?.first_name || "User"
+  }
+
   const canAccessDashboard = profile?.role === "owner" || profile?.role === "admin"
 
   return (
@@ -91,17 +108,21 @@ export function Header() {
 
         <div className="flex items-center space-x-4">
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={getAvatarSrc() || "/placeholder.svg"} alt="User" />
-                    <AvatarFallback>
-                      <User className="h-5 w-5" />
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
+            <div className="flex items-center space-x-3">
+              <span className="text-gray-300 text-sm font-medium hidden md:block">
+                {getDisplayName()}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={getAvatarSrc() || "/placeholder.svg"} alt="User" />
+                      <AvatarFallback>
+                        <User className="h-5 w-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
                 {canAccessDashboard && (
                   <DropdownMenuItem asChild>
@@ -123,6 +144,7 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           ) : (
             <Link href="/auth/login">
               <Button variant="outline" className="bg-black text-white border-gray-700 hover:bg-gray-900">

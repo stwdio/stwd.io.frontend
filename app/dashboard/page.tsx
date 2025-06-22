@@ -174,12 +174,14 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold">Owner Dashboard</h1>
         <Dialog open={formOpen} onOpenChange={setFormOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingStudio(null)}>
+            <Button onClick={() => setEditingStudio(null)} disabled={!profile || loading}>
               <Plus className="h-4 w-4 mr-2" />
               Add New Studio
             </Button>
           </DialogTrigger>
-          <StudioFormDialog studio={editingStudio} onSaved={handleStudioSaved} ownerId={profile?.id} />
+          {profile && (
+            <StudioFormDialog studio={editingStudio} onSaved={handleStudioSaved} ownerId={profile.id} />
+          )}
         </Dialog>
       </div>
 
@@ -300,7 +302,7 @@ export default function DashboardPage() {
                 <div className="text-center py-12">
                   <p className="text-muted-foreground text-lg mb-4">No Studios Yet</p>
                   <p className="text-muted-foreground mb-6">Create Your First Studio To Get Started</p>
-                  <Button onClick={() => setFormOpen(true)}>
+                  <Button onClick={() => setFormOpen(true)} disabled={!profile || loading}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Your First Studio
                   </Button>

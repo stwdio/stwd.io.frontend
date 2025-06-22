@@ -10,7 +10,6 @@ interface OnboardingGateProps {
 
 export function OnboardingGate({ children }: OnboardingGateProps) {
   const [isLoading, setIsLoading] = useState(true)
-  const [shouldRedirect, setShouldRedirect] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -46,8 +45,8 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
 
         // If user has no role (NULL), they need to complete onboarding
         if (!profile?.role) {
-          setShouldRedirect(true)
-          router.push("/onboarding")
+          // Use replace instead of push to avoid back button issues
+          router.replace("/onboarding")
           return
         }
 
@@ -68,7 +67,6 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
       } else if (event === "SIGNED_OUT") {
         // Reset state when user signs out
         setIsLoading(false)
-        setShouldRedirect(false)
       }
     })
 
@@ -79,14 +77,6 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (shouldRedirect) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Redirecting to onboarding...</div>
       </div>
     )
   }

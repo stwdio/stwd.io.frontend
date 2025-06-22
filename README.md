@@ -66,3 +66,64 @@ Alex's journey is about oversight and support:
 ## 🚀 Our Vision
 
 Our vision for stwd.io is to become the essential operating system for the creative space industry, empowering creativity by removing friction and building connections within a trusted, professionally-managed global community.
+
+## The stwd.io Technical Architecture: A Supabase-First Philosophy
+
+Our architectural philosophy for stwd.io is built on a single guiding principle: leverage the full power of the Supabase ecosystem to create a robust, scalable, and maintainable platform with minimal moving parts. We consciously avoid external APIs and services where a native Supabase feature can provide a superior, more integrated solution.
+
+This approach allows us to move faster, reduce costs, and maintain a clean, comprehensible codebase. Our stack is not just a collection of technologies; it's a tightly integrated system.
+
+### Pillar 1: The Frontend - A Modern, Performant Experience
+
+The frontend is designed for a best-in-class user experience, SEO performance, and developer efficiency.
+
+**Framework: Next.js (with App Router)**
+
+We use Next.js for its hybrid capabilities. Public-facing pages like the main landing page and individual studio detail pages are Server-Side Rendered (SSR) for optimal SEO and fast initial loads. Interactive, protected areas like the Owner Dashboard are rendered on the client, providing a snappy, app-like feel.
+
+**UI System: shadcn/ui**
+
+We chose shadcn/ui because it is not a traditional component library; it's a design system built on convention. We copy components directly into our project, giving us full control over their code and style. This avoids dependency bloat and ensures perfect consistency, as everything is styled with Tailwind CSS. We do not use any custom CSS files, enforcing a strict adherence to the design system.
+
+**The Accelerator: @supabase/ui-react**
+
+To accelerate development, we use Supabase's own UI components where it makes sense. The prime example is the `<Auth />` component, which handles our entire authentication flow (sign-up, sign-in, password reset) in a secure, pre-built, and themeable block.
+
+### Pillar 2: The Backend - Supabase as the Complete Backend-as-a-Service
+
+This is the cornerstone of our architecture. We treat Supabase as our entire backend, not just a database.
+
+**The Database: PostgreSQL with Superpowers**
+
+- We use Postgres as our single source of truth for all data (profiles, studios, bookings, etc.).
+- **PostGIS Extension (CRITICAL)**: This is how we avoid expensive, external mapping services like Google Places API. We use PostGIS for all geographic data, allowing us to perform incredibly fast and efficient "find studios near me" or radius-based queries directly in the database.
+- **JSONB Data Type**: For flexible, unstructured data like a studio's gear list, we leverage the jsonb type, giving owners the freedom to list their equipment without schema constraints.
+
+**The Identity Layer: Supabase Auth**
+
+Supabase Auth is our complete user management solution. It handles sign-ups, logins, and session management. Our entire authorization system is built on this foundation, with a custom profiles table linked via foreign key to auth.users. A Postgres trigger automatically creates a profile for every new user, making the system seamless.
+
+**The File System: Supabase Storage**
+
+We do not use external services like S3 directly. All user-generated content, primarily high-resolution studio photos and user avatars, is managed through Supabase Storage. This simplifies our security model, as we can write RLS policies that grant access to storage objects based on our database rules.
+
+**The Logic Layer: Edge Functions**
+
+For all server-side logic that doesn't belong in the client, we use Supabase Edge Functions. This allows us to have a "serverless" backend, eliminating the need to manage a traditional server. Our key use cases are:
+
+- **Stripe Webhooks**: Handling payment confirmations to update booking statuses.
+- **Notifications**: Sending transactional emails (e.g., via Resend) for booking confirmations or new messages.
+- **Geocoding Proxy**: When a studio owner enters an address, an Edge Function sends it to a free geocoding service (like Nominatim) to get coordinates, which are then stored in our PostGIS database. This completely abstracts away the paid API dependency from our frontend.
+
+### Pillar 3: The Security Model - Row Level Security (RLS)
+
+Security is not an afterthought; it's built into our database core.
+
+**RLS is Always On**: Every table in our database has Row Level Security enabled and forced.
+
+**Policies, Not API Endpoints**: We do not build traditional REST API endpoints like `/api/studios/[id]`. Instead, our security rules live directly in the database as RLS policies. This is a more secure and declarative approach. For example:
+
+- "Owners can only update their own studios"
+- "A review can only be created for a booking that is 'completed'"
+
+**Helper Functions & SECURITY DEFINER**: Complex, protected actions (like confirming a booking) are encapsulated in SECURITY DEFINER Postgres functions. This ensures that a user can only perform actions they are authorized to, with logic that cannot be bypassed by the client. This is the ultimate layer of our security model.

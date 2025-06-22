@@ -32,14 +32,10 @@
 - **Supabase**: Backend-as-a-Service
   - PostgreSQL database with PostGIS for location data
   - Real-time subscriptions
+  - Authentication (OAuth with Google and others)
   - Row Level Security (RLS)
   - Storage for images and files
-
-### Authentication
-- **Clerk**: Primary authentication provider
-  - OAuth integration (Google and others)
   - User management and profiles
-  - Session handling and security
 
 ### Package Management
 - **pnpm**: Fast, efficient package manager
@@ -126,10 +122,10 @@ pnpm lint
 ## Third-Party Integrations
 
 ### Authentication
-- **Clerk Authentication**: Primary authentication provider
-- Multiple OAuth providers (Google, etc.)
+- **Supabase Auth**: Primary authentication provider
+- Multiple OAuth providers (Google, Apple, etc.)
 - JWT token management and session handling
-- User profile management
+- Built-in user management and RLS integration
 
 ### Payments (Future)
 - Stripe integration planned
@@ -174,7 +170,6 @@ pnpm lint
 - Preview deployments for testing
 
 ### CI/CD Pipeline
-- GitHub Actions for automated testing
 - Type checking and linting in CI
 - Automated deployment to Vercel
 - Environment-specific configurations

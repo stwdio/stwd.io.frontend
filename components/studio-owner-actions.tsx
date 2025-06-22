@@ -45,7 +45,7 @@ export function StudioOwnerActions({ studio }: StudioOwnerActionsProps) {
       }
 
       // Get the user's profile to check if they own this studio
-      const { data: profile } = await supabase.from("profiles").select("id").eq("id", user.id).single()
+      const { data: profile } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
 
       if (profile && studio.owner_id === profile.id) {
         setIsOwner(true)

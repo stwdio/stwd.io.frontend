@@ -3,26 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-console.log("Supabase initialization:", {
-  url: supabaseUrl,
-  hasKey: !!supabaseAnonKey,
-  keyLength: supabaseAnonKey?.length || 0,
-})
-
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Test the connection immediately
-supabase
-  .from("profiles")
-  .select("count")
-  .limit(1)
-  .then(({ data, error }) => {
-    if (error) {
-      console.error("Supabase connection test failed:", error)
-    } else {
-      console.log("Supabase connection test successful")
-    }
-  })
 
 // Helper function to fetch studio reviews through bookings
 export async function getStudioReviews(studioId: number) {

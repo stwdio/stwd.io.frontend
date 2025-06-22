@@ -3,29 +3,26 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Settings, LogOut, LayoutDashboard } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import { AuthDialog } from "@/components/auth-dialog"
 import { generateIdenticon } from "@/lib/identicon"
 
 interface Profile {
   id: number
   user_id: string
-  role: "creator" | "owner" | "admin"
+  role: "creator" | "owner" | "admin" | null
   stripe_customer_id: string | null
 }
 
 export function Header() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [authOpen, setAuthOpen] = useState(false)
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -35,7 +32,7 @@ export function Header() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -127,16 +124,11 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Dialog open={authOpen} onOpenChange={setAuthOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="bg-black text-white border-gray-700 hover:bg-gray-900">
-                  Sign In
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <AuthDialog onClose={() => setAuthOpen(false)} />
-              </DialogContent>
-            </Dialog>
+            <Link href="/auth/login">
+              <Button variant="outline" className="bg-black text-white border-gray-700 hover:bg-gray-900">
+                Sign In
+              </Button>
+            </Link>
           )}
         </div>
       </div>

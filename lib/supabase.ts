@@ -79,7 +79,7 @@ export type Database = {
         Row: {
           id: number
           user_id: string
-          role: "creator" | "owner" | "admin"
+          role: "creator" | "owner" | "admin" | null
           stripe_customer_id: string | null
           full_name: string | null
           avatar_url: string | null
@@ -89,7 +89,7 @@ export type Database = {
         Insert: {
           id?: number
           user_id: string
-          role?: "creator" | "owner" | "admin"
+          role?: "creator" | "owner" | "admin" | null
           stripe_customer_id?: string | null
           full_name?: string | null
           avatar_url?: string | null
@@ -99,7 +99,7 @@ export type Database = {
         Update: {
           id?: number
           user_id?: string
-          role?: "creator" | "owner" | "admin"
+          role?: "creator" | "owner" | "admin" | null
           stripe_customer_id?: string | null
           full_name?: string | null
           avatar_url?: string | null

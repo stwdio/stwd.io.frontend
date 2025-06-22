@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { Header } from "@/components/header"
 import { Toaster } from "@/components/ui/toaster"
 import { ClientLayout } from "@/components/client-layout"
+import { OnboardingGate } from "@/components/onboarding-gate"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,10 +23,12 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <ClientLayout>
-          <div className="min-h-screen bg-black text-white">
-            <Header />
-            <main>{children}</main>
-          </div>
+          <OnboardingGate>
+            <div className="min-h-screen bg-black text-white">
+              <Header />
+              <main>{children}</main>
+            </div>
+          </OnboardingGate>
           <Toaster />
         </ClientLayout>
       </body>

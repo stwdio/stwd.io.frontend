@@ -110,6 +110,9 @@ export function Header() {
               Claim Studio
             </Link>
           )}
+          <Link href="/messages" className="text-gray-300 hover:text-white transition-colors">
+            Messages
+          </Link>
           <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
             About
           </Link>

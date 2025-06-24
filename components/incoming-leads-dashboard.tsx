@@ -121,7 +121,26 @@ export function IncomingLeadsDashboard({ profileId }: IncomingLeadsProps) {
 
       if (error) throw error
 
-      toast.success('Response sent successfully!')
+      // Create conversation with initial message
+      let conversationMessage = responseForm.response_message
+      if (responseForm.quote_amount) {
+        conversationMessage += `\n\nQuote: $${responseForm.quote_amount}`
+      }
+      
+      const { error: conversationError } = await supabase.rpc('create_conversation_from_inquiry', {
+        inquiry_id_param: respondingTo.inquiry_id,
+        studio_id_param: respondingTo.studio_id,
+        initial_message: conversationMessage
+      })
+
+      if (conversationError) {
+        console.error('Error creating conversation:', conversationError)
+        // Don't fail the entire operation if conversation creation fails
+        toast.success('Response sent successfully! Note: Conversation creation may have failed.')
+      } else {
+        toast.success('Response sent and conversation created!')
+      }
+
       setRespondingTo(null)
       setResponseForm({ response_message: '', quote_amount: '' })
       fetchIncomingLeads()

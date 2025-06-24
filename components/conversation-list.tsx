@@ -28,6 +28,8 @@ interface Conversation {
   }
   studios: {
     name: string
+    location: string
+    hourly_rate: number
   }
   customer_profile: {
     first_name: string

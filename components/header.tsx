@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -28,6 +29,7 @@ export function Header() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const { studios, toggleBasket } = useQuoteBasket()
+  const router = useRouter()
 
   useEffect(() => {
     // Get initial session
@@ -74,6 +76,7 @@ export function Header() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
+    router.push('/auth/login')
   }
 
   const getAvatarSrc = () => {

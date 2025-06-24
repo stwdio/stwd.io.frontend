@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, MoreHorizontal, ArrowUp, ArrowDown, Eye, Edit, Trash2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Plus, MoreHorizontal, ArrowUp, ArrowDown, Eye, Edit, Trash2, MessageSquare, Building2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"
 import { StudioFormDialog } from "@/components/studio-form-dialog"
+import { IncomingLeadsDashboard } from "@/components/incoming-leads-dashboard"
 import { supabase } from "@/lib/supabase"
 import { generateIdenticon } from "@/lib/identicon"
 import { useRouter } from "next/navigation"
@@ -202,7 +204,7 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Inquiries</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
@@ -228,10 +230,10 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">New Messages</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Response Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">85%</div>
             <CardDescription className="flex items-center text-green-600">
               <ArrowUp className="h-3 w-3 mr-1" />
               +12.5% from last month
@@ -240,82 +242,139 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Main Information */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* My Studios Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>My Studios</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {studios.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Studio Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Hourly Rate</TableHead>
-                      <TableHead className="w-[70px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {studios.map((studio: Studio) => (
-                      <TableRow key={studio.id}>
-                        <TableCell className="font-medium">{studio.name}</TableCell>
-                        <TableCell>
-                          {/* @ts-ignore */}
-                          <Badge variant={studio.published ? "default" : "secondary"}>
-                            {studio.published ? "Published" : "Draft"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>${studio.hourly_rate}/hr</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEdit(studio)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => router.push(`/studios/${studio.id}`)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Public Page
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDelete(studio.id)} className="text-red-600">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground text-lg mb-4">No Studios Yet</p>
-                  <p className="text-muted-foreground mb-6">Create Your First Studio To Get Started</p>
-                  <Button onClick={() => setFormOpen(true)} disabled={!profile || loading}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Your First Studio
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Main Dashboard Tabs */}
+      <Tabs defaultValue="leads" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="leads" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Incoming Leads
+          </TabsTrigger>
+          <TabsTrigger value="studios" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            My Studios
+          </TabsTrigger>
+          <TabsTrigger value="analytics">
+            Analytics
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Booking Performance Chart */}
+        {/* Incoming Leads Tab */}
+        <TabsContent value="leads" className="space-y-6">
+          {profile && <IncomingLeadsDashboard profileId={profile.id} />}
+        </TabsContent>
+
+        {/* Studios Management Tab */}
+        <TabsContent value="studios" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Studios Table */}
+            <div className="lg:col-span-2 space-y-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>My Studios</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {studios.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Studio Name</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Hourly Rate</TableHead>
+                          <TableHead className="w-[70px]">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {studios.map((studio: Studio) => (
+                          <TableRow key={studio.id}>
+                            <TableCell className="font-medium">{studio.name}</TableCell>
+                            <TableCell>
+                              {/* @ts-ignore */}
+                              <Badge variant={studio.published ? "default" : "secondary"}>
+                                {studio.published ? "Published" : "Draft"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>${studio.hourly_rate}/hr</TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEdit(studio)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => router.push(`/studios/${studio.id}`)}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View Public Page
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDelete(studio.id)} className="text-red-600">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground text-lg mb-4">No Studios Yet</p>
+                      <p className="text-muted-foreground mb-6">Create Your First Studio To Get Started</p>
+                      <Button onClick={() => setFormOpen(true)} disabled={!profile || loading}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Your First Studio
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Upcoming Bookings */}
+            <div className="space-y-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upcoming Bookings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {upcomingBookings.length > 0 ? (
+                    <div className="space-y-4">
+                      {upcomingBookings.map((booking: Booking) => (
+                        <div key={booking.id} className="flex items-center space-x-3 p-3 rounded-lg border">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={generateIdenticon(booking.creator_id) || "/placeholder.svg"} />
+                            <AvatarFallback>{booking.creator_name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{booking.creator_name}</p>
+                            <p className="text-xs text-muted-foreground">{booking.studio_name}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(booking.start_time)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No upcoming bookings</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Booking Performance</CardTitle>
-              <CardDescription>Daily bookings over the past week</CardDescription>
+              <CardTitle>Inquiry Performance</CardTitle>
+              <CardDescription>Daily inquiries over the past week</CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={chartConfig} className="h-[300px]">
@@ -335,41 +394,8 @@ export default function DashboardPage() {
               </ChartContainer>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Right Column - Actionable Items */}
-        <div className="space-y-8">
-          {/* Upcoming Bookings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Bookings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {upcomingBookings.length > 0 ? (
-                <div className="space-y-4">
-                  {upcomingBookings.map((booking: Booking) => (
-                    <div key={booking.id} className="flex items-center space-x-3 p-3 rounded-lg border">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={generateIdenticon(booking.creator_id) || "/placeholder.svg"} />
-                        <AvatarFallback>{booking.creator_name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{booking.creator_name}</p>
-                        <p className="text-xs text-muted-foreground">{booking.studio_name}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(booking.start_time)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No upcoming bookings</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

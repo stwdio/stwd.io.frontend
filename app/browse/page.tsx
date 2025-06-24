@@ -8,19 +8,21 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { Star, MapPin } from "lucide-react"
+import { Star, MapPin, Plus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { supabase } from "@/lib/supabase"
+import { useQuoteBasket } from "@/lib/store/quote-basket"
 
 interface Studio {
-  id: string
+  id: number
   name: string
   description: string
   hourly_rate: number
   location: string
   owner_id: string
   published: boolean
+  verification_status: string
   created_at: string
   average_rating?: number
   review_count?: number
@@ -36,6 +38,7 @@ export default function BrowsePage() {
   const [studios, setStudios] = useState<Studio[]>([])
   const [amenities, setAmenities] = useState<Amenity[]>([])
   const [loading, setLoading] = useState(true)
+  const { addStudio, studios: basketStudios } = useQuoteBasket()
 
   // Filter state
   const [locationFilter, setLocationFilter] = useState("")
@@ -62,6 +65,7 @@ export default function BrowsePage() {
         )
       `)
       .eq("published", true)
+      .eq("verification_status", "verified")
 
     if (error) {
       console.error("Error fetching studios:", error)
@@ -100,6 +104,7 @@ export default function BrowsePage() {
         )
       `)
       .eq("published", true)
+      .eq("verification_status", "verified")
 
     if (locationFilter) {
       query = query.ilike("location", `%${locationFilter}%`)
@@ -268,9 +273,26 @@ export default function BrowsePage() {
                     </div>
                   </div>
 
-                  <Button asChild className="w-full mt-4">
-                    <Link href={`/studios/${studio.id}`}>View Details</Link>
-                  </Button>
+                  <div className="flex gap-2 mt-4">
+                    <Button asChild className="flex-1">
+                      <Link href={`/studios/${studio.id}`}>View Details</Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => addStudio({
+                        id: studio.id,
+                        name: studio.name,
+                        description: studio.description || '',
+                        location: studio.location || '',
+                        hourly_rate: studio.hourly_rate,
+                        verification_status: studio.verification_status
+                      })}
+                      disabled={basketStudios.some(s => s.id === studio.id)}
+                      className="px-3"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

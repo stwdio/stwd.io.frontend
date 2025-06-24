@@ -135,7 +135,7 @@ export function StudioForm({ studio, onSaved, ownerId }: StudioFormProps) {
       // Verify profile exists
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("id")
+        .select("id, role")
         .eq("user_id", session.user.id)
         .single()
 
@@ -151,7 +151,7 @@ export function StudioForm({ studio, onSaved, ownerId }: StudioFormProps) {
       let studioData
 
       if (studio) {
-        // Update existing studio
+        // Update existing studio - keep current verification status
         const { data, error } = await supabase
           .from("studios")
           .update({
@@ -165,13 +165,18 @@ export function StudioForm({ studio, onSaved, ownerId }: StudioFormProps) {
         if (error) throw error
         studioData = data
       } else {
-        // Create new studio
+        // Create new studio with verification workflow
+        const isAdmin = profileData.role === 'admin'
+        
         const { data, error } = await supabase
           .from("studios")
           .insert({
             ...formData,
             owner_id: ownerId,
             gear,
+            // Admin studios are auto-verified, others need approval
+            verification_status: isAdmin ? 'verified' : 'pending_new_studio_approval',
+            published: isAdmin ? formData.published : false, // Only allow publishing if admin or after verification
           })
           .select()
           .single()
@@ -196,10 +201,21 @@ export function StudioForm({ studio, onSaved, ownerId }: StudioFormProps) {
         }
       }
 
-      toast({
-        title: "Success",
-        description: studio ? "Studio updated successfully!" : "Studio created successfully!",
-      })
+      if (studio) {
+        toast({
+          title: "Success",
+          description: "Studio updated successfully!",
+        })
+      } else {
+        // Different messages based on verification status
+        const isAdmin = profileData.role === 'admin'
+        toast({
+          title: "Success",
+          description: isAdmin 
+            ? "Studio created and verified successfully!" 
+            : "Studio submitted successfully! Our team will review and verify your studio before it goes live.",
+        })
+      }
 
       onSaved()
     } catch (error: any) {

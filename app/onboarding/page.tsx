@@ -28,16 +28,37 @@ export default function OnboardingPage() {
       }
 
       setUser(session.user)
+      console.log("Onboarding: User authenticated:", session.user.id)
       
       // Check if user already has a role
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("user_id", session.user.id)
         .single()
       
-      if (profile?.role) {
+      console.log("Onboarding: Profile check:", { profile, error })
+
+      if (error && error.code === "PGRST116") {
+        // Profile doesn't exist, create one
+        console.log("Creating profile for user:", session.user.id)
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: session.user.id,
+            first_name: session.user.user_metadata?.first_name || null,
+            last_name: session.user.user_metadata?.last_name || null,
+            avatar_url: session.user.user_metadata?.avatar_url || null,
+            username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'user',
+            role: null // Start with NULL to trigger onboarding
+          })
+        
+        if (insertError) {
+          console.error("Error creating profile:", insertError)
+        }
+      } else if (profile?.role) {
         // User already has a role, redirect appropriately
+        console.log("User already has role:", profile.role)
         router.push(profile.role === "owner" ? "/dashboard" : "/browse")
       }
     }

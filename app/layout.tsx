@@ -24,10 +24,10 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <ClientLayout>
           <OnboardingGate>
-            <div className="min-h-screen bg-black text-white">
-              <Header />
-              <main>{children}</main>
-            </div>
+          <div className="min-h-screen bg-black text-white">
+            <Header />
+            <main>{children}</main>
+          </div>
           </OnboardingGate>
           <Toaster />
         </ClientLayout>

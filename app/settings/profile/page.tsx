@@ -294,7 +294,7 @@ export default function ProfileSettingsPage() {
                   <div className="mt-2">
                     {usernameStatus === "checking" && (
                       <p className="text-sm text-gray-400 flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
+                        <span className="animate-spin rounded-full h-3 w-3 border-b border-gray-400 inline-block"></span>
                         Checking availability...
                       </p>
                     )}

@@ -31,13 +31,14 @@
 stwd.io.frontend/
 ├── app/                    # Next.js App Router
 │   ├── auth/              # ✅ Authentication flows - WORKING
-│   ├── browse/            # Studio discovery and search
+│   ├── browse/            # ✅ Studio discovery (default for logged-in) - WORKING
 │   ├── dashboard/         # User dashboards
 │   ├── onboarding/        # ✅ New user setup - WORKING
 │   └── studios/           # Individual studio pages
 ├── components/            # Reusable UI components
-│   ├── ui/                # shadcn/ui base components
-│   └── [custom]/          # ✅ Application-specific components - AUTH WORKING
+│   ├── ui/                # ✅ shadcn/ui components (sidebar, etc.) - WORKING
+│   ├── stwd-sidebar.tsx   # ✅ Main navigation sidebar - WORKING
+│   └── [custom]/          # ✅ Application-specific components - WORKING
 ├── hooks/                 # Custom React hooks
 ├── lib/                   # ✅ Utilities and configurations - SUPABASE WORKING
 └── memory-bank/           # Project documentation

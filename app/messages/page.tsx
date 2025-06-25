@@ -80,14 +80,10 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center space-y-2">
-              <MessageSquare className="h-8 w-8 mx-auto opacity-50" />
-              <p className="text-sm text-muted-foreground">Loading messages...</p>
-            </div>
-          </div>
+      <div className="h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading messages...</p>
         </div>
       </div>
     )
@@ -95,18 +91,14 @@ export default function MessagesPage() {
 
   if (!currentProfileId) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center space-y-4">
-              <MessageSquare className="h-12 w-12 mx-auto opacity-50" />
-              <div>
-                <h3 className="text-lg font-medium">Authentication Required</h3>
-                <p className="text-sm text-muted-foreground">
-                  Please log in to access your messages
-                </p>
-              </div>
-            </div>
+      <div className="h-screen bg-black flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <MessageSquare className="h-12 w-12 mx-auto text-gray-400" />
+          <div>
+            <h3 className="text-lg font-medium text-white">Authentication Required</h3>
+            <p className="text-sm text-gray-400">
+              Please log in to access your messages
+            </p>
           </div>
         </div>
       </div>
@@ -114,14 +106,14 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+          <h1 className="text-3xl font-bold text-white flex items-center">
             <MessageSquare className="h-8 w-8 mr-3" />
             Messages
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-400 mt-2">
             Communicate with clients and studio owners about your projects
           </p>
         </div>

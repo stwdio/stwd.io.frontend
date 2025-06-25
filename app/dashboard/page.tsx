@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, MoreHorizontal, ArrowUp, ArrowDown, Eye, Edit, Trash2, MessageSquare, Building2 } from "lucide-react"
+import { Plus, MoreHorizontal, ArrowUp, ArrowDown, Eye, Edit, Trash2, MessageSquare, Building2, Info } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as ChartTooltip } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"
 import { StudioFormDialog } from "@/components/studio-form-dialog"
 import { IncomingLeadsDashboard } from "@/components/incoming-leads-dashboard"
@@ -26,6 +27,7 @@ interface Studio {
   published: boolean
   created_at: string
   gear: any
+  verification_status: string
 }
 
 interface Booking {
@@ -163,8 +165,11 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading dashboard...</div>
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading dashboard...</p>
+        </div>
       </div>
     )
   }
@@ -279,21 +284,64 @@ export default function DashboardPage() {
                         <TableRow>
                           <TableHead>Studio Name</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Verification</TableHead>
                           <TableHead>Hourly Rate</TableHead>
                           <TableHead className="w-[70px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {studios.map((studio: Studio) => (
-                          <TableRow key={studio.id}>
-                            <TableCell className="font-medium">{studio.name}</TableCell>
-                            <TableCell>
-                              {/* @ts-ignore */}
-                              <Badge variant={studio.published ? "default" : "secondary"}>
-                                {studio.published ? "Published" : "Draft"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>${studio.hourly_rate}/hr</TableCell>
+                        {studios.map((studio: Studio) => {
+                          const isVerified = studio.verification_status === 'verified'
+                          const canPublish = isVerified
+                          
+                          return (
+                            <TableRow key={studio.id}>
+                              <TableCell className="font-medium">{studio.name}</TableCell>
+                              <TableCell>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant={studio.published && canPublish ? "default" : "secondary"}>
+                                          {studio.published && canPublish ? "Published" : "Draft"}
+                                        </Badge>
+                                        {!canPublish && studio.published && (
+                                          <Info className="h-4 w-4 text-amber-500" />
+                                        )}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {!canPublish ? 
+                                        "Studio must be verified by an admin before it can be published" : 
+                                        studio.published ? "Studio is live and visible to customers" : "Studio is saved as draft"
+                                      }
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableCell>
+                              <TableCell>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant={isVerified ? "default" : "secondary"}>
+                                          {isVerified ? "Verified" : "Unverified"}
+                                        </Badge>
+                                        {!isVerified && (
+                                          <Info className="h-4 w-4 text-amber-500" />
+                                        )}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {isVerified ? 
+                                        "Studio has been verified by an admin and can be published" : 
+                                        "Studio needs to be verified by an admin before it can be published"
+                                      }
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </TableCell>
+                              <TableCell>${studio.hourly_rate}/hr</TableCell>
                             <TableCell>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -318,7 +366,8 @@ export default function DashboardPage() {
                               </DropdownMenu>
                             </TableCell>
                           </TableRow>
-                        ))}
+                          )
+                        })}
                       </TableBody>
                     </Table>
                   ) : (
@@ -386,7 +435,7 @@ export default function DashboardPage() {
                     {/* @ts-ignore */}
                     <YAxis />
                     {/* @ts-ignore */}
-                    <Tooltip />
+                    <ChartTooltip />
                     {/* @ts-ignore */}
                     <Bar dataKey="bookings" fill="var(--color-bookings)" />
                   </BarChart>

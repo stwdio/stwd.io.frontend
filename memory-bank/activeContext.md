@@ -184,8 +184,47 @@
 - **OAuth Integration**: Social logins properly creating and linking profiles
 - **Complete RLS Coverage**: All tables secured with appropriate access controls
 
-### Current Development Focus
-With authentication, onboarding, AND SECURITY fully implemented, development can now focus on:
+#### 🐛 **Username Constraint Fix - RESOLVED** (Updated January 23, 2025)
+- **Status**: ✅ **COMPLETED** - Fixed username generation for email-based signups
+- **Problem**: Users with emails like `studio.io.infra@gmail.com` couldn't sign up due to username constraint violations
+- **Root Cause**: Database trigger was using raw email addresses as usernames, which contain invalid characters (dots, @ symbols)
+- **Solution Applied**:
+  - **Enhanced `handle_new_user` Function**: Added comprehensive email sanitization logic
+  - **Email-to-Username Conversion**: Extracts local part of email and sanitizes invalid characters
+  - **Character Sanitization**: Removes dots, hyphens, special chars → replaces with underscores
+  - **Multiple Underscore Cleanup**: Replaces `__` patterns with single `_`
+  - **Length Validation**: Ensures minimum 3 characters, appends `_user` if needed
+  - **Uniqueness Guarantee**: Automatically appends numbers if username exists
+- **Examples of Fix**:
+  - `studio.io.infra@gmail.com` → `studio_io_infra`
+  - `user-name.test@example.com` → `user_name_test`
+  - `a@b.com` → `a_user` (meets minimum length)
+- **Files Updated**:
+  - `memory-bank/supabaseBackend.md` - Updated trigger function documentation
+  - `fix-username-constraint.sql` - Migration script for database fix
+- **Result**: ✅ All email formats now supported for user registration
+
+### 🎨 **Vertical Centering & Layout Improvements - COMPLETED** (January 23, 2025)
+- **Status**: ✅ **COMPLETED** - Fixed vertical centering issues across all pages
+- **Problem**: Many pages were not properly centered vertically, wasting viewport space and creating unnecessary scrolling
+- **Pages Fixed**:
+  - **Onboarding Page**: Changed from `min-h-screen` to `h-screen` for true full-height centering
+  - **Login Page**: Fixed to use full viewport height instead of subtracting header height
+  - **Browse Page**: Improved loading state with proper centering
+  - **Dashboard Page**: Enhanced loading state with full-height centering
+  - **Messages Page**: Fixed loading/auth states and updated to dark theme consistency
+  - **Claim Studio Page**: Improved loading state centering
+  - **Profile Settings**: Enhanced loading state with full viewport usage
+  - **Studio Detail**: Fixed error state with proper centering and messaging
+- **Key Changes**:
+  - **Loading States**: All loading states now use `h-screen flex items-center justify-center`
+  - **Error States**: Improved error messaging with proper vertical centering
+  - **Theme Consistency**: Updated messages page to match dark theme
+  - **No Unnecessary Scrolling**: Pages that don't need scrolling now prevent it by using exact viewport height
+- **Result**: All pages now utilize full viewport height effectively with proper vertical centering
+
+## Current Development Focus
+With authentication, onboarding, security, AND USERNAME VALIDATION fully implemented, development can now focus on:
 
 1. **Studio Management System**: Complete studio listing creation and editing
 2. **Studio Discovery**: Implement search, filtering, and browse functionality  

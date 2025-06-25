@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { User, Settings, LogOut, LayoutDashboard, ShoppingCart } from "lucide-react"
+import { User, Settings, LogOut, LayoutDashboard, ShoppingCart, MessageSquare } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { generateIdenticon } from "@/lib/identicon"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
@@ -113,16 +113,13 @@ export function Header() {
               Claim Studio
             </Link>
           )}
-          <Link href="/messages" className="text-gray-300 hover:text-white transition-colors">
-            Messages
-          </Link>
           <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
             About
           </Link>
         </nav>
 
         <div className="flex items-center space-x-4">
-          {user && (
+          {user && profile?.role === "creator" && (
             <Button
               variant="outline"
               size="sm"
@@ -167,6 +164,12 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem asChild>
+                  <Link href="/messages" className="flex items-center">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Messages
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/settings" className="flex items-center">
                     <Settings className="mr-2 h-4 w-4" />

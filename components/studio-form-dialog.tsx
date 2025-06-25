@@ -12,9 +12,10 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { X, Upload } from "lucide-react"
+import { X, Upload, Info } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Studio {
   id: number
@@ -23,6 +24,7 @@ interface Studio {
   hourly_rate: number
   published: boolean
   gear: any
+  verification_status: string
 }
 
 interface Amenity {
@@ -363,17 +365,41 @@ export function StudioFormDialog({ studio, onSaved, ownerId }: StudioFormDialogP
               <CardTitle>Publication Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="published"
-                  checked={formData.published}
-                  onCheckedChange={(checked) => handleInputChange("published", checked)}
-                />
-                <Label htmlFor="published">Publish Studio</Label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                When published, your studio will be visible to everyone on stwd.io.
-              </p>
+              {(() => {
+                const isVerified = studio?.verification_status === 'verified'
+                const canPublish = isVerified
+                
+                return (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                id="published"
+                                checked={formData.published && canPublish}
+                                onCheckedChange={(checked) => canPublish && handleInputChange("published", checked)}
+                                disabled={!canPublish}
+                              />
+                              <Label htmlFor="published" className={!canPublish ? "text-muted-foreground" : ""}>
+                                Publish Studio
+                              </Label>
+                              {!canPublish && <Info className="h-4 w-4 text-amber-500" />}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            {canPublish ? 
+                              "When published, your studio will be visible to everyone on stwd.io." : 
+                              "Studio must be verified by an admin before it can be published"
+                            }
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </>
+                )
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -384,7 +410,11 @@ export function StudioFormDialog({ studio, onSaved, ownerId }: StudioFormDialogP
           Cancel
         </Button>
         <Button onClick={handleSubmit} disabled={loading}>
-          {loading ? "Saving..." : "Save Changes"}
+          {loading ? "Saving..." : 
+            (!formData.published || (studio && studio.verification_status !== 'verified')) ? 
+              "Save Draft" : 
+              "Save Changes"
+          }
         </Button>
       </DialogFooter>
     </DialogContent>

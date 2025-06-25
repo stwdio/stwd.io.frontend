@@ -41,8 +41,11 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
 
   if (studioError || !studioData) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Studio not found</div>
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-2">Studio Not Found</h1>
+          <p className="text-gray-400">The studio you're looking for doesn't exist or has been removed.</p>
+        </div>
       </div>
     )
   }

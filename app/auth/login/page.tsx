@@ -58,57 +58,79 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="h-screen bg-black flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="h-screen bg-black flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2">Welcome back</h1>
-          <p className="text-gray-400">Sign in to your account</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
+          <p className="text-gray-400">Sign In To Your Account</p>
         </div>
         
-        <div className="bg-gray-900 p-8 rounded-lg border border-gray-800">
+        <div className="p-6 rounded-lg border border-gray-800">
           <Auth
             supabaseClient={supabase}
             appearance={{ 
-              theme: ThemeSupa,
-              style: {
-                button: {
-                  background: 'white',
-                  color: 'black',
-                  borderRadius: '8px',
-                  border: 'none',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                },
-                anchor: {
-                  color: '#60a5fa',
-                  textDecoration: 'none',
-                },
-                container: {
-                  backgroundColor: 'transparent',
-                },
-                input: {
-                  backgroundColor: '#1f2937',
-                  border: '1px solid #374151',
-                  borderRadius: '8px',
-                  color: 'white',
-                  padding: '12px',
-                },
-                label: {
-                  color: '#d1d5db',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                },
-                message: {
-                  color: '#ef4444',
-                  fontSize: '14px',
+              theme: {
+                default: {
+                  colors: {
+                    brand: '#ffffff',
+                    brandAccent: '#e5e7eb',
+                    brandButtonText: '#000000',
+                    defaultButtonBackground: '#ffffff',
+                    defaultButtonBackgroundHover: '#f3f4f6',
+                    defaultButtonBorder: '#ffffff',
+                    defaultButtonText: '#000000',
+                    dividerBackground: '#374151',
+                    inputBackground: '#1f2937',
+                    inputBorder: '#374151',
+                    inputBorderHover: '#4b5563',
+                    inputBorderFocus: '#ffffff',
+                    inputText: '#ffffff',
+                    inputLabelText: '#d1d5db',
+                    inputPlaceholder: '#9ca3af',
+                    messageText: '#ef4444',
+                    messageTextDanger: '#ef4444',
+                    anchorTextColor: '#ffffff',
+                    anchorTextHoverColor: '#e5e7eb',
+                  },
+                  space: {
+                    spaceSmall: '4px',
+                    spaceMedium: '8px',
+                    spaceLarge: '16px',
+                    labelBottomMargin: '8px',
+                    anchorBottomMargin: '4px',
+                    emailInputSpacing: '4px',
+                    socialAuthSpacing: '4px',
+                    buttonPadding: '10px 15px',
+                    inputPadding: '10px 15px',
+                  },
+                  fontSizes: {
+                    baseBodySize: '13px',
+                    baseInputSize: '14px',
+                    baseLabelSize: '14px',
+                    baseButtonSize: '14px',
+                  },
+                  fonts: {
+                    bodyFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif`,
+                    buttonFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif`,
+                    inputFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif`,
+                    labelFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif`,
+                  },
+                  borderWidths: {
+                    buttonBorderWidth: '1px',
+                    inputBorderWidth: '1px',
+                  },
+                  radii: {
+                    borderRadiusButton: '6px',
+                    buttonBorderRadius: '6px',
+                    inputBorderRadius: '6px',
+                  },
                 }
               }
             }}

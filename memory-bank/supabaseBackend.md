@@ -292,7 +292,7 @@ CREATE TABLE disputes (
 
 ## 🔧 **Database Functions & Triggers**
 
-### **✅ handle_new_user Function** (Enhanced Security)
+### **✅ handle_new_user Function** (Enhanced Security + Username Sanitization)
 ```sql
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER
@@ -300,18 +300,64 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public  -- Security enhancement
 AS $$
+DECLARE
+  sanitized_username TEXT;
+  base_username TEXT;
+  counter INTEGER := 0;
+  final_username TEXT;
 BEGIN
+  -- Create a sanitized username from email or metadata
+  base_username := COALESCE(
+    NEW.raw_user_meta_data->>'username',
+    NEW.raw_user_meta_data->>'name'
+  );
+  
+  -- If no username in metadata, sanitize the email
+  IF base_username IS NULL AND NEW.email IS NOT NULL THEN
+    -- Extract username part from email (before @)
+    base_username := split_part(NEW.email, '@', 1);
+    
+    -- Remove dots, hyphens, and other invalid characters
+    base_username := regexp_replace(base_username, '[^a-zA-Z0-9_]', '_', 'g');
+    
+    -- Replace multiple underscores with single underscore
+    base_username := regexp_replace(base_username, '_+', '_', 'g');
+    
+    -- Remove leading/trailing underscores
+    base_username := trim(base_username, '_');
+    
+    -- Convert to lowercase
+    base_username := lower(base_username);
+    
+    -- Ensure minimum length of 3 characters
+    IF length(base_username) < 3 THEN
+      base_username := base_username || '_user';
+    END IF;
+  END IF;
+  
+  -- Final fallback if still no valid username
+  IF base_username IS NULL OR length(base_username) < 3 THEN
+    base_username := 'user_' || substr(NEW.id::text, 1, 8);
+  END IF;
+  
+  -- Ensure username is unique by adding numbers if needed
+  sanitized_username := base_username;
+  
+  -- Check if username exists and increment counter if needed
+  WHILE EXISTS (SELECT 1 FROM public.profiles WHERE username = sanitized_username) LOOP
+    counter := counter + 1;
+    sanitized_username := base_username || '_' || counter;
+  END LOOP;
+  
+  final_username := sanitized_username;
+
   INSERT INTO public.profiles (user_id, role, created_at, updated_at, username)
   VALUES (
     NEW.id,
     NULL, -- Role is NULL initially to trigger onboarding
     NOW(),
     NOW(),
-    COALESCE(
-      NEW.raw_user_meta_data->>'name', 
-      NEW.email, 
-      'user_' || substr(NEW.id::text, 1, 8)
-    )
+    final_username
   );
   RETURN NEW;
 EXCEPTION
@@ -411,4 +457,5 @@ The Supabase backend is now **enterprise-grade and production-ready**, providing
 
 ---
 
-**Last Updated**: January 22, 2025 - Complete Enterprise Backend Implementation 
+**Last Updated**: January 22, 2025 - Complete Enterprise Backend Implementation
+```

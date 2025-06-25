@@ -110,6 +110,7 @@ export type Database = {
           gear: any
           created_at: string
           updated_at: string
+          verification_status: string
         }
         Insert: {
           id?: number
@@ -123,6 +124,7 @@ export type Database = {
           gear?: any
           created_at?: string
           updated_at?: string
+          verification_status: string
         }
         Update: {
           id?: number
@@ -136,6 +138,7 @@ export type Database = {
           gear?: any
           created_at?: string
           updated_at?: string
+          verification_status?: string
         }
       }
       amenities: {
@@ -236,6 +239,61 @@ export type Database = {
           updated_at?: string
         }
       }
+      inquiries: {
+        Row: {
+          id: number
+          creator_id: number
+          project_type: string
+          genre: string | null
+          budget_range: string | null
+          preferred_dates: string | null
+          location_preference: string | null
+          custom_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          creator_id: number
+          project_type: string
+          genre?: string | null
+          budget_range?: string | null
+          preferred_dates?: string | null
+          location_preference?: string | null
+          custom_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          creator_id?: number
+          project_type?: string
+          genre?: string | null
+          budget_range?: string | null
+          preferred_dates?: string | null
+          location_preference?: string | null
+          custom_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      inquiry_recipients: {
+        Row: {
+          inquiry_id: number
+          studio_id: number
+          created_at: string
+        }
+        Insert: {
+          inquiry_id: number
+          studio_id: number
+          created_at?: string
+        }
+        Update: {
+          inquiry_id?: number
+          studio_id?: number
+          created_at?: string
+        }
+      }
     }
   }
-}
+} 

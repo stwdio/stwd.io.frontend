@@ -2,60 +2,39 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Building2, Search, Star, MapPin, Users, ArrowRight } from "lucide-react"
+import Link from "next/link"
 import { supabase } from "@/lib/supabase"
+import { IconBuilding, IconSearch, IconStar } from "@tabler/icons-react"
 
-export default function HomePage() {
+export default function LandingPage() {
   const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Get initial session
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session?.user) {
-        setUser(session.user)
-        
-        // Fetch profile to check role
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .single()
-        
-        if (profileData && profileData.role) {
-          // User is authenticated and has a role, redirect to browse
-          router.replace('/browse')
-          return
-        }
-        
-        setProfile(profileData)
+        // User is authenticated, redirect to dashboard
+        router.push('/dashboard')
+        return
       }
       
+      setUser(null)
       setLoading(false)
     }
 
     checkAuth()
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .single()
-        
-        if (profileData && profileData.role) {
-          router.replace('/browse')
-        }
+        router.push('/dashboard')
+      } else {
+        setUser(null)
+        setLoading(false)
       }
     })
 
@@ -64,82 +43,99 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
-  // Show landing page for non-authenticated users
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="flex-1 flex items-center justify-center py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="flex items-center justify-center mb-6">
-            <Building2 className="h-12 w-12 text-primary mr-3" />
-            <h1 className="text-4xl md:text-6xl font-bold">STWD.io</h1>
-          </div>
-          
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Discover and book professional recording studios worldwide. 
-            Your next hit starts here.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
+    <div className="min-h-screen bg-background">
+      {/* Header for non-authenticated users */}
+      <header className="border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <IconBuilding className="h-8 w-8 mr-2" />
+              <span className="text-2xl font-bold">stwd.io</span>
+            </div>
+            <div className="flex items-center space-x-4">
               <Link href="/auth/login">
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <Button variant="ghost">Sign In</Button>
               </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/browse">
+              <Link href="/auth/login">
+                <Button>Get Started</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight mb-6">
+            Find the Perfect
+            <span className="text-primary"> Recording Studio</span>
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            Discover and book professional recording studios worldwide. 
+            Connect with top-tier facilities and bring your creative vision to life.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/auth/login">
+              <Button size="lg" className="text-lg px-8">
+                <IconSearch className="mr-2 h-5 w-5" />
                 Browse Studios
-                <Search className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+              </Button>
+            </Link>
+            <Link href="/auth/login">
+              <Button size="lg" variant="outline" className="text-lg px-8">
+                <IconBuilding className="mr-2 h-5 w-5" />
+                List Your Studio
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-muted/50">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Why Choose STWD.io?
-          </h2>
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Why Choose stwd.io?</h2>
+            <p className="text-xl text-muted-foreground">
+              The platform that connects musicians with professional recording studios
+            </p>
+          </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card>
               <CardHeader>
-                <Search className="h-10 w-10 text-primary mb-2" />
+                <IconSearch className="h-12 w-12 text-primary mb-4" />
                 <CardTitle>Easy Discovery</CardTitle>
                 <CardDescription>
-                  Find the perfect studio with advanced filters for location, price, and equipment.
+                  Find studios by location, price, equipment, and amenities with our advanced search filters
                 </CardDescription>
               </CardHeader>
             </Card>
             
             <Card>
               <CardHeader>
-                <Star className="h-10 w-10 text-primary mb-2" />
+                <IconStar className="h-12 w-12 text-primary mb-4" />
                 <CardTitle>Verified Quality</CardTitle>
                 <CardDescription>
-                  All studios are verified and rated by real musicians and producers.
+                  All studios are verified and reviewed by our community to ensure the highest standards
                 </CardDescription>
               </CardHeader>
             </Card>
             
             <Card>
               <CardHeader>
-                <Users className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Trusted Community</CardTitle>
+                <IconBuilding className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Direct Booking</CardTitle>
                 <CardDescription>
-                  Join thousands of artists and studio owners in our global network.
+                  Book directly with studio owners and manage your sessions through our integrated platform
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -148,27 +144,30 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to Create Your Next Masterpiece?
-          </h2>
-          <p className="text-muted-foreground mb-8">
-            Join STWD.io today and connect with professional recording studios worldwide.
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
+          <p className="text-xl text-muted-foreground mb-8">
+            Join thousands of musicians and studio owners on stwd.io
           </p>
-          <Button size="lg" asChild>
-            <Link href="/auth/login">
-              Start Recording Today
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+          <Link href="/auth/login">
+            <Button size="lg" className="text-lg px-8">
+              Join stwd.io Today
+            </Button>
+          </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t bg-muted/50">
-        <div className="max-w-6xl mx-auto text-center text-muted-foreground">
-          <p>&copy; 2025 STWD.io. All rights reserved.</p>
+      <footer className="border-t py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="flex items-center justify-center mb-4">
+            <IconBuilding className="h-6 w-6 mr-2" />
+            <span className="text-lg font-semibold">stwd.io</span>
+          </div>
+          <p className="text-muted-foreground">
+            © 2025 stwd.io. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>

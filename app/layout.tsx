@@ -1,19 +1,16 @@
-import type React from "react"
-import "./globals.css"
-import { Inter } from "next/font/google"
-import { Toaster } from "@/components/ui/toaster"
-import { ClientLayout } from "@/components/client-layout"
-import { OnboardingGate } from "@/components/onboarding-gate"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { STWDSidebar } from "@/components/stwd-sidebar"
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { OnboardingGate } from "@/components/onboarding-gate";
+import { ClientLayout } from "@/components/client-layout";
+import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "stwd.io - Professional Recording Studios",
   description: "Book professional recording studios worldwide",
-  generator: 'v0.dev'
-}
+};
 
 export default function RootLayout({
   children,
@@ -25,18 +22,11 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <ClientLayout>
           <OnboardingGate>
-            <SidebarProvider>
-              <STWDSidebar variant="inset" />
-              <SidebarInset>
-                <main className="flex flex-1 flex-col">
-                  {children}
-                </main>
-              </SidebarInset>
-            </SidebarProvider>
+            {children}
           </OnboardingGate>
           <Toaster />
         </ClientLayout>
       </body>
     </html>
-  )
+  );
 }

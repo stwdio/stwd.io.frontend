@@ -205,17 +205,17 @@ export function QuoteBasketDialog() {
                   id="location_preference"
                   value={formData.location_preference}
                   onChange={(e) => setFormData(prev => ({ ...prev, location_preference: e.target.value }))}
-                  placeholder="e.g., Manhattan, Remote, Within 20 miles"
+                  placeholder="e.g., Within 50 miles of downtown"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="custom_message">Additional Details</Label>
+                <Label htmlFor="custom_message">Additional Message</Label>
                 <Textarea
                   id="custom_message"
                   value={formData.custom_message}
                   onChange={(e) => setFormData(prev => ({ ...prev, custom_message: e.target.value }))}
-                  placeholder="Tell studios more about your project, timeline, or specific requirements..."
+                  placeholder="Tell the studios more about your project..."
                   rows={4}
                 />
               </div>
@@ -223,20 +223,15 @@ export function QuoteBasketDialog() {
               <Separator />
 
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={toggleBasket}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
+                <Button 
+                  type="submit" 
                   disabled={studios.length === 0 || isSubmitting}
                   className="flex-1"
                 >
                   {isSubmitting ? 'Sending...' : `Send to ${studios.length} Studio${studios.length !== 1 ? 's' : ''}`}
+                </Button>
+                <Button type="button" variant="outline" onClick={toggleBasket}>
+                  Close
                 </Button>
               </div>
             </form>

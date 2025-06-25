@@ -8,9 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
-import { Star, MapPin, Plus, Filter } from "lucide-react"
+import { Star, MapPin, Plus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { supabase } from "@/lib/supabase"
@@ -40,7 +38,6 @@ export default function BrowsePage() {
   const [studios, setStudios] = useState<Studio[]>([])
   const [amenities, setAmenities] = useState<Amenity[]>([])
   const [loading, setLoading] = useState(true)
-  const [showFilters, setShowFilters] = useState(false)
   const { addStudio, studios: basketStudios } = useQuoteBasket()
 
   // Filter state
@@ -58,6 +55,7 @@ export default function BrowsePage() {
   }, [locationFilter, priceRange, selectedAmenities])
 
   const fetchStudios = async () => {
+    // First, let's use a simpler query structure that works with the current database schema
     const { data, error } = await supabase
       .from("studios")
       .select(`
@@ -76,9 +74,10 @@ export default function BrowsePage() {
     }
 
     if (data) {
+      // For now, we'll set reviews to empty arrays since we need to query them through bookings
       const studiosWithStats = data.map((studio) => ({
         ...studio,
-        average_rating: 0,
+        average_rating: 0, // We'll update this when we have bookings/reviews
         review_count: 0,
         amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
       }))
@@ -123,11 +122,12 @@ export default function BrowsePage() {
     if (data) {
       let filteredStudios = data.map((studio) => ({
         ...studio,
-        average_rating: 0,
+        average_rating: 0, // We'll update this when we have bookings/reviews
         review_count: 0,
         amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
       }))
 
+      // Filter by amenities if any selected
       if (selectedAmenities.length > 0) {
         filteredStudios = filteredStudios.filter((studio) =>
           selectedAmenities.every((amenity) => studio.amenities?.includes(amenity)),
@@ -150,52 +150,32 @@ export default function BrowsePage() {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-4 w-4 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+        className={`h-4 w-4 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-600"}`}
       />
     ))
   }
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p className="text-muted-foreground">Loading studios...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading studios...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      {/* Header */}
-      <header className="flex h-16 shrink-0 items-center gap-2">
-        <div className="flex items-center gap-2">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <h1 className="text-lg font-semibold">Browse Studios</h1>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="md:hidden"
-          >
-            <Filter className="h-4 w-4" />
-            Filters
-          </Button>
-        </div>
-      </header>
-
-      <div className="flex flex-1 gap-4">
-        {/* Filters Panel */}
-        <div className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-80 space-y-6`}>
-          <Card className="p-4">
-            <h2 className="text-lg font-semibold mb-4">Filters</h2>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Filters Sidebar */}
+        <div className="lg:w-80 space-y-6">
+          <div className="sticky top-24">
+            <h2 className="text-2xl font-bold mb-6">Filters</h2>
 
             {/* Location Filter */}
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
               <Input
                 id="location"
@@ -206,10 +186,10 @@ export default function BrowsePage() {
             </div>
 
             {/* Price Range Filter */}
-            <div className="space-y-4 mb-4">
+            <div className="space-y-4">
               <Label>Price Range (Per Hour)</Label>
               <Slider value={priceRange} onValueChange={setPriceRange} max={500} min={0} step={10} className="w-full" />
-              <div className="flex justify-between text-sm text-muted-foreground">
+              <div className="flex justify-between text-sm text-gray-400">
                 <span>${priceRange[0]}</span>
                 <span>${priceRange[1]}</span>
               </div>
@@ -222,63 +202,53 @@ export default function BrowsePage() {
                 {amenities.map((amenity) => (
                   <div key={amenity.id} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`amenity-${amenity.id}`}
+                      id={amenity.id}
                       checked={selectedAmenities.includes(amenity.name)}
                       onCheckedChange={(checked) => handleAmenityChange(amenity.name, checked as boolean)}
                     />
-                    <Label htmlFor={`amenity-${amenity.id}`} className="text-sm">
+                    <Label htmlFor={amenity.id} className="text-sm">
                       {amenity.name}
                     </Label>
                   </div>
                 ))}
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Studios Grid */}
         <div className="flex-1">
-          {studios.length === 0 ? (
-            <div className="flex h-64 items-center justify-center">
-              <div className="text-center">
-                <p className="text-lg text-muted-foreground">No studios found</p>
-                <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {studios.map((studio) => (
-                <Card key={studio.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="relative h-48 bg-muted">
-                    <Image
-                      src="/placeholder.jpg"
-                      alt={studio.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg">{studio.name}</h3>
-                      <div className="flex items-center gap-1">
-                        {renderStars(studio.average_rating || 0)}
-                        <span className="text-sm text-muted-foreground ml-1">
-                          ({studio.review_count || 0})
-                        </span>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">Recording Studios</h1>
+            <p className="text-gray-400">{studios.length} Studios Found</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {studios.map((studio, index) => (
+              <Card key={studio.id} className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-colors">
+                <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                  <Image
+                    src="/placeholder.svg?height=200&width=300"
+                    alt={studio.name}
+                    fill
+                    className="object-cover"
+                    priority={index < 6} // Add priority to first 6 images (above the fold)
+                  />
+                </div>
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="text-xl font-semibold mb-1">{studio.name}</h3>
+                      <div className="flex items-center text-sm text-gray-400">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {studio.location}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                      <MapPin className="h-4 w-4" />
-                      {studio.location}
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                      {studio.description}
-                    </p>
-                    
-                    {studio.amenities && studio.amenities.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-3">
+
+                    <p className="text-gray-300 text-sm line-clamp-2 h-10">{studio.description}</p>
+
+                    {studio.amenities && studio.amenities.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 h-8">
                         {studio.amenities.slice(0, 3).map((amenity) => (
                           <Badge key={amenity} variant="secondary" className="text-xs">
                             {amenity}
@@ -290,31 +260,51 @@ export default function BrowsePage() {
                           </Badge>
                         )}
                       </div>
+                    ) : (
+                      <div className="h-8"></div>
                     )}
-                    
+
                     <div className="flex items-center justify-between">
-                      <div className="text-lg font-semibold">
-                        ${studio.hourly_rate}/hr
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center">{renderStars(studio.average_rating || 0)}</div>
+                        <span className="text-sm text-gray-400">({studio.review_count || 0})</span>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => addStudio(studio)}
-                          disabled={basketStudios.some((s) => s.id === studio.id)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" asChild>
-                          <Link href={`/studios/${studio.id}`}>
-                            View Details
-                          </Link>
-                        </Button>
+                      <div className="text-right">
+                        <div className="text-lg font-bold">${studio.hourly_rate}</div>
+                        <div className="text-xs text-gray-400">per hour</div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+                    <Button asChild className="flex-1">
+                      <Link href={`/studios/${studio.id}`}>View Details</Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => addStudio({
+                        id: studio.id,
+                        name: studio.name,
+                        description: studio.description || '',
+                        location: studio.location || '',
+                        hourly_rate: studio.hourly_rate,
+                        verification_status: studio.verification_status
+                      })}
+                      disabled={basketStudios.some(s => s.id === studio.id)}
+                      className="px-3"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {studios.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">No Studios Found Matching Your Criteria.</p>
+              <p className="text-gray-500 mt-2">Try Adjusting Your Filters.</p>
             </div>
           )}
         </div>

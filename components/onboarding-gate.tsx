@@ -99,8 +99,8 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
   // Show loading while checking auth status
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -108,8 +108,8 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
   // Show loading while redirecting to onboarding
   if (needsOnboarding && pathname !== "/onboarding") {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Redirecting to onboarding...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-foreground">Redirecting to onboarding...</div>
       </div>
     )
   }

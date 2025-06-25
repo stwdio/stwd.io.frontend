@@ -1,16 +1,16 @@
 "use client"
 
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "next-themes"
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider 
       attribute="class" 
-      defaultTheme="dark" 
-      enableSystem={false} 
+      defaultTheme="light" 
+      enableSystem={true}
       disableTransitionOnChange
     >
       {children}
     </ThemeProvider>
   )
-}
+} 

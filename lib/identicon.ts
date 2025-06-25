@@ -38,4 +38,4 @@ export function generateIdenticon(userId: string): string {
     console.error("Error generating identicon:", error)
     return ""
   }
-}
+} 

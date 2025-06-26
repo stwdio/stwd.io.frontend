@@ -32,6 +32,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { QuoteBasketDialog } from "@/components/quote-basket-dialog"
 
 interface Profile {
   id: number
@@ -113,28 +114,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/dashboard",
         icon: IconSearch,
       },
-      {
-        title: "Messages",
-        url: "/messages",
-        icon: IconMessage,
-      },
     ]
 
-    if (profile?.role === "owner" || profile?.role === "admin") {
-      baseItems.splice(1, 0, {
+    if (profile?.role === "admin") {
+      baseItems.push({
+        title: "Admin Dashboard",
+        url: "/dashboard/admin",
+        icon: IconDashboard,
+      })
+    } else if (profile?.role === "owner") {
+      baseItems.push({
         title: "My Studios",
         url: "/dashboard/studios",
         icon: IconBuilding,
       })
-    }
-
-    if (profile?.role === "creator") {
-      baseItems.splice(1, 0, {
+    } else if (profile?.role === "creator") {
+      baseItems.push({
         title: "My Inquiries",
         url: "/dashboard/my-inquiries",
         icon: IconDashboard,
       })
     }
+
+    baseItems.push({
+      title: "Messages",
+      url: "/messages",
+      icon: IconMessage,
+    })
 
     return baseItems
   }
@@ -147,13 +153,49 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   })
 
   if (loading) {
-    return null
+    return (
+      <Sidebar collapsible="offcanvas" {...props}>
+        <SidebarContent>
+          <div className="flex items-center justify-center h-20">
+            <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    )
   }
 
   if (!user) {
-    // If not logged in, show minimal sidebar or redirect
-    router.push('/auth/login')
-    return null
+    // Show a minimal sidebar for non-authenticated users instead of redirecting
+    return (
+      <Sidebar collapsible="offcanvas" {...props}>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                className="data-[slot=sidebar-menu-button]:!p-1.5"
+              >
+                <a href="/">
+                  <IconBuilding className="!size-5" />
+                  <span className="text-base font-semibold">stwd.io</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        
+        <SidebarContent>
+          <div className="p-4 text-center">
+            <p className="text-muted-foreground text-sm mb-4">
+              Sign in to access all features
+            </p>
+            <Button asChild className="w-full">
+              <a href="/auth/login">Sign In</a>
+            </Button>
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    )
   }
 
   return (
@@ -200,20 +242,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         )}
 
-        {/* Owner-specific features */}
-        {(profile?.role === "owner" || profile?.role === "admin") && (
-          <div className="mt-4 px-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/dashboard/studios/new')}
-              className="w-full justify-start"
-            >
-              <IconPlus className="h-4 w-4 mr-2" />
-              Add Studio
-            </Button>
-          </div>
-        )}
+
       </SidebarContent>
       
       <SidebarFooter>
@@ -239,12 +268,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              {(profile?.role === "owner" || profile?.role === "admin") && (
-                <DropdownMenuItem onClick={() => router.push('/dashboard/owner')}>
-                  <IconDashboard className="mr-2 h-4 w-4" />
-                  Owner Dashboard
-                </DropdownMenuItem>
-              )}
               <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <IconSettings className="mr-2 h-4 w-4" />
                 Settings
@@ -257,6 +280,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </DropdownMenu>
         </div>
       </SidebarFooter>
+      
+      <QuoteBasketDialog />
     </Sidebar>
   )
 }

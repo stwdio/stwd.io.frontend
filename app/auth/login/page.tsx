@@ -46,8 +46,8 @@ export default function LoginPage() {
       if (!profile?.role) {
         router.push("/onboarding")
       } else {
-        // Redirect based on role
-        router.push(profile.role === "owner" ? "/dashboard" : "/browse")
+        // Redirect to dashboard for all roles
+        router.push("/dashboard")
       }
     } catch (error) {
       console.error("Error checking onboarding status:", error)
@@ -58,46 +58,47 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="h-screen bg-black flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Sign In To Your Account</p>
+          <h1 className="text-4xl font-bold mb-2">Welcome Back</h1>
+          <p className="text-muted-foreground">Sign In To Your Account</p>
         </div>
         
-        <div className="p-6 rounded-lg border border-gray-800">
+        <div className="p-6 rounded-lg border">
           <Auth
             supabaseClient={supabase}
             appearance={{ 
-              theme: {
+              theme: ThemeSupa,
+              variables: {
                 default: {
                   colors: {
-                    brand: '#ffffff',
-                    brandAccent: '#e5e7eb',
-                    brandButtonText: '#000000',
-                    defaultButtonBackground: '#ffffff',
-                    defaultButtonBackgroundHover: '#f3f4f6',
-                    defaultButtonBorder: '#ffffff',
-                    defaultButtonText: '#000000',
-                    dividerBackground: '#374151',
-                    inputBackground: '#1f2937',
-                    inputBorder: '#374151',
-                    inputBorderHover: '#4b5563',
-                    inputBorderFocus: '#ffffff',
-                    inputText: '#ffffff',
-                    inputLabelText: '#d1d5db',
-                    inputPlaceholder: '#9ca3af',
-                    messageText: '#ef4444',
-                    messageTextDanger: '#ef4444',
-                    anchorTextColor: '#ffffff',
-                    anchorTextHoverColor: '#e5e7eb',
+                    brand: 'hsl(var(--primary))',
+                    brandAccent: 'hsl(var(--primary))',
+                    brandButtonText: 'hsl(var(--primary-foreground))',
+                    defaultButtonBackground: 'hsl(var(--background))',
+                    defaultButtonBackgroundHover: 'hsl(var(--muted))',
+                    defaultButtonBorder: 'hsl(var(--border))',
+                    defaultButtonText: 'hsl(var(--foreground))',
+                    dividerBackground: 'hsl(var(--border))',
+                    inputBackground: 'hsl(var(--background))',
+                    inputBorder: 'hsl(var(--border))',
+                    inputBorderHover: 'hsl(var(--ring))',
+                    inputBorderFocus: 'hsl(var(--ring))',
+                    inputText: 'hsl(var(--foreground))',
+                    inputLabelText: 'hsl(var(--foreground))',
+                    inputPlaceholder: 'hsl(var(--muted-foreground))',
+                    messageText: 'hsl(var(--destructive))',
+                    messageTextDanger: 'hsl(var(--destructive))',
+                    anchorTextColor: 'hsl(var(--primary))',
+                    anchorTextHoverColor: 'hsl(var(--primary))',
                   },
                   space: {
                     spaceSmall: '4px',
@@ -111,7 +112,7 @@ export default function LoginPage() {
                     inputPadding: '10px 15px',
                   },
                   fontSizes: {
-                    baseBodySize: '13px',
+                    baseBodySize: '14px',
                     baseInputSize: '14px',
                     baseLabelSize: '14px',
                     baseButtonSize: '14px',

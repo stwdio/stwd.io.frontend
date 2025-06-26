@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { AppSidebar } from "@/components/app-sidebar"
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
 import { ConversationList } from '@/components-old/conversation-list'
 import { ChatInterface } from '@/components-old/chat-interface'
 import { Card, CardContent } from '@/components/ui/card'
@@ -80,37 +85,76 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading messages...</p>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col p-6">
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading messages...</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </SidebarInset>
+      </SidebarProvider>
     )
   }
 
   if (!currentProfileId) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground" />
-            <div>
-              <h3 className="text-lg font-medium">Authentication Required</h3>
-              <p className="text-sm text-muted-foreground">
-                Please log in to access your messages
-              </p>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col p-6">
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center space-y-4">
+                  <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <div>
+                    <h3 className="text-lg font-medium">Authentication Required</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Please log in to access your messages
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </SidebarInset>
+      </SidebarProvider>
     )
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center">
           <MessageSquare className="h-8 w-8 mr-3" />
@@ -168,6 +212,9 @@ export default function MessagesPage() {
           </Card>
         </div>
       </div>
-    </div>
-  )
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    )
 } 

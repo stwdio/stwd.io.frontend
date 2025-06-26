@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { AdminDashboard } from '@/components/admin-dashboard'
+import { OwnerDashboard } from '@/components/owner-dashboard'
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   SidebarInset,
@@ -20,7 +20,7 @@ interface Profile {
   avatar_url: string | null
 }
 
-export default function AdminPage() {
+export default function OwnerPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -55,8 +55,8 @@ export default function AdminPage() {
 
         setProfile(profile)
 
-        // Check if user is admin
-        if (profile.role !== 'admin') {
+        // Check if user is owner
+        if (profile.role !== 'owner') {
           router.replace('/dashboard')
           return
         }
@@ -126,7 +126,7 @@ export default function AdminPage() {
       <SidebarInset>
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col p-6">
-            <AdminDashboard />
+            <OwnerDashboard />
           </div>
         </div>
       </SidebarInset>

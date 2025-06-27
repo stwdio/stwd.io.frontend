@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import Link from "next/link"
 
 interface Profile {
   id: number
@@ -212,17 +213,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem onClick={() => router.push('/profile/dashboard')}>
-                <IconDashboard className="mr-2 h-4 w-4" />
-                Dashboard
+              <DropdownMenuItem asChild>
+                <Link href="/profile/dashboard" className="flex items-center">
+                  <IconDashboard className="mr-2 h-4 w-4" />
+                  Dashboard
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/profile/messages')}>
-                <IconMessage className="mr-2 h-4 w-4" />
-                Messages
+              <DropdownMenuItem asChild>
+                <Link href="/profile/messages" className="flex items-center">
+                  <IconMessage className="mr-2 h-4 w-4" />
+                  Messages
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/profile/settings')}>
-                <IconSettings className="mr-2 h-4 w-4" />
-                Settings
+              <DropdownMenuItem asChild>
+                <Link href="/profile/settings" className="flex items-center">
+                  <IconSettings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>
                 <IconLogout className="mr-2 h-4 w-4" />

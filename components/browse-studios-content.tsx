@@ -43,7 +43,7 @@ export function BrowseStudiosContent() {
 
   // Filter state
   const [locationFilter, setLocationFilter] = useState("")
-  const [maxPrice, setMaxPrice] = useState([250])
+  const [priceRange, setPriceRange] = useState([0, 500])
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export function BrowseStudiosContent() {
 
   useEffect(() => {
     applyFilters()
-  }, [locationFilter, maxPrice, selectedAmenities])
+  }, [locationFilter, priceRange, selectedAmenities])
 
   const fetchStudios = async () => {
     const { data, error } = await supabase
@@ -108,7 +108,7 @@ export function BrowseStudiosContent() {
       query = query.ilike("location", `%${locationFilter}%`)
     }
 
-    query = query.lte("hourly_rate", maxPrice[0])
+    query = query.gte("hourly_rate", priceRange[0]).lte("hourly_rate", priceRange[1])
 
     const { data, error } = await query
 
@@ -165,18 +165,18 @@ export function BrowseStudiosContent() {
               </div>
 
       <div className="space-y-4">
-        <Label>Maximum Price (Per Hour)</Label>
+        <Label>Price Range (Per Hour)</Label>
         <Slider 
-          defaultValue={maxPrice} 
-          onValueCommit={setMaxPrice}
+          defaultValue={priceRange} 
+          onValueCommit={setPriceRange}
           max={500} 
           min={0} 
           step={10} 
           className="w-full" 
         />
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>$0</span>
-          <span>${maxPrice[0]}</span>
+          <span>${priceRange[0]}</span>
+          <span>${priceRange[1]}</span>
         </div>
       </div>
 

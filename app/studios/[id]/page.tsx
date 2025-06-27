@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Star, MapPin, Wifi, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { StudioImage } from "@/components/studio-image-placeholder"
+import { StudioDetailActions } from "@/components/studio-detail-client"
 import { supabase } from "@/lib/supabase"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -247,13 +248,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
                           </div>
                         </div>
 
-                        <Button className="w-full" size="lg">
-                          Contact Studio
-                        </Button>
-                        
-                        <Button variant="outline" className="w-full">
-                          Add to Quote
-                        </Button>
+                        <StudioDetailActions studio={studio} />
                       </div>
                     </CardContent>
                   </Card>

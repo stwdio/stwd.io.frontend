@@ -266,10 +266,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <IconDashboard className="mr-2 h-4 w-4" />
                     Owner Dashboard
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/studios')}>
-                    <IconBuilding className="mr-2 h-4 w-4" />
-                    My Studios
-                  </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push('/dashboard/owner')}>
+                <IconBuilding className="mr-2 h-4 w-4" />
+                My Studios
+              </DropdownMenuItem>
                 </>
               )}
               <DropdownMenuItem onClick={() => router.push('/settings')}>

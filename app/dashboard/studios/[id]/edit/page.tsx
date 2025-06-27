@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { StudioFormStandalone } from "@/components/studio-form-standalone"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 
 interface Studio {
   id: number
@@ -74,7 +76,7 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
 
         // Verify ownership
         if (studioData.owner_id !== profileData.id && profileData.role !== 'admin') {
-          router.push("/dashboard/studios")
+          router.push("/dashboard/owner")
           return
         }
 
@@ -91,54 +93,82 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
   }, [params, router])
 
   const handleSaved = () => {
-    // Navigate back to My Studios after successful save
-    router.push("/dashboard/studios")
+    // Navigate back to Owner Dashboard after successful save
+    router.push("/dashboard/owner")
   }
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading studio...</p>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col p-6">
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading studio...</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </SidebarInset>
+      </SidebarProvider>
     )
   }
 
   if (error) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center text-destructive">{error}</div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col p-6">
+              <div className="text-center text-destructive">{error}</div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     )
   }
 
   if (!studio || !profile) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">Studio not found</div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col p-6">
+              <div className="text-center">Studio not found</div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     )
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Edit Studio</h1>
-          <p className="text-muted-foreground mt-2">Update your studio details, amenities, and settings.</p>
-        </div>
+    <SidebarProvider>
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col p-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold">Edit Studio</h1>
+                <p className="text-muted-foreground mt-2">Update your studio details, amenities, and settings.</p>
+              </div>
 
-        <StudioFormStandalone 
-          studio={studio} 
-          onSaved={handleSaved} 
-          ownerId={profile.id}
-          showActions={true}
-        />
-      </div>
-    </div>
+              <StudioFormStandalone 
+                studio={studio} 
+                onSaved={handleSaved} 
+                ownerId={profile.id}
+                showActions={true}
+              />
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 } 

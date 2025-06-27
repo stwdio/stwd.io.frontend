@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { MyInquiriesDashboard } from '@/components-old/my-inquiries-dashboard'
+// Inquiries are now handled in the Owner Dashboard
+const MyInquiriesDashboard = () => (
+  <div className="p-6">
+    <h1 className="text-2xl font-bold mb-4">My Inquiries</h1>
+    <p className="text-muted-foreground">Inquiries are now managed in the Owner Dashboard. <a href="/dashboard/owner" className="text-primary underline">Go to Owner Dashboard</a></p>
+  </div>
+)
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   SidebarInset,

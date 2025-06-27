@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Star, MapPin, Plus, Filter } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { StudioImage } from "@/components/studio-image-placeholder"
+import { StudioCardActions } from "@/components/studio-card-actions"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
@@ -307,27 +308,7 @@ export function BrowseStudiosContent() {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 pointer-events-none"
-                    >
-                      View Details
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        addStudio(studio)
-                      }}
-                      className="flex-1"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add to Quote
-                    </Button>
-                  </div>
+                  <StudioCardActions studio={studio} />
                 </CardContent>
               </Card>
               </Link>

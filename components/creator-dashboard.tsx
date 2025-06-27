@@ -458,7 +458,7 @@ export function CreatorDashboard() {
                                 <DialogHeader>
                                   <DialogTitle>Studio Response</DialogTitle>
                                   <DialogDescription>
-                                    Response from {response.studios?.name}
+                                    Response from {response.studios.name}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">

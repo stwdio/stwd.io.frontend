@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { Plus, Edit, MessageCircle } from 'lucide-react'
+import { Plus, Edit, MessageCircle, MessageSquare } from 'lucide-react'
 
 interface Profile {
   id: number
@@ -28,11 +28,12 @@ interface StudioDetailActionsProps {
 export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [hasInquiry, setHasInquiry] = useState(false)
   const { addStudio } = useQuoteBasket()
   const router = useRouter()
 
   useEffect(() => {
-    const getProfile = async () => {
+    const getProfileAndCheckInquiry = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -48,12 +49,27 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
 
       if (profileData) {
         setProfile(profileData)
+        
+        // Check if user has made an inquiry to this studio
+        if (profileData.role === 'creator') {
+          const { data: inquiryCheck } = await supabase
+            .from('inquiry_recipients')
+            .select(`
+              inquiry_id,
+              inquiries!inner(creator_id)
+            `)
+            .eq('studio_id', studio.id)
+            .eq('inquiries.creator_id', profileData.id)
+            .limit(1)
+
+          setHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
+        }
       }
       setLoading(false)
     }
 
-    getProfile()
-  }, [])
+    getProfileAndCheckInquiry()
+  }, [studio.id])
 
   if (loading) {
     return (
@@ -99,7 +115,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
     )
   }
 
-  // For creators - show contact and add to quote actions
+  // For creators - show contact and either "View Inquiry" or "Add to Quote"
   return (
     <>
       <Button className="w-full" size="lg">
@@ -107,14 +123,25 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         Contact Studio
       </Button>
       
-      <Button 
-        variant="outline" 
-        className="w-full"
-        onClick={() => addStudio(studio)}
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        Add to Quote
-      </Button>
+      {hasInquiry ? (
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={() => router.push('/dashboard/creator')}
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          View Inquiry
+        </Button>
+      ) : (
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={() => addStudio(studio)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add to Quote
+        </Button>
+      )}
     </>
   )
 } 

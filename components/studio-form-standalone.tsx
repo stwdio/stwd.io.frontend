@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { X, Upload } from "lucide-react"
+import { StudioImage } from "@/components/studio-image-placeholder"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 
@@ -339,9 +340,12 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
                   {uploadedImages.map((image, index) => (
                     <div key={index} className="relative group">
                       <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                        <img
-                          src={image || "/placeholder.svg"}
+                        <StudioImage
+                          src={image}
                           alt={`Studio image ${index + 1}`}
+                          fill
+                          width={300}
+                          height={200}
                           className="w-full h-full object-cover"
                         />
                       </div>

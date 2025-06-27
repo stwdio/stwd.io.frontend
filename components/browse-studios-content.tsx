@@ -10,8 +10,8 @@ import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Star, MapPin, Plus, Filter } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { StudioImage } from "@/components/studio-image-placeholder"
 import Link from "next/link"
-import Image from "next/image"
 import { supabase } from "@/lib/supabase"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
 
@@ -257,12 +257,14 @@ export function BrowseStudiosContent() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {studios.map((studio) => (
-              <Card key={studio.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-video bg-muted relative">
-                  <Image
-                    src="/placeholder.jpg"
+              <Card key={studio.id} className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0">
+                <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                  <StudioImage
+                    src={null} // TODO: Replace with actual studio image URL from database
                     alt={studio.name}
                     fill
+                    width={300}
+                    height={200}
                     className="object-cover"
                   />
                 </div>

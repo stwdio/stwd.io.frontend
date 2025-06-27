@@ -84,6 +84,7 @@ export default function OnboardingPage() {
           description: "Failed to set your role. Please try again.",
           variant: "destructive",
         })
+        setLoading(false)
         return
       }
 

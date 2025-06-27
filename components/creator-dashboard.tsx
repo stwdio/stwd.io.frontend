@@ -90,7 +90,10 @@ export function CreatorDashboard() {
     try {
       // Get current user profile
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
+      if (!session?.user) {
+        setLoading(false)
+        return
+      }
 
       const { data: profileData } = await supabase
         .from('profiles')
@@ -98,7 +101,10 @@ export function CreatorDashboard() {
         .eq('user_id', session.user.id)
         .single()
 
-      if (!profileData) return
+      if (!profileData) {
+        setLoading(false)
+        return
+      }
       setProfile(profileData)
 
       // Fetch creator's inquiries

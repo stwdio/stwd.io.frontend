@@ -133,7 +133,7 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
         gearData = { description: formData.gear }
       }
 
-      let studioData
+      let studioData: any
 
       if (studio) {
         // Update existing studio

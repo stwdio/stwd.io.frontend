@@ -10,13 +10,11 @@ import {
   IconMessage,
   IconDashboard,
   IconPlus,
-  IconShoppingCart,
   IconUser,
   IconLogout,
 } from "@tabler/icons-react"
 import { supabase } from "@/lib/supabase"
 import { generateIdenticon } from "@/lib/identicon"
-import { useQuoteBasket } from "@/lib/store/quote-basket"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -29,10 +27,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { QuoteBasketDialog } from "@/components/quote-basket-dialog"
 
 interface Profile {
   id: number
@@ -48,7 +44,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const { studios: basketStudios, toggleBasket } = useQuoteBasket()
   const router = useRouter()
 
   useEffect(() => {
@@ -192,31 +187,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       
       <SidebarContent>
         <NavMain items={getNavItems()} />
-        
-        {/* Creator-specific features */}
-        {profile?.role === "creator" && (
-          <div className="mt-4 px-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleBasket}
-              className="w-full justify-start relative"
-            >
-              <IconShoppingCart className="h-4 w-4 mr-2" />
-              Quote Basket
-              {basketStudios.length > 0 && (
-                <Badge 
-                  variant="default" 
-                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                >
-                  {basketStudios.length}
-                </Badge>
-              )}
-            </Button>
-          </div>
-        )}
-
-
       </SidebarContent>
       
       <SidebarFooter>
@@ -282,8 +252,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </DropdownMenu>
         </div>
       </SidebarFooter>
-      
-      <QuoteBasketDialog />
     </Sidebar>
   )
 }

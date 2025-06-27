@@ -1,5 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { BrowseStudiosContent } from "@/components/browse-studios-content"
+import { FloatingCartButton } from "@/components/floating-cart-button"
 import {
   SidebarInset,
   SidebarProvider,
@@ -23,6 +24,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </SidebarInset>
+      <FloatingCartButton />
     </SidebarProvider>
   )
 }

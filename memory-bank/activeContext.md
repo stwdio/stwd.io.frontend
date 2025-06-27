@@ -330,6 +330,70 @@ With authentication, onboarding, security, AND USERNAME VALIDATION fully impleme
 - **Result**: ✅ Users can no longer create duplicate inquiries; seamless navigation to inquiry management
 - **UX Improvement**: Clear indication of existing relationship with studios and easy access to inquiry status
 
+### ✅ Floating Shopping Cart Button - COMPLETED (January 23, 2025)
+- **Status**: ✅ **COMPLETED** - Replaced sidebar quote basket with modern floating cart button
+- **Problem**: Quote basket in sidebar took up valuable navigation space and wasn't accessible on all relevant pages
+- **Solution Applied**:
+  - **Floating UI**: Created elegant floating cart button positioned bottom-right like modern e-commerce sites
+  - **Theme-Compliant Design**: Uses shadcn theme system (`variant="outline"`) for consistent styling
+  - **Smart Visibility**: Only shows for creators on pages where they can add studios (browse and studio detail)
+  - **Badge Integration**: Cart count displayed as theme-default badge on top-right of shopping cart icon
+  - **Accessibility**: Added `cursor-pointer` for proper hover interaction
+- **Technical Implementation**:
+  - **New Component**: `components/floating-cart-button.tsx` with profile-based visibility logic
+  - **Fixed Positioning**: `fixed bottom-6 right-6 z-50` ensures always visible and accessible
+  - **Role-Based Display**: Only renders for users with 'creator' role to prevent confusion
+  - **Dialog Integration**: Maintains existing `QuoteBasketDialog` functionality
+- **Pages Enhanced**:
+  - `app/dashboard/page.tsx` - Browse studios page
+  - `app/studios/[id]/page.tsx` - Studio detail pages
+- **Sidebar Cleanup**:
+  - `components/app-sidebar.tsx` - Removed quote basket button and related imports
+  - Cleaner navigation focused on core navigation items
+- **Result**: ✅ Modern floating cart UX with better accessibility and visual consistency
+- **UX Improvement**: Cart accessible on all relevant pages without cluttering navigation sidebar
+
+## 🎨 Theme System Documentation
+
+### ✅ **COMPLETE SHADCN THEME SYSTEM** - Production Ready
+The application uses a comprehensive theme system based on shadcn/ui with full dark/light mode support:
+
+#### **Theme Architecture**
+- **CSS Variables**: All colors defined as CSS custom properties in `app/globals.css`
+- **Tailwind Integration**: Theme variables mapped in `tailwind.config.ts`
+- **shadcn Components**: Use semantic color tokens (e.g., `variant="outline"`, `variant="default"`)
+- **Dark Mode**: Complete dark theme with automatic switching support
+
+#### **Color Tokens Available**
+```css
+/* Core Theme Colors */
+--background, --foreground          /* Main background and text */
+--card, --card-foreground          /* Card containers */
+--primary, --primary-foreground    /* Primary actions/buttons */
+--secondary, --secondary-foreground /* Secondary elements */
+--muted, --muted-foreground        /* Subtle backgrounds and text */
+--accent, --accent-foreground      /* Accent highlights */
+--destructive                      /* Error/danger states */
+--border, --input, --ring          /* Form elements and borders */
+```
+
+#### **Component Usage Guidelines**
+✅ **ALWAYS USE**: shadcn variant props instead of custom colors
+```tsx
+// ✅ CORRECT - Uses theme system
+<Button variant="outline">Click me</Button>
+<Badge variant="default">Count</Badge>
+
+// ❌ AVOID - Hardcoded colors
+<Button className="bg-red-600 text-white">Click me</Button>
+```
+
+#### **Benefits of Theme System**
+- **Automatic Dark Mode**: All components adapt to theme without code changes
+- **Consistent Styling**: Unified visual language across entire application
+- **Accessibility**: Proper contrast ratios maintained in both themes
+- **Maintenance**: Color changes applied globally through CSS variables
+
 ## Next Immediate Priorities
 
 ### Studio Management Implementation

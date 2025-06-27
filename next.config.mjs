@@ -11,6 +11,9 @@ const nextConfig = {
   },
   // Disable source maps in production to prevent source map errors
   productionBrowserSourceMaps: false,
+  devIndicators: {
+    position: 'top-right',
+  }
 }
 
 export default nextConfig

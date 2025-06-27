@@ -116,14 +116,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ]
 
-    if (profile?.role === "creator") {
-      baseItems.push({
-        title: "My Inquiries",
-        url: "/dashboard/my-inquiries",
-        icon: IconDashboard,
-      })
-    }
-
     return baseItems
   }
 
@@ -254,6 +246,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <IconMessage className="mr-2 h-4 w-4" />
                 Messages
               </DropdownMenuItem>
+              {profile?.role === "creator" && (
+                <DropdownMenuItem onClick={() => router.push('/dashboard/creator')}>
+                  <IconDashboard className="mr-2 h-4 w-4" />
+                  Creator Dashboard
+                </DropdownMenuItem>
+              )}
               {profile?.role === "admin" && (
                 <DropdownMenuItem onClick={() => router.push('/dashboard/admin')}>
                   <IconDashboard className="mr-2 h-4 w-4" />

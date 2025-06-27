@@ -3,18 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-// Inquiries are now handled in the Owner Dashboard
-const MyInquiriesDashboard = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">My Inquiries</h1>
-    <p className="text-muted-foreground">Inquiries are now managed in the Owner Dashboard. <a href="/dashboard/owner" className="text-primary underline">Go to Owner Dashboard</a></p>
-  </div>
-)
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { CreatorDashboard } from '@/components/creator-dashboard'
 
 interface Profile {
   id: number
@@ -26,7 +20,7 @@ interface Profile {
   avatar_url: string | null
 }
 
-export default function MyInquiriesPage() {
+export default function CreatorDashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -55,6 +49,13 @@ export default function MyInquiriesPage() {
 
         if (profileError || !profile) {
           console.error('Profile error:', profileError)
+          router.replace('/dashboard')
+          return
+        }
+
+        // Check if user is a creator
+        if (profile.role !== 'creator') {
+          console.error('Access denied: User is not a creator')
           router.replace('/dashboard')
           return
         }
@@ -125,14 +126,7 @@ export default function MyInquiriesPage() {
       <SidebarInset>
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col p-6">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold">My Inquiries</h1>
-              <p className="text-muted-foreground">
-                Track your studio inquiries and responses
-              </p>
-            </div>
-            
-            <MyInquiriesDashboard />
+            <CreatorDashboard />
           </div>
         </div>
       </SidebarInset>

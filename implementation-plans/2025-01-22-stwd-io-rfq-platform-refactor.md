@@ -174,7 +174,7 @@ interface QuoteBasketStore {
 #### Task 2.3: Implement Customer Inquiry Dashboard
 
 **Current State Check**:
-- ❌ **MISSING** - Customer inquiry tracking at `/dashboard/my-inquiries`
+- ✅ **COMPLETED** - Creator inquiry tracking at `/dashboard/creator`
 
 **Frontend User Flow**:
 - Protected route showing all user's inquiries

@@ -134,27 +134,17 @@ export function OwnerDashboard() {
       const studioIds = studiosData?.map(studio => studio.id) || []
 
       if (studioIds.length > 0) {
-        // Fetch incoming leads
-        const { data: leadsData } = await supabase
-          .from('inquiry_recipients')
-          .select(`
-            *,
-            inquiries (
-              *,
-              profiles:creator_id (
-                first_name,
-                last_name,
-                username
-              )
-            ),
-            studios (
-              name
-            )
-          `)
-          .in('studio_id', studioIds)
-          .order('created_at', { ascending: false })
+        // Fetch incoming leads using RPC function for proper access control
+        const { data: leadsData, error: leadsError } = await supabase
+          .rpc('get_studio_inquiries', { studio_ids: studioIds })
 
-        setIncomingLeads(leadsData || [])
+        if (leadsError) {
+          console.error('Error fetching leads:', leadsError)
+          toast.error('Failed to load inquiries')
+          setIncomingLeads([])
+        } else {
+          setIncomingLeads(leadsData || [])
+        }
 
         // Fetch bookings
         const { data: bookingsData } = await supabase

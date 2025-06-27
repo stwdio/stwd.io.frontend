@@ -59,7 +59,7 @@ export default function OnboardingPage() {
       } else if (profile?.role) {
         // User already has a role, redirect appropriately
         console.log("User already has role:", profile.role)
-        router.push(profile.role === "owner" ? "/dashboard" : "/browse")
+        router.push(profile.role === "owner" ? "/dashboard/owner" : "/dashboard")
       }
     }
 
@@ -93,7 +93,7 @@ export default function OnboardingPage() {
       })
 
       // Redirect based on role
-      router.push(role === "owner" ? "/dashboard" : "/browse")
+      router.push(role === "owner" ? "/dashboard/owner" : "/dashboard")
     } catch (err) {
       console.error("Unexpected error:", err)
       toast({

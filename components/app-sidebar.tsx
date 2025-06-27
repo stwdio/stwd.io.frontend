@@ -106,7 +106,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const baseItems = [
       {
         title: "Browse Studios",
-        url: "/dashboard",
+        url: "/browse",
         icon: IconSearch,
       },
     ]
@@ -212,35 +212,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem onClick={() => router.push('/messages')}>
+              <DropdownMenuItem onClick={() => router.push('/profile/dashboard')}>
+                <IconDashboard className="mr-2 h-4 w-4" />
+                Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/profile/messages')}>
                 <IconMessage className="mr-2 h-4 w-4" />
                 Messages
               </DropdownMenuItem>
-              {profile?.role === "creator" && (
-                <DropdownMenuItem onClick={() => router.push('/dashboard/creator')}>
-                  <IconDashboard className="mr-2 h-4 w-4" />
-                  Creator Dashboard
-                </DropdownMenuItem>
-              )}
-              {profile?.role === "admin" && (
-                <DropdownMenuItem onClick={() => router.push('/dashboard/admin')}>
-                  <IconDashboard className="mr-2 h-4 w-4" />
-                  Admin Dashboard
-                </DropdownMenuItem>
-              )}
-              {profile?.role === "owner" && (
-                <>
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/owner')}>
-                    <IconDashboard className="mr-2 h-4 w-4" />
-                    Owner Dashboard
-                  </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push('/dashboard/owner')}>
-                <IconBuilding className="mr-2 h-4 w-4" />
-                My Studios
-              </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuItem onClick={() => router.push('/settings')}>
+              <DropdownMenuItem onClick={() => router.push('/profile/settings')}>
                 <IconSettings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>

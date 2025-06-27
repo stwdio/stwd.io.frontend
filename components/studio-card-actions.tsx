@@ -141,7 +141,7 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            router.push('/dashboard/creator')
+            router.push('/profile/dashboard')
           }}
           className="flex-1"
           variant="outline"

@@ -18,8 +18,8 @@ export default function LandingPage() {
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session?.user) {
-        // User is authenticated, redirect to dashboard
-        router.push('/dashboard')
+        // User is authenticated, redirect to browse
+        router.push('/browse')
         return
       }
       

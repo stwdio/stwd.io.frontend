@@ -89,7 +89,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
             {/* Back Button */}
             <div className="mb-6">
               <Button variant="ghost" asChild className="mb-4">
-                <Link href="/dashboard">
+                <Link href="/browse">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Browse
                 </Link>

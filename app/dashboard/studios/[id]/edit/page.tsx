@@ -76,7 +76,7 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
 
         // Verify ownership
         if (studioData.owner_id !== profileData.id && profileData.role !== 'admin') {
-          router.push("/dashboard/owner")
+          router.push("/profile/dashboard")
           return
         }
 
@@ -94,7 +94,7 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
 
   const handleSaved = () => {
     // Navigate back to Owner Dashboard after successful save
-    router.push("/dashboard/owner")
+    router.push("/profile/dashboard")
   }
 
   if (loading) {

@@ -127,7 +127,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         <Button 
           variant="outline" 
           className="w-full"
-          onClick={() => router.push('/dashboard/creator')}
+          onClick={() => router.push('/profile/dashboard')}
         >
           <MessageSquare className="h-4 w-4 mr-2" />
           View Inquiry

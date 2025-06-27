@@ -37,7 +37,7 @@ export default function NewStudioPage() {
         }
 
         if (profileData.role !== 'owner' && profileData.role !== 'admin') {
-          router.push("/dashboard")
+          router.push("/browse")
           return
         }
 
@@ -55,7 +55,7 @@ export default function NewStudioPage() {
 
   const handleSaved = () => {
     // Navigate back to Owner Dashboard after successful save
-    router.push("/dashboard/owner")
+    router.push("/profile/dashboard")
   }
 
   if (loading) {

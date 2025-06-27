@@ -9,6 +9,6 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // Redirect to dashboard - OnboardingGate will handle routing based on user state
-  return NextResponse.redirect(new URL("/dashboard", request.url))
+  // Redirect to browse - OnboardingGate will handle routing based on user state
+  return NextResponse.redirect(new URL("/browse", request.url))
 } 

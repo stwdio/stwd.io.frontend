@@ -2,11 +2,6 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -219,45 +214,18 @@ export default function ProfileSettingsPage() {
 
   if (loading) {
     return (
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar variant="inset" />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col p-6">
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Loading profile...</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <div className="flex items-center justify-center min-h-[400px] p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col p-6">
-            <div className="max-w-2xl">
+    <div className="p-6">
+      <div className="max-w-2xl">
         <div className="flex items-center gap-4 mb-8">
           <User className="h-8 w-8" />
           <div>
@@ -371,9 +339,6 @@ export default function ProfileSettingsPage() {
             </CardContent>
           </Card>
         </div>
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      </div>
     )
 } 

@@ -6,11 +6,6 @@ import { supabase } from '@/lib/supabase'
 import { CreatorDashboard } from '@/components/creator-dashboard'
 import { OwnerDashboard } from '@/components/owner-dashboard'
 import { AdminDashboard } from '@/components/admin-dashboard'
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
 
 interface Profile {
   id: number
@@ -108,25 +103,9 @@ export default function ProfileDashboardPage() {
 
   if (loading) {
     return (
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar variant="inset" />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col p-6">
-              <div className="flex items-center justify-center h-32">
-                <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-              </div>
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <div className="flex items-center justify-center h-32 p-6">
+        <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+      </div>
     )
   }
 
@@ -135,22 +114,8 @@ export default function ProfileDashboardPage() {
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col p-6">
-            {renderDashboardContent()}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="p-6">
+      {renderDashboardContent()}
+    </div>
   )
 } 

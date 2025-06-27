@@ -8,10 +8,7 @@ import { Star, MapPin, Wifi, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioDetailActions } from "@/components/studio-detail-client"
-import { FloatingCartButton } from "@/components/floating-cart-button"
 import { supabase } from "@/lib/supabase"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
 
 interface Studio {
   id: number
@@ -81,11 +78,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col p-6">
+    <div className="p-6">
             {/* Back Button */}
             <div className="mb-6">
               <Button variant="ghost" asChild className="mb-4">
@@ -257,9 +250,5 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
               </div>
             </div>
           </div>
-        </div>
-      </SidebarInset>
-      <FloatingCartButton />
-    </SidebarProvider>
   )
 } 

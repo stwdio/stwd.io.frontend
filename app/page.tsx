@@ -31,7 +31,7 @@ export default function LandingPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        router.push('/dashboard')
+        router.push('/browse')
       } else {
         setUser(null)
         setLoading(false)

@@ -20,7 +20,7 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
       try {
         console.log("Checking onboarding status for path:", pathname)
         
-        // Skip gate for auth and onboarding pages
+        // Skip gate for auth and onboarding pages, but still check initial session
         if (pathname.startsWith("/auth") || pathname === "/onboarding") {
           console.log("Skipping gate for auth/onboarding page")
           setIsLoading(false)
@@ -82,9 +82,26 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
       
       if (event === "SIGNED_IN" && session) {
         setUser(session.user)
-        // Only recheck if we're not on auth or onboarding pages
-        if (!pathname.startsWith("/auth") && pathname !== "/onboarding") {
-          await checkOnboardingStatus()
+        console.log("User signed in, checking profile for routing...")
+        
+        // Check profile and route regardless of current page
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .single()
+
+        console.log("Profile after signin:", profile)
+
+        if (!profile?.role) {
+          console.log("Redirecting to onboarding - no role")
+          setNeedsOnboarding(true)
+          router.replace("/onboarding")
+        } else {
+          console.log("User has role, redirecting to dashboard")
+          setNeedsOnboarding(false)
+          setIsLoading(false)
+          router.replace("/dashboard")
         }
       } else if (event === "SIGNED_OUT") {
         setUser(null)

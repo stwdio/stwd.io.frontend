@@ -7,8 +7,8 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { ConversationList } from '@/components-old/conversation-list'
-import { ChatInterface } from '@/components-old/chat-interface'
+import { ConversationList } from '@/components/conversation-list'
+import { ChatInterface } from '@/components/chat-interface'
 import { Card, CardContent } from '@/components/ui/card'
 import { MessageSquare, Users } from 'lucide-react'
 

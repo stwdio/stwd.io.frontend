@@ -257,7 +257,8 @@ export function BrowseStudiosContent() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {studios.map((studio) => (
-              <Card key={studio.id} className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0">
+              <Link key={studio.id} href={`/studios/${studio.id}`} className="block">
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer">
                 <div className="aspect-video relative overflow-hidden rounded-t-lg">
                   <StudioImage
                     src={null} // TODO: Replace with actual studio image URL from database
@@ -307,12 +308,20 @@ export function BrowseStudiosContent() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button asChild variant="outline" size="sm" className="flex-1">
-                      <Link href={`/studios/${studio.id}`}>View Details</Link>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 pointer-events-none"
+                    >
+                      View Details
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => addStudio(studio)}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        addStudio(studio)
+                      }}
                       className="flex-1"
                     >
                       <Plus className="h-4 w-4 mr-1" />
@@ -321,6 +330,7 @@ export function BrowseStudiosContent() {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             ))}
           </div>
 

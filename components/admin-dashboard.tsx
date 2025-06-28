@@ -60,6 +60,9 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [editingStudio, setEditingStudio] = useState<Studio | null>(null)
   const [studioFormOpen, setStudioFormOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [studioToDelete, setStudioToDelete] = useState<Studio | null>(null)
+  const [deleteConfirmationName, setDeleteConfirmationName] = useState('')
   const [studioForm, setStudioForm] = useState({
     name: '',
     description: '',
@@ -142,8 +145,8 @@ export function AdminDashboard() {
     }
   }
 
-  const handleDeleteStudio = async (studioId: number) => {
-    if (!confirm('Are you sure you want to delete this studio? This action cannot be undone.')) {
+  const handleDeleteStudio = async () => {
+    if (!studioToDelete || deleteConfirmationName !== studioToDelete.name) {
       return
     }
 
@@ -151,11 +154,14 @@ export function AdminDashboard() {
       const { error } = await supabase
         .from('studios')
         .delete()
-        .eq('id', studioId)
+        .eq('id', studioToDelete.id)
 
       if (error) throw error
 
       toast.success('Studio deleted successfully')
+      setDeleteDialogOpen(false)
+      setStudioToDelete(null)
+      setDeleteConfirmationName('')
       fetchData()
     } catch (error) {
       console.error('Error deleting studio:', error)
@@ -333,7 +339,10 @@ export function AdminDashboard() {
                               )}
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteStudio(studio.id)}
+                              onClick={() => {
+                                setStudioToDelete(studio)
+                                setDeleteDialogOpen(true)
+                              }}
                               className="text-red-600"
                             >
                               <IconTrash className="mr-2 h-4 w-4" />
@@ -476,6 +485,60 @@ export function AdminDashboard() {
             </Button>
             <Button onClick={handleUpdateStudio}>
               Update Studio
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Studio</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the studio and remove all associated data.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="text-sm text-red-800">
+                <strong>Warning:</strong> This process is irreversible. All studio data, bookings, and inquiries will be permanently deleted.
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="studio-name-confirmation">
+                Type the studio name "{studioToDelete?.name}" to confirm deletion:
+              </Label>
+              <Input
+                id="studio-name-confirmation"
+                value={deleteConfirmationName}
+                onChange={(e) => setDeleteConfirmationName(e.target.value)}
+                placeholder={studioToDelete?.name}
+                className="mt-2"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setStudioToDelete(null)
+                setDeleteConfirmationName('')
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteStudio}
+              disabled={deleteConfirmationName !== studioToDelete?.name}
+            >
+              <IconTrash className="h-4 w-4 mr-2" />
+              Delete Studio
             </Button>
           </div>
         </DialogContent>

@@ -46,6 +46,7 @@ interface Conversation {
 }
 
 export default function MessagesPage() {
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [currentProfileId, setCurrentProfileId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,6 +54,13 @@ export default function MessagesPage() {
   useEffect(() => {
     fetchCurrentProfile()
   }, [])
+
+  useEffect(() => {
+    if (currentProfileId) {
+      fetchConversations()
+      setupRealtimeSubscription()
+    }
+  }, [currentProfileId])
 
   const fetchCurrentProfile = async () => {
     try {
@@ -76,6 +84,83 @@ export default function MessagesPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchConversations = async () => {
+    if (!currentProfileId) return
+
+    try {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          customer_profile:profiles!conversations_customer_id_fkey(id, first_name, last_name, username),
+          studio_owner_profile:profiles!conversations_studio_owner_id_fkey(id, first_name, last_name, username),
+          studios(id, name),
+          inquiries(id, project_type, genre)
+        `)
+        .or(`customer_id.eq.${currentProfileId},studio_owner_id.eq.${currentProfileId}`)
+        .order('last_message_at', { ascending: false, nullsFirst: false })
+
+      if (error) throw error
+
+      // Process conversations to add last message info and unread counts
+      const processedConversations = await Promise.all(
+        (data || []).map(async (conversation) => {
+          // Get the actual last message
+          const { data: lastMessage } = await supabase
+            .from('messages')
+            .select('content, message_type, quote_amount')
+            .eq('conversation_id', conversation.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          // Get unread count (messages where sender is not current user)
+          const { count: unreadCount } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conversation.id)
+            .neq('sender_id', currentProfileId)
+            .gt('created_at', conversation.last_read_at || '1970-01-01')
+
+          return {
+            ...conversation,
+            last_message_content: lastMessage?.content || '',
+            unread_count: unreadCount || 0
+          }
+        })
+      )
+
+      setConversations(processedConversations)
+    } catch (error) {
+      console.error('Error fetching conversations:', error)
+    }
+  }
+
+  const setupRealtimeSubscription = () => {
+    if (!currentProfileId) return
+
+    const channel = supabase
+      .channel('user_conversations')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'conversations',
+        filter: `or(customer_id.eq.${currentProfileId},studio_owner_id.eq.${currentProfileId})`
+      }, () => {
+        fetchConversations()
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      }, () => {
+        fetchConversations()
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   }
 
   if (loading) {
@@ -130,8 +215,10 @@ export default function MessagesPage() {
               </div>
               <div className="overflow-y-auto h-[calc(100%-60px)]">
                 <ConversationList
+                  conversations={conversations}
                   onSelectConversation={setSelectedConversation}
                   selectedConversationId={selectedConversation?.id}
+                  currentProfileId={currentProfileId}
                 />
               </div>
             </CardContent>

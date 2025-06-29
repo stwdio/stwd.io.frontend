@@ -186,7 +186,7 @@ export function OwnerDashboard() {
       const { data, error } = await supabase.rpc('handle_inquiry_response', {
         inquiry_id_param: respondingTo.inquiry_id,
         studio_id_param: respondingTo.studio_id,
-        response_message: responseForm.response_message,
+        response_message_param: responseForm.response_message,
         quote_amount_param: responseForm.quote_amount ? parseFloat(responseForm.quote_amount) : null
       })
 

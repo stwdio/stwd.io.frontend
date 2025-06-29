@@ -35,9 +35,25 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Early return if conversation data is incomplete
+  if (!conversation || !conversation.id || !currentProfileId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <p className="text-muted-foreground">Unable to load conversation</p>
+        </div>
+      </div>
+    )
+  }
+
   useEffect(() => {
     fetchMessages()
-    setupRealtimeSubscription()
+    const cleanup = setupRealtimeSubscription()
+    
+    // Cleanup function
+    return () => {
+      if (cleanup) cleanup()
+    }
   }, [conversation.id])
 
   useEffect(() => {
@@ -50,11 +66,21 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
         conversation_id_param: conversation.id
       })
 
-      if (error) throw error
-      setMessages(data || [])
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+      
+      // Ensure data is an array and has valid structure
+      const validMessages = Array.isArray(data) ? data.filter(msg => 
+        msg && msg.id && msg.sender_profile && typeof msg.sender_profile === 'object'
+      ) : []
+      
+      setMessages(validMessages)
     } catch (error) {
       console.error('Error fetching messages:', error)
       toast.error('Failed to load messages')
+      setMessages([]) // Set empty array on error
     } finally {
       setLoading(false)
     }
@@ -62,7 +88,7 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
 
   const setupRealtimeSubscription = () => {
     const channel = supabase
-      .channel('conversation_messages')
+      .channel(`conversation_messages_${conversation.id}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -74,7 +100,9 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
       })
       .subscribe()
 
-    return () => supabase.removeChannel(channel)
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }
 
   const sendMessage = async (e: React.FormEvent) => {
@@ -125,11 +153,12 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
     // Determine if current user is customer or studio owner
     const isCustomer = conversation.customer_id === currentProfileId
     
-    if (isCustomer) {
+    if (isCustomer && conversation.studio_owner_profile) {
       return getSenderName(conversation.studio_owner_profile)
-    } else {
+    } else if (!isCustomer && conversation.customer_profile) {
       return getSenderName(conversation.customer_profile)
     }
+    return 'Unknown User'
   }
 
   if (loading) {
@@ -177,6 +206,11 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
         ) : (
           <div className="space-y-1">
             {messages.map((message) => {
+              // Safety check for message data
+              if (!message || !message.id || !message.sender_profile) {
+                return null
+              }
+
               const isOwn = message.sender_profile.id === currentProfileId
               const senderName = getSenderName(message.sender_profile)
 
@@ -184,7 +218,7 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
                 return (
                   <QuoteMessage
                     key={message.id}
-                    content={message.content}
+                    content={message.content || ''}
                     quoteAmount={message.quote_amount}
                     senderName={senderName}
                     timestamp={message.created_at}
@@ -196,13 +230,13 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
               return (
                 <TextMessage
                   key={message.id}
-                  content={message.content}
+                  content={message.content || ''}
                   senderName={senderName}
                   timestamp={message.created_at}
                   isOwn={isOwn}
                 />
               )
-            })}
+            }).filter(Boolean)}
             <div ref={messagesEndRef} />
           </div>
         )}

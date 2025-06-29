@@ -119,7 +119,7 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="w-full p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Edit Studio</h1>
         <p className="text-muted-foreground mt-2">Update your studio details, amenities, and settings.</p>

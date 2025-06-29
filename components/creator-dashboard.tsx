@@ -220,6 +220,35 @@ export function CreatorDashboard() {
     })
   }
 
+  const handleViewConversation = async (inquiryId: number, studioId: number) => {
+    try {
+      // Find the conversation for this inquiry and studio
+      const { data: conversation, error } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('inquiry_id', inquiryId)
+        .eq('studio_id', studioId)
+        .single()
+
+      if (error) {
+        console.error('Error finding conversation:', error)
+        toast.error('Could not find conversation')
+        return
+      }
+
+      if (!conversation) {
+        toast.error('Conversation not found')
+        return
+      }
+
+      // Navigate to messages page - the conversation will be auto-selected based on URL or we can use a state
+      router.push(`/profile/messages?conversation=${conversation.id}`)
+    } catch (error) {
+      console.error('Error navigating to conversation:', error)
+      toast.error('Failed to open conversation')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -453,36 +482,14 @@ export function CreatorDashboard() {
                         </TableCell>
                         <TableCell>
                           {response.status === 'responded' && (
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <IconMessage className="h-4 w-4 mr-1" />
-                                  View Response
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Studio Response</DialogTitle>
-                                  <DialogDescription>
-                                    Response from {response.studios.name}
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div>
-                                    <label className="text-sm font-medium">Quote Amount</label>
-                                    <p className="text-sm text-muted-foreground">
-                                      {response.quote_amount ? `$${response.quote_amount.toFixed(2)}` : 'No quote provided'}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Message</label>
-                                    <p className="text-sm text-muted-foreground">
-                                      {response.response_message || 'No message provided'}
-                                    </p>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewConversation(response.inquiry_id, response.studio_id)}
+                            >
+                              <IconMessage className="h-4 w-4 mr-1" />
+                              View Conversation
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>

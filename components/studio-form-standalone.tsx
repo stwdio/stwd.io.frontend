@@ -165,7 +165,7 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
             published: formData.published,
             gear: gearData,
             owner_id: ownerId,
-            verification_status: 'pending'
+            verification_status: 'pending_new_studio_approval'
           })
           .select()
           .single()
@@ -210,13 +210,13 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
   return (
     <div className="w-full space-y-8">
       {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8 min-h-[calc(100vh-12rem)]">
         
         {/* Left Column - Basic Info */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-8 flex flex-col">
           
           {/* Studio Basics Card */}
-          <Card className="h-fit">
+          <Card>
             <CardHeader className="pb-6">
               <div className="flex items-center gap-3">
                 <Building className="h-5 w-5 text-primary" />
@@ -314,7 +314,7 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
                   value={formData.gear}
                   onChange={(e) => handleInputChange("gear", e.target.value)}
                   placeholder="List your key equipment and gear (e.g., microphones, monitors, mixing consoles, instruments)..."
-                  rows={6}
+                  rows={8}
                   className="text-base resize-none"
                 />
                 <p className="text-sm text-muted-foreground">
@@ -324,8 +324,8 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
             </CardContent>
           </Card>
 
-          {/* Studio Photos Card */}
-          <Card>
+          {/* Studio Photos Card - Moved up to fill space */}
+          <Card className="flex-1">
             <CardHeader className="pb-6">
               <div className="flex items-center gap-3">
                 <Camera className="h-5 w-5 text-primary" />
@@ -335,12 +335,12 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 h-full">
               {/* Upload Area */}
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-12 text-center hover:border-primary/50 transition-colors">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium mb-2">Upload Studio Photos</h3>
-                <p className="text-muted-foreground mb-6">Drag and drop your images here, or click to browse</p>
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
+                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                <h3 className="text-base font-medium mb-2">Upload Studio Photos</h3>
+                <p className="text-sm text-muted-foreground mb-4">Drag and drop your images here, or click to browse</p>
                 <Input
                   type="file"
                   multiple
@@ -350,7 +350,7 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
                   id="image-upload"
                 />
                 <Label htmlFor="image-upload">
-                  <Button variant="outline" size="lg" asChild className="cursor-pointer">
+                  <Button variant="outline" asChild className="cursor-pointer">
                     <span>Choose Files</span>
                   </Button>
                 </Label>
@@ -358,12 +358,12 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
 
               {/* Image Previews */}
               {uploadedImages.length > 0 && (
-                <div>
+                <div className="flex-1">
                   <h4 className="font-medium mb-4 flex items-center gap-2">
                     Uploaded Photos
                     <Badge variant="secondary">{uploadedImages.length}</Badge>
                   </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {uploadedImages.map((image, index) => (
                       <div key={index} className="relative group">
                         <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden border">
@@ -394,16 +394,16 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
         </div>
 
         {/* Right Column - Amenities & Settings */}
-        <div className="space-y-8">
+        <div className="space-y-8 flex flex-col">
           
           {/* Amenities Card */}
-          <Card className="h-fit">
+          <Card className="flex-1">
             <CardHeader className="pb-6">
               <CardTitle>Studio Amenities</CardTitle>
               <CardDescription>Select all amenities available at your studio</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="flex-1">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
                 {amenities.map((amenity) => (
                   <div key={amenity.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                     <Checkbox
@@ -425,7 +425,7 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
           </Card>
 
           {/* Publication Settings Card */}
-          <Card className="h-fit">
+          <Card>
             <CardHeader className="pb-6">
               <div className="flex items-center gap-3">
                 <Eye className="h-5 w-5 text-primary" />
@@ -454,6 +454,76 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
               </div>
             </CardContent>
           </Card>
+
+          {/* Tips & Guidelines Card - New addition to fill space */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">✨ Studio Listing Tips</CardTitle>
+              <CardDescription>Maximize your studio's appeal</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                  <p className="text-sm text-muted-foreground">Use high-quality photos showing different angles of your studio</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                  <p className="text-sm text-muted-foreground">Include detailed equipment specifications in your gear list</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                  <p className="text-sm text-muted-foreground">Write a compelling description highlighting your studio's unique features</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                  <p className="text-sm text-muted-foreground">Research competitive pricing in your area for accurate rates</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats Card - Additional content */}
+          {(formData.name || formData.description || selectedAmenities.length > 0) && (
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">📊 Listing Preview</CardTitle>
+                <CardDescription>How your studio appears to potential clients</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {formData.name && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">STUDIO NAME</Label>
+                    <p className="font-medium truncate">{formData.name}</p>
+                  </div>
+                )}
+                {formData.location && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">LOCATION</Label>
+                    <p className="text-sm">{formData.location}</p>
+                  </div>
+                )}
+                {formData.hourly_rate > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">HOURLY RATE</Label>
+                    <p className="text-sm font-medium">${formData.hourly_rate}/hour</p>
+                  </div>
+                )}
+                {selectedAmenities.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">AMENITIES</Label>
+                    <p className="text-sm">{selectedAmenities.length} selected</p>
+                  </div>
+                )}
+                {uploadedImages.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">PHOTOS</Label>
+                    <p className="text-sm">{uploadedImages.length} uploaded</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

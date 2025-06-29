@@ -51,24 +51,26 @@ export function FloatingCartButton() {
   return (
     <>
       <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          onClick={toggleBasket}
-          size="lg"
-          className="h-14 w-14 rounded-full shadow-lg cursor-pointer p-0"
-          variant="outline"
-        >
-          <div className="relative">
-            <ShoppingCart className="h-6 w-6" />
-            {basketStudios.length > 0 && (
-              <Badge 
-                variant="default" 
-                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs font-bold"
-              >
-                {basketStudios.length}
-              </Badge>
-            )}
-          </div>
-        </Button>
+        <div className="relative">
+          <Button
+            onClick={toggleBasket}
+            size="lg"
+            className="h-14 w-14 rounded-full shadow-lg cursor-pointer p-0"
+            variant="outline"
+          >
+            <div className="relative p-2">
+              <ShoppingCart className="h-6 w-6" />
+            </div>
+          </Button>
+          {basketStudios.length > 0 && (
+            <Badge 
+              variant="default" 
+              className="absolute -top-2 -left-2 h-6 w-6 p-0 flex items-center justify-center text-xs font-bold min-w-[1.5rem] z-10"
+            >
+              {basketStudios.length}
+            </Badge>
+          )}
+        </div>
       </div>
       <QuoteBasketDialog />
     </>

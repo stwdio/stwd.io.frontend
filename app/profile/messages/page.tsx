@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ConversationList } from '@/components/conversation-list'
 import { ChatInterface } from '@/components/chat-interface'
@@ -50,6 +51,7 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [currentProfileId, setCurrentProfileId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     fetchCurrentProfile()
@@ -61,6 +63,17 @@ export default function MessagesPage() {
       setupRealtimeSubscription()
     }
   }, [currentProfileId])
+
+  // Handle conversation query parameter
+  useEffect(() => {
+    const conversationId = searchParams.get('conversation')
+    if (conversationId && conversations.length > 0) {
+      const targetConversation = conversations.find(c => c.id === parseInt(conversationId))
+      if (targetConversation) {
+        setSelectedConversation(targetConversation)
+      }
+    }
+  }, [searchParams, conversations])
 
   const fetchCurrentProfile = async () => {
     try {

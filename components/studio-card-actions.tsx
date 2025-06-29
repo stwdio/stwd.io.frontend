@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { Plus, Eye, MessageSquare } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Profile {
   id: number
@@ -29,8 +30,60 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [hasInquiry, setHasInquiry] = useState(false)
-  const { addStudio } = useQuoteBasket()
+  const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
+
+  const isInBasket = isStudioInBasket(studio.id)
+
+  const handleViewConversation = async () => {
+    if (!profile) return
+
+    try {
+      // Find the conversation for this studio and creator
+      const { data: conversation, error } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('studio_id', studio.id)
+        .eq('customer_id', profile.id)
+        .single()
+
+      if (error) {
+        console.error('Error finding conversation:', error)
+        // If no conversation exists, route to creator dashboard instead
+        router.push('/dashboard/creator')
+        return
+      }
+
+      if (!conversation) {
+        // If no conversation exists, route to creator dashboard instead
+        router.push('/dashboard/creator')
+        return
+      }
+
+      // Navigate to messages page with conversation selected
+      router.push(`/profile/messages?conversation=${conversation.id}`)
+    } catch (error) {
+      console.error('Error navigating to conversation:', error)
+      // Fallback to creator dashboard
+      router.push('/dashboard/creator')
+    }
+  }
+
+  const checkInquiryStatus = async (profileData: Profile) => {
+    if (profileData.role !== 'creator') return
+    
+    const { data: inquiryCheck } = await supabase
+      .from('inquiry_recipients')
+      .select(`
+        inquiry_id,
+        inquiries!inner(creator_id)
+      `)
+      .eq('studio_id', studio.id)
+      .eq('inquiries.creator_id', profileData.id)
+      .limit(1)
+
+    setHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
+  }
 
   useEffect(() => {
     const getProfileAndCheckInquiry = async () => {
@@ -49,27 +102,25 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
 
       if (profileData) {
         setProfile(profileData)
-        
-        // Check if user has made an inquiry to this studio
-        if (profileData.role === 'creator') {
-          const { data: inquiryCheck } = await supabase
-            .from('inquiry_recipients')
-            .select(`
-              inquiry_id,
-              inquiries!inner(creator_id)
-            `)
-            .eq('studio_id', studio.id)
-            .eq('inquiries.creator_id', profileData.id)
-            .limit(1)
-
-          setHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
-        }
+        await checkInquiryStatus(profileData)
       }
       setLoading(false)
     }
 
     getProfileAndCheckInquiry()
   }, [studio.id])
+  
+  // Listen for inquiry submissions in a separate effect
+  useEffect(() => {
+    const unsubscribe = onInquirySubmitted((studioIds) => {
+      // If this studio was part of the submission, refresh inquiry status
+      if (studioIds.includes(studio.id) && profile) {
+        checkInquiryStatus(profile)
+      }
+    })
+    
+    return unsubscribe
+  }, [studio.id, profile])
 
   if (loading) {
     return (
@@ -100,9 +151,11 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
             addStudio(studio)
           }}
           className="flex-1"
+          disabled={isInBasket}
+          variant={isInBasket ? "secondary" : "default"}
         >
           <Plus className="h-4 w-4 mr-1" />
-          Add to Quote
+          {isInBasket ? 'In Quote Basket' : 'Add to Quote'}
         </Button>
       </div>
     )
@@ -141,13 +194,13 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            router.push('/profile/dashboard')
+            handleViewConversation()
           }}
           className="flex-1"
           variant="outline"
         >
           <MessageSquare className="h-4 w-4 mr-1" />
-          View Inquiry
+          View Conversation
         </Button>
       ) : (
         <Button
@@ -158,9 +211,11 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
             addStudio(studio)
           }}
           className="flex-1"
+          disabled={isInBasket}
+          variant={isInBasket ? "secondary" : "default"}
         >
           <Plus className="h-4 w-4 mr-1" />
-          Add to Quote
+          {isInBasket ? 'In Quote Basket' : 'Add to Quote'}
         </Button>
       )}
     </div>

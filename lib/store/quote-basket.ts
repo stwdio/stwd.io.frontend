@@ -29,6 +29,10 @@ interface QuoteBasketStore {
   clearBasket: () => void
   toggleBasket: () => void
   submitInquiry: (inquiryData: InquiryData) => Promise<boolean>
+  isStudioInBasket: (studioId: number) => boolean
+  onInquirySubmitted: (callback: (studioIds: number[]) => void) => () => void
+  _notifyInquirySubmitted: (studioIds: number[]) => void
+  _inquiryCallbacks: Set<(studioIds: number[]) => void>
 }
 
 export const useQuoteBasket = create<QuoteBasketStore>()(
@@ -36,6 +40,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
     (set, get) => ({
       studios: [],
       isOpen: false,
+      _inquiryCallbacks: new Set(),
       
       addStudio: (studio: Studio) => {
         const { studios } = get()
@@ -74,6 +79,11 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
       
       toggleBasket: () => {
         set(state => ({ isOpen: !state.isOpen }))
+      },
+      
+      isStudioInBasket: (studioId: number) => {
+        const { studios } = get()
+        return studios.some(s => s.id === studioId)
       },
       
       submitInquiry: async (inquiryData: InquiryData) => {
@@ -132,8 +142,14 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           
           if (recipientsError) throw recipientsError
           
+          // Get studio IDs before clearing basket
+          const submittedStudioIds = studios.map(s => s.id)
+          
           // Clear the basket after successful submission
           set({ studios: [], isOpen: false })
+          
+          // Notify components that inquiries were submitted
+          get()._notifyInquirySubmitted(submittedStudioIds)
           
           toast.success(`Inquiry sent to ${studios.length} studio${studios.length > 1 ? 's' : ''}!`)
           return true
@@ -143,6 +159,21 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           toast.error('Failed to submit inquiry. Please try again.')
           return false
         }
+      },
+      
+      onInquirySubmitted: (callback: (studioIds: number[]) => void) => {
+        const { _inquiryCallbacks } = get()
+        _inquiryCallbacks.add(callback)
+        
+        // Return cleanup function
+        return () => {
+          _inquiryCallbacks.delete(callback)
+        }
+      },
+      
+      _notifyInquirySubmitted: (studioIds: number[]) => {
+        const { _inquiryCallbacks } = get()
+        _inquiryCallbacks.forEach(callback => callback(studioIds))
       }
     }),
     {

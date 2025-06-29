@@ -214,7 +214,8 @@ export function ChatInterface({ conversation, currentProfileId }: ChatInterfaceP
               const isOwn = message.sender_profile.id === currentProfileId
               const senderName = getSenderName(message.sender_profile)
 
-              if (message.message_type === 'quote') {
+              // Only render as quote if it has an actual quote amount
+              if (message.message_type === 'quote' && message.quote_amount !== null && message.quote_amount > 0) {
                 return (
                   <QuoteMessage
                     key={message.id}

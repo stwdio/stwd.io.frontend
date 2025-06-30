@@ -1,11 +1,11 @@
 'use client'
 
-import { ChatLayout } from '@/components/chat/ChatLayout'
+import { STWDChatLayout } from '@/components/stwd-chat-layout'
 
 export default function MessagesPage() {
   return (
     <div className="h-screen">
-      <ChatLayout />
+      <STWDChatLayout />
     </div>
   )
 } 

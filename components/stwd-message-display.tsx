@@ -36,11 +36,11 @@ export const STWDMessageItem = ({ message, isOwnMessage, showHeader }: STWDMessa
               <DollarSign className="h-4 w-4" />
               Quote Response
             </div>
-            {message.quote_amount && (
-              <div className="text-lg font-bold text-primary">
-                ${message.quote_amount.toLocaleString()}
-              </div>
-            )}
+                  {message.quote_amount && (
+        <div className="text-lg font-bold">
+          ${message.quote_amount.toLocaleString()}
+        </div>
+      )}
             <p className="text-sm">{message.content}</p>
           </div>
         )

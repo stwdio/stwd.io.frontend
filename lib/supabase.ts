@@ -7,40 +7,49 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Helper function to fetch studio reviews through bookings
 export async function getStudioReviews(studioId: number) {
-  const { data, error } = await supabase
-    .from("reviews")
-    .select(`
-      *,
-      bookings!inner (
-        studio_id,
-        creator_id,
-        profiles!bookings_creator_id_fkey (full_name, avatar_url, id)
-      )
-    `)
-    .eq("bookings.studio_id", studioId)
-    .order("created_at", { ascending: false })
+  try {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select(`
+        *,
+        bookings!inner (
+          studio_id,
+          creator_id,
+          profiles!bookings_creator_id_fkey (
+            id,
+            full_name,
+            avatar_url
+          )
+        )
+      `)
+      .eq("bookings.studio_id", studioId)
+      .order("created_at", { ascending: false })
 
-  if (error) {
-    console.error("Error fetching studio reviews:", error)
+    if (error) {
+      console.error("Error fetching studio reviews:", error)
+      return { reviews: [], averageRating: 0, reviewCount: 0 }
+    }
+
+    if (!data || data.length === 0) {
+      return { reviews: [], averageRating: 0, reviewCount: 0 }
+    }
+
+    // Transform the data to match the expected format
+    const reviews = data.map((review) => ({
+      ...review,
+      profiles: review.bookings.profiles,
+    }))
+
+    const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+
+    return {
+      reviews,
+      averageRating,
+      reviewCount: reviews.length,
+    }
+  } catch (error) {
+    console.error("Unexpected error fetching studio reviews:", error)
     return { reviews: [], averageRating: 0, reviewCount: 0 }
-  }
-
-  if (!data || data.length === 0) {
-    return { reviews: [], averageRating: 0, reviewCount: 0 }
-  }
-
-  // Transform the data to match the expected format
-  const reviews = data.map((review) => ({
-    ...review,
-    profiles: review.bookings.profiles
-  }))
-
-  const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-
-  return {
-    reviews,
-    averageRating,
-    reviewCount: reviews.length
   }
 }
 
@@ -50,25 +59,40 @@ export type Database = {
       profiles: {
         Row: {
           id: number
-          user_id: string
-          role: "creator" | "owner" | "admin"
+          user_id: string | null
+          role: "creator" | "owner" | "admin" | null
           stripe_customer_id: string | null
+          first_name: string | null
+          middle_name: string | null
+          last_name: string | null
+          username: string
+          avatar_url: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: number
-          user_id: string
-          role?: "creator" | "owner" | "admin"
+          user_id?: string | null
+          role?: "creator" | "owner" | "admin" | null
           stripe_customer_id?: string | null
+          first_name?: string | null
+          middle_name?: string | null
+          last_name?: string | null
+          username: string
+          avatar_url?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: number
-          user_id?: string
-          role?: "creator" | "owner" | "admin"
+          user_id?: string | null
+          role?: "creator" | "owner" | "admin" | null
           stripe_customer_id?: string | null
+          first_name?: string | null
+          middle_name?: string | null
+          last_name?: string | null
+          username?: string
+          avatar_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -86,6 +110,7 @@ export type Database = {
           gear: any
           created_at: string
           updated_at: string
+          verification_status: string
         }
         Insert: {
           id?: number
@@ -99,6 +124,7 @@ export type Database = {
           gear?: any
           created_at?: string
           updated_at?: string
+          verification_status: string
         }
         Update: {
           id?: number
@@ -112,6 +138,7 @@ export type Database = {
           gear?: any
           created_at?: string
           updated_at?: string
+          verification_status?: string
         }
       }
       amenities: {
@@ -212,6 +239,61 @@ export type Database = {
           updated_at?: string
         }
       }
+      inquiries: {
+        Row: {
+          id: number
+          creator_id: number
+          project_type: string
+          genre: string | null
+          budget_range: string | null
+          preferred_dates: string | null
+          location_preference: string | null
+          custom_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          creator_id: number
+          project_type: string
+          genre?: string | null
+          budget_range?: string | null
+          preferred_dates?: string | null
+          location_preference?: string | null
+          custom_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          creator_id?: number
+          project_type?: string
+          genre?: string | null
+          budget_range?: string | null
+          preferred_dates?: string | null
+          location_preference?: string | null
+          custom_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      inquiry_recipients: {
+        Row: {
+          inquiry_id: number
+          studio_id: number
+          created_at: string
+        }
+        Insert: {
+          inquiry_id: number
+          studio_id: number
+          created_at?: string
+        }
+        Update: {
+          inquiry_id?: number
+          studio_id?: number
+          created_at?: string
+        }
+      }
     }
   }
-}
+} 

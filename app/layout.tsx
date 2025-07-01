@@ -1,16 +1,16 @@
-import type React from "react"
-import "./globals.css"
-import { Inter } from "next/font/google"
-import { Header } from "@/components/header"
-import { Toaster } from "@/components/ui/toaster"
-import { ClientLayout } from "@/components/client-layout"
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { OnboardingGate } from "@/components/onboarding-gate";
+import { ClientLayout } from "@/components/client-layout";
+import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "stwd.io - Professional Recording Studios",
   description: "Book professional recording studios worldwide",
-}
+};
 
 export default function RootLayout({
   children,
@@ -18,16 +18,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <ClientLayout>
-          <div className="min-h-screen bg-black text-white">
-            <Header />
-            <main>{children}</main>
-          </div>
+          <OnboardingGate>
+            {children}
+          </OnboardingGate>
           <Toaster />
         </ClientLayout>
       </body>
     </html>
-  )
+  );
 }

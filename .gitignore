@@ -1,3 +1,5 @@
 node_modules
 .next
 .cursor
+.env
+.DS_Store

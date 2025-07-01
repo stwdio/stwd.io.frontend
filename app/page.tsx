@@ -1,86 +1,175 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Music, Mic, Headphones, Users } from "lucide-react"
+"use client"
 
-export default function HomePage() {
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { IconBuilding, IconSearch, IconStar } from "@tabler/icons-react"
+
+export default function LandingPage() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session?.user) {
+        // User is authenticated, redirect to browse
+        router.push('/browse')
+        return
+      }
+      
+      setUser(null)
+      setLoading(false)
+    }
+
+    checkAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        router.push('/browse')
+      } else {
+        setUser(null)
+        setLoading(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
+      {/* Header for non-authenticated users */}
+      <header className="border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <IconBuilding className="h-8 w-8 mr-2" />
+              <span className="text-2xl font-bold">stwd.io</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/auth/login">
+                <Button variant="ghost">Sign In</Button>
+              </Link>
+              <Link href="/auth/login">
+                <Button>Get Started</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative py-24 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-            Professional Recording Studios
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight mb-6">
+            Find the Perfect
+            <span className="text-primary"> Recording Studio</span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-3xl mx-auto">
-            Discover And Book World-Class Recording Studios For Your Next Project. From Intimate Vocal Booths To Full
-            Orchestral Spaces.
+          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            Discover and book professional recording studios worldwide. 
+            Connect with top-tier facilities and bring your creative vision to life.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="text-lg px-8 py-6">
-              <Link href="/browse">Browse Studios</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="text-lg px-8 py-6 bg-black text-white border-gray-700 hover:bg-gray-900"
-            >
-              <Link href="/list-studio">List Your Studio</Link>
-            </Button>
+            <Link href="/auth/login">
+              <Button size="lg" className="text-lg px-8">
+                <IconSearch className="mr-2 h-5 w-5" />
+                Browse Studios
+              </Button>
+            </Link>
+            <Link href="/auth/login">
+              <Button size="lg" variant="outline" className="text-lg px-8">
+                <IconBuilding className="mr-2 h-5 w-5" />
+                List Your Studio
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-gray-950/50">
-        <div className="container mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Why Choose Stwd.io?</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="bg-gray-900/50 border-gray-800">
-              <CardContent className="p-6 text-center">
-                <Music className="h-12 w-12 mx-auto mb-4 text-white" />
-                <h3 className="text-xl font-semibold mb-2">Professional Quality</h3>
-                <p className="text-gray-400">Access To Industry-Standard Equipment And Acoustically Treated Spaces.</p>
-              </CardContent>
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Why Choose stwd.io?</h2>
+            <p className="text-xl text-muted-foreground">
+              The platform that connects musicians with professional recording studios
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card>
+              <CardHeader>
+                <IconSearch className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Easy Discovery</CardTitle>
+                <CardDescription>
+                  Find studios by location, price, equipment, and amenities with our advanced search filters
+                </CardDescription>
+              </CardHeader>
             </Card>
-            <Card className="bg-gray-900/50 border-gray-800">
-              <CardContent className="p-6 text-center">
-                <Mic className="h-12 w-12 mx-auto mb-4 text-white" />
-                <h3 className="text-xl font-semibold mb-2">Verified Studios</h3>
-                <p className="text-gray-400">All Studios Are Verified And Reviewed By Our Community Of Creators.</p>
-              </CardContent>
+            
+            <Card>
+              <CardHeader>
+                <IconStar className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Verified Quality</CardTitle>
+                <CardDescription>
+                  All studios are verified and reviewed by our community to ensure the highest standards
+                </CardDescription>
+              </CardHeader>
             </Card>
-            <Card className="bg-gray-900/50 border-gray-800">
-              <CardContent className="p-6 text-center">
-                <Headphones className="h-12 w-12 mx-auto mb-4 text-white" />
-                <h3 className="text-xl font-semibold mb-2">Easy Booking</h3>
-                <p className="text-gray-400">Simple, Transparent Booking Process With Instant Confirmation.</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-gray-900/50 border-gray-800">
-              <CardContent className="p-6 text-center">
-                <Users className="h-12 w-12 mx-auto mb-4 text-white" />
-                <h3 className="text-xl font-semibold mb-2">Community</h3>
-                <p className="text-gray-400">Connect With Other Creators And Industry Professionals.</p>
-              </CardContent>
+            
+            <Card>
+              <CardHeader>
+                <IconBuilding className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Direct Booking</CardTitle>
+                <CardDescription>
+                  Book directly with studio owners and manage your sessions through our integrated platform
+                </CardDescription>
+              </CardHeader>
             </Card>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready To Create?</h2>
-          <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            Join Thousands Of Creators Who Trust Stwd.io For Their Recording Needs.
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
+          <p className="text-xl text-muted-foreground mb-8">
+            Join thousands of musicians and studio owners on stwd.io
           </p>
-          <Button asChild size="lg" className="text-lg px-8 py-6">
-            <Link href="/browse">Start Browsing</Link>
-          </Button>
+          <Link href="/auth/login">
+            <Button size="lg" className="text-lg px-8">
+              Join stwd.io Today
+            </Button>
+          </Link>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="flex items-center justify-center mb-4">
+            <IconBuilding className="h-6 w-6 mr-2" />
+            <span className="text-lg font-semibold">stwd.io</span>
+          </div>
+          <p className="text-muted-foreground">
+            © 2025 stwd.io. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   )
 }

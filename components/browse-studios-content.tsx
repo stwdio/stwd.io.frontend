@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -137,6 +137,39 @@ function StudioCardSkeleton() {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// Modern infinite scroll loading component
+function InfiniteScrollLoader() {
+  return (
+    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+      {/* Animated dots */}
+      <div className="flex space-x-1">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-2 h-2 bg-primary rounded-full animate-pulse"
+            style={{
+              animationDelay: `${i * 0.15}s`,
+              animationDuration: '1s'
+            }}
+          />
+        ))}
+      </div>
+      {/* Loading text */}
+      <p className="text-sm text-muted-foreground animate-pulse">
+        Loading more studios...
+      </p>
+      {/* Skeleton cards preview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full max-w-6xl">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="opacity-50">
+            <StudioCardSkeleton />
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -432,9 +465,13 @@ export function BrowseStudiosContent() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [currentPage, setCurrentPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const { addStudio, studios: basketStudios } = useQuoteBasket()
+  
+  // Use refs to avoid stale closure issues
+  const currentPageRef = useRef(0)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const isLoadingRef = useRef(false) // Prevent duplicate requests
 
   // Initialize filter state from URL parameters
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -485,49 +522,17 @@ export function BrowseStudiosContent() {
     router.replace(newURL, { scroll: false })
   }, [router])
 
-  // Initialize data on mount
-  useEffect(() => {
-    fetchStudios(true) // Reset to first page
-    fetchAmenities()
-    fetchAvailableGear()
-  }, [])
+  const fetchStudios = useCallback(async (reset = false) => {
+    // Prevent duplicate requests
+    if (isLoadingRef.current) return
+    isLoadingRef.current = true
 
-  const buildQuery = useCallback(() => {
-    let query = supabase
-      .from("studios")
-      .select(`
-        *,
-        studio_amenities!inner (
-          amenities (name)
-        )
-      `, { count: 'exact' })
-      .eq("published", true)
-      .eq("verification_status", "verified")
-
-    // Location filter (server-side)
-    if (filters.location.trim()) {
-      query = query.ilike("location", `%${filters.location.trim()}%`)
-    }
-
-    // Price range filter (server-side)
-    query = query.gte("hourly_rate", filters.priceRange[0]).lte("hourly_rate", filters.priceRange[1])
-
-    // Amenity filter (server-side using join)
-    if (filters.selectedAmenities.length > 0) {
-      // For multiple amenities, we need to use a more complex query
-      // This approach gets studios that have ALL selected amenities
-      const amenityConditions = filters.selectedAmenities.map(amenity => `studio_amenities.amenities.name.eq.${amenity}`).join(',')
-    }
-
-    return query
-  }, [filters.location, filters.priceRange, filters.selectedAmenities])
-
-  const fetchStudios = async (reset = false) => {
-    const pageToFetch = reset ? 0 : currentPage
+    const pageToFetch = reset ? 0 : currentPageRef.current
     const isFirstLoad = reset || pageToFetch === 0
 
     if (isFirstLoad) {
       setLoading(true)
+      currentPageRef.current = 0
     } else {
       setLoadingMore(true)
     }
@@ -645,7 +650,7 @@ export function BrowseStudiosContent() {
 
         if (reset) {
           setStudios(studiosWithStats)
-          setCurrentPage(1)
+          currentPageRef.current = 1
         } else {
           // Prevent duplicates by filtering out studios that already exist
           setStudios(prev => {
@@ -653,7 +658,7 @@ export function BrowseStudiosContent() {
             const newStudios = studiosWithStats.filter(studio => !existingIds.has(studio.id))
             return [...prev, ...newStudios]
           })
-          setCurrentPage(prev => prev + 1)
+          currentPageRef.current = currentPageRef.current + 1
         }
 
         setTotalCount(count || 0)
@@ -664,14 +669,41 @@ export function BrowseStudiosContent() {
     } finally {
       setLoading(false)
       setLoadingMore(false)
+      isLoadingRef.current = false
     }
-  }
+  }, [filters.location, filters.priceRange, filters.selectedAmenities, filters.selectedGear])
 
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      fetchStudios(false)
+  // Simple intersection observer for infinite scroll
+  useEffect(() => {
+    const currentRef = loadMoreRef.current
+    if (!currentRef) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (entry.isIntersecting && hasMore && !loadingMore && !loading) {
+          fetchStudios(false)
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '100px'
+      }
+    )
+
+    observer.observe(currentRef)
+
+    return () => {
+      observer.unobserve(currentRef)
     }
-  }, [loadingMore, hasMore])
+  }, [hasMore, loadingMore, loading, fetchStudios])
+
+  // Initialize data on mount
+  useEffect(() => {
+    fetchStudios(true) // Reset to first page
+    fetchAmenities()
+    fetchAvailableGear()
+  }, [])
 
   const fetchAmenities = async () => {
     const { data } = await supabase.from("amenities").select("*").order("name")
@@ -741,7 +773,7 @@ export function BrowseStudiosContent() {
   const handleSearchFilters = useCallback(() => {
     updateURL(filters)
     fetchStudios(true) // Reset and apply filters
-  }, [filters, updateURL])
+  }, [filters, updateURL, fetchStudios])
 
   const handleClearFilters = useCallback(() => {
     const clearedFilters = {
@@ -758,7 +790,7 @@ export function BrowseStudiosContent() {
     setTimeout(() => {
       fetchStudios(true)
     }, 0)
-  }, [updateURL])
+  }, [updateURL, fetchStudios])
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -780,9 +812,9 @@ export function BrowseStudiosContent() {
 
           {/* Desktop Filters Sidebar Skeleton */}
           <div className="hidden lg:block lg:w-80">
-            <div className="sticky top-6">
-              <Card>
-                <CardContent className="p-6">
+            <div className="sticky top-6 h-[calc(100vh-3rem)]">
+              <Card className="h-full">
+                <CardContent className="p-6 h-full overflow-y-auto">
                   <Skeleton className="h-6 w-16 mb-4" />
                   <div className="space-y-6">
                     <div className="space-y-2">
@@ -885,9 +917,9 @@ export function BrowseStudiosContent() {
 
         {/* Desktop Filters Sidebar */}
         <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
-          <div className="sticky top-6">
-            <Card className="shadow-sm">
-              <CardContent className="p-6">
+          <div className="sticky top-6 h-[calc(100vh-3rem)]">
+            <Card className="shadow-sm h-full">
+              <CardContent className="p-6 h-full overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">Filters</h2>
                   <Badge 
@@ -916,15 +948,15 @@ export function BrowseStudiosContent() {
 
         {/* Studios Grid */}
         <div className="flex-1 overflow-y-auto">
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2">Browse Recording Studios</h1>
             <p className="text-muted-foreground">
               {loading ? "Loading studios..." : `${totalCount} studios found`}
             </p>
-          </div>
+          </div> */}
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 bg-muted/20 p-6 rounded-lg border">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="overflow-hidden">
                   <Skeleton className="h-48 w-full" />
@@ -950,7 +982,7 @@ export function BrowseStudiosContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 bg-muted/20 p-6 rounded-lg border">
             {studios.map((studio) => (
               <Link key={studio.id} href={`/studios/${studio.id}`} className="block">
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col">
@@ -1013,26 +1045,17 @@ export function BrowseStudiosContent() {
           </div>
 
 
-              {/* Load More Button */}
+              {/* Infinite Scroll Trigger & Loading Indicator */}
               {hasMore && (
-                <div className="flex justify-center mt-8 mb-4">
-                  <Button 
-                    onClick={loadMore} 
-                    disabled={loadingMore}
-                    variant="outline"
-                    size="lg"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Loading More...
-                      </>
-                    ) : (
-                      "Load More Studios"
-                    )}
-                  </Button>
+                <div ref={loadMoreRef} className="mt-8 min-h-[20px] flex items-center justify-center">
+                  {loadingMore ? (
+                    <InfiniteScrollLoader />
+                  ) : (
+                    <div className="h-4 w-full" />
+                  )}
                 </div>
               )}
+      
             </>
           )}
         </div>

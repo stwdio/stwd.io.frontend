@@ -57,17 +57,17 @@ export function FloatingCartButton() {
           <Button
             onClick={toggleBasket}
             size="lg"
-            className="h-14 w-14 rounded-full shadow-lg cursor-pointer p-0"
+            className="h-16 w-16 rounded-full shadow-lg cursor-pointer p-0 border-2 border-black"
             variant="outline"
           >
             <div className="relative p-2">
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-7 w-7" />
             </div>
           </Button>
           {basketStudios.length > 0 && (
             <Badge 
               variant="default" 
-              className="absolute -top-2 -left-2 h-6 w-6 p-0 flex items-center justify-center text-xs font-bold min-w-[1.5rem] z-10"
+              className="absolute -top-2 -left-2 h-7 w-7 p-0 flex items-center justify-center text-sm font-bold min-w-[1.75rem] z-10 border-2 border-black"
             >
               {basketStudios.length}
             </Badge>

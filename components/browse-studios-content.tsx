@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,7 +63,7 @@ interface FiltersContentProps {
   isLoading?: boolean
 }
 
-const STUDIOS_PER_PAGE = 9
+const STUDIOS_PER_PAGE = 12
 
 // Custom hook for debounced values
 function useDebounce<T>(value: T, delay: number): T {
@@ -195,32 +196,30 @@ function FiltersContent({
     onFilterChange({ selectedGear: newGear })
   }, [filters.selectedGear, onFilterChange])
 
-  const hasActiveFilters = useMemo(() => {
-    return filters.location || 
-           filters.priceRange[0] > 0 || 
-           filters.priceRange[1] < 500 ||
-           filters.selectedAmenities.length > 0 ||
-           filters.selectedGear.length > 0
-  }, [filters])
-
   const handleFormSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     onSearchFilters()
   }, [onSearchFilters])
 
+  // Memoize derived values
+  const hasActiveFilters = useMemo(() => 
+    filters.location.trim() !== "" ||
+    filters.selectedAmenities.length > 0 ||
+    filters.selectedGear.length > 0 ||
+    filters.priceRange[0] !== 0 ||
+    filters.priceRange[1] !== 500
+  , [filters])
+
   return (
     <form onSubmit={handleFormSubmit} className="space-y-6">
-      {/* Location Filter */}
-      <div className="space-y-2">
-        <Label htmlFor="location-filter" className="text-sm font-medium">
-          Location
-        </Label>
+      {/* Location Search */}
+      <div className="space-y-4">
+        <Label className="text-sm font-medium">Location</Label>
         <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            id="location-filter"
             type="text"
-            placeholder="Enter city or area..."
+            placeholder="Search by city, state..."
             value={filters.location}
             onChange={handleLocationChange}
             className="pl-10"
@@ -264,11 +263,14 @@ function FiltersContent({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Amenities</Label>
-          {filters.selectedAmenities.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {filters.selectedAmenities.length} selected
-            </Badge>
-          )}
+          <Badge 
+            variant="secondary" 
+            className={`text-xs transition-opacity ${
+              filters.selectedAmenities.length > 0 ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {filters.selectedAmenities.length} selected
+          </Badge>
         </div>
         
         <div className="relative">
@@ -325,18 +327,21 @@ function FiltersContent({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Equipment & Gear</Label>
-          {filters.selectedGear.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {filters.selectedGear.length} selected
-            </Badge>
-          )}
+          <Badge 
+            variant="secondary" 
+            className={`text-xs transition-opacity ${
+              filters.selectedGear.length > 0 ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {filters.selectedGear.length} selected
+          </Badge>
         </div>
-
+        
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search equipment..."
+            placeholder="Search gear..."
             value={filters.gearSearch}
             onChange={handleGearSearchChange}
             className="pl-10"
@@ -359,7 +364,7 @@ function FiltersContent({
         <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-input p-3">
           {filteredGear.length > 0 ? (
             filteredGear.map((gear, index) => (
-              <div key={`${gear.item}-${index}`} className="flex items-center space-x-2">
+              <div key={`${gear.category}-${gear.item}-${index}`} className="flex items-center space-x-2">
                 <Checkbox
                   id={`gear-${index}`}
                   checked={filters.selectedGear.includes(gear.item)}
@@ -376,18 +381,17 @@ function FiltersContent({
             ))
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">
-              {filters.gearSearch ? `No equipment found matching "${filters.gearSearch}"` : "Loading equipment..."}
+              {filters.gearSearch ? `No gear found matching "${filters.gearSearch}"` : "Loading gear..."}
             </p>
           )}
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="pt-4 border-t space-y-3">
+      <div className="space-y-2 pt-4 border-t">
         <Button 
           type="submit"
           className="w-full"
-          size="lg"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -403,25 +407,25 @@ function FiltersContent({
           )}
         </Button>
         
-        {hasActiveFilters && (
-          <Button 
-            type="button"
-            onClick={onClearFilters}
-            variant="outline" 
-            className="w-full"
-            size="sm"
-            disabled={isLoading}
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Clear All Filters
-          </Button>
-        )}
+        <Button 
+          type="button"
+          onClick={onClearFilters}
+          variant="outline" 
+          className="w-full"
+          size="sm"
+          disabled={isLoading || !hasActiveFilters}
+        >
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Clear All Filters
+        </Button>
       </div>
     </form>
   )
 }
 
 export function BrowseStudiosContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [studios, setStudios] = useState<Studio[]>([])
   const [amenities, setAmenities] = useState<Amenity[]>([])
   const [availableGear, setAvailableGear] = useState<GearItem[]>([])
@@ -432,23 +436,54 @@ export function BrowseStudiosContent() {
   const [totalCount, setTotalCount] = useState(0)
   const { addStudio, studios: basketStudios } = useQuoteBasket()
 
-  // Consolidated filter state
-  const [filters, setFilters] = useState<FilterState>({
-    location: "",
-    priceRange: [0, 500],
-    selectedAmenities: [],
-    selectedGear: [],
-    amenitySearch: "",
-    gearSearch: ""
+  // Initialize filter state from URL parameters
+  const [filters, setFilters] = useState<FilterState>(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    return {
+      location: params.get('location') || "",
+      priceRange: [
+        parseInt(params.get('minPrice') || '0'),
+        parseInt(params.get('maxPrice') || '500')
+      ] as [number, number],
+      selectedAmenities: params.get('amenities') ? params.get('amenities')!.split(',') : [],
+      selectedGear: params.get('gear') ? params.get('gear')!.split(',') : [],
+      amenitySearch: "",
+      gearSearch: ""
+    }
   })
-
-  // Debounce location filter to prevent excessive API calls
-  const debouncedLocationFilter = useDebounce(filters.location, 500)
 
   // Memoized filter change handler to prevent recreation
   const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
   }, [])
+
+  // Update URL parameters when filters change
+  const updateURL = useCallback((currentFilters: FilterState) => {
+    const params = new URLSearchParams()
+    
+    if (currentFilters.location.trim()) {
+      params.set('location', currentFilters.location.trim())
+    }
+    
+    if (currentFilters.priceRange[0] !== 0) {
+      params.set('minPrice', currentFilters.priceRange[0].toString())
+    }
+    
+    if (currentFilters.priceRange[1] !== 500) {
+      params.set('maxPrice', currentFilters.priceRange[1].toString())
+    }
+    
+    if (currentFilters.selectedAmenities.length > 0) {
+      params.set('amenities', currentFilters.selectedAmenities.join(','))
+    }
+    
+    if (currentFilters.selectedGear.length > 0) {
+      params.set('gear', currentFilters.selectedGear.join(','))
+    }
+
+    const newURL = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`
+    router.replace(newURL, { scroll: false })
+  }, [router])
 
   // Initialize data on mount
   useEffect(() => {
@@ -457,35 +492,35 @@ export function BrowseStudiosContent() {
     fetchAvailableGear()
   }, [])
 
-  // Trigger search when debounced location changes
-  useEffect(() => {
-    if (debouncedLocationFilter !== filters.location) {
-      // Only trigger if the debounced value is different from current
-      return
-    }
-    fetchStudios(true)
-  }, [debouncedLocationFilter])
-
   const buildQuery = useCallback(() => {
     let query = supabase
       .from("studios")
       .select(`
         *,
-        studio_amenities (
+        studio_amenities!inner (
           amenities (name)
         )
       `, { count: 'exact' })
       .eq("published", true)
       .eq("verification_status", "verified")
 
-    if (debouncedLocationFilter) {
-      query = query.ilike("location", `%${debouncedLocationFilter}%`)
+    // Location filter (server-side)
+    if (filters.location.trim()) {
+      query = query.ilike("location", `%${filters.location.trim()}%`)
     }
 
+    // Price range filter (server-side)
     query = query.gte("hourly_rate", filters.priceRange[0]).lte("hourly_rate", filters.priceRange[1])
 
+    // Amenity filter (server-side using join)
+    if (filters.selectedAmenities.length > 0) {
+      // For multiple amenities, we need to use a more complex query
+      // This approach gets studios that have ALL selected amenities
+      const amenityConditions = filters.selectedAmenities.map(amenity => `studio_amenities.amenities.name.eq.${amenity}`).join(',')
+    }
+
     return query
-  }, [debouncedLocationFilter, filters.priceRange])
+  }, [filters.location, filters.priceRange, filters.selectedAmenities])
 
   const fetchStudios = async (reset = false) => {
     const pageToFetch = reset ? 0 : currentPage
@@ -498,7 +533,69 @@ export function BrowseStudiosContent() {
     }
 
     try {
-      const query = buildQuery()
+      // Build the base query
+      let query = supabase
+        .from("studios")
+        .select(`
+          *,
+          studio_amenities (
+            amenities (name)
+          )
+        `, { count: 'exact' })
+        .eq("published", true)
+        .eq("verification_status", "verified")
+
+      // Apply server-side filters
+      if (filters.location.trim()) {
+        query = query.ilike("location", `%${filters.location.trim()}%`)
+      }
+
+      query = query.gte("hourly_rate", filters.priceRange[0]).lte("hourly_rate", filters.priceRange[1])
+
+      // If we have amenity filters, we need to get studios that have ALL selected amenities
+      if (filters.selectedAmenities.length > 0) {
+        // First get all studios that have at least one of the selected amenities
+        const { data: studioIds } = await supabase
+          .from("studio_amenities")
+          .select("studio_id")
+          .in("amenity_id", 
+            await supabase
+              .from("amenities")
+              .select("id")
+              .in("name", filters.selectedAmenities)
+              .then(({ data }) => data?.map(a => a.id) || [])
+          )
+
+        if (studioIds && studioIds.length > 0) {
+          // Group by studio_id and count amenities to find studios with ALL selected amenities
+          const studioIdCounts = studioIds.reduce((acc, { studio_id }) => {
+            acc[studio_id] = (acc[studio_id] || 0) + 1
+            return acc
+          }, {} as Record<number, number>)
+
+          // Filter to studios that have all selected amenities
+          const validStudioIds = Object.entries(studioIdCounts)
+            .filter(([_, count]) => count === filters.selectedAmenities.length)
+            .map(([id, _]) => parseInt(id))
+
+          if (validStudioIds.length === 0) {
+            // No studios match all selected amenities
+            setStudios([])
+            setTotalCount(0)
+            setHasMore(false)
+            return
+          }
+
+          query = query.in("id", validStudioIds)
+        } else {
+          // No studios have any of the selected amenities
+          setStudios([])
+          setTotalCount(0)
+          setHasMore(false)
+          return
+        }
+      }
+
       const { data, error, count } = await query
         .range(pageToFetch * STUDIOS_PER_PAGE, (pageToFetch + 1) * STUDIOS_PER_PAGE - 1)
         .order('created_at', { ascending: false })
@@ -516,14 +613,7 @@ export function BrowseStudiosContent() {
           amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
         }))
 
-        // Apply amenity filter on client side since it's complex
-        if (filters.selectedAmenities.length > 0) {
-          studiosWithStats = studiosWithStats.filter((studio) =>
-            filters.selectedAmenities.every((amenity) => studio.amenities?.includes(amenity)),
-          )
-        }
-
-        // Apply gear filter on client side
+        // Apply gear filter on client side (since gear structure is complex)
         if (filters.selectedGear.length > 0) {
           studiosWithStats = studiosWithStats.filter((studio) => {
             if (!studio.gear) return false
@@ -649,23 +739,26 @@ export function BrowseStudiosContent() {
   }
 
   const handleSearchFilters = useCallback(() => {
+    updateURL(filters)
     fetchStudios(true) // Reset and apply filters
-  }, [])
+  }, [filters, updateURL])
 
   const handleClearFilters = useCallback(() => {
-    setFilters({
+    const clearedFilters = {
       location: "",
-      priceRange: [0, 500],
+      priceRange: [0, 500] as [number, number],
       selectedAmenities: [],
       selectedGear: [],
       amenitySearch: "",
       gearSearch: ""
-    })
+    }
+    setFilters(clearedFilters)
+    updateURL(clearedFilters)
     // Fetch all studios after clearing filters
     setTimeout(() => {
       fetchStudios(true)
     }, 0)
-  }, [])
+  }, [updateURL])
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -678,7 +771,7 @@ export function BrowseStudiosContent() {
 
   if (loading) {
     return (
-      <div className="p-4 md:p-6">
+      <div className="p-4 md:p-6 min-h-screen">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Mobile Filters Skeleton */}
           <div className="lg:hidden">
@@ -700,32 +793,32 @@ export function BrowseStudiosContent() {
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-4 w-full" />
                     </div>
-                    <div className="space-y-4">
-                      <Skeleton className="h-4 w-16" />
-                      <div className="space-y-3">
-                        {Array.from({ length: 6 }, (_, i) => (
-                          <div key={i} className="flex items-center space-x-2">
-                            <Skeleton className="h-4 w-4" />
-                            <Skeleton className="h-4 w-20" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <Skeleton className="h-4 w-24" />
-                      <div className="space-y-3">
-                        {Array.from({ length: 8 }, (_, i) => (
-                          <div key={i} className="flex items-center space-x-2">
-                            <Skeleton className="h-4 w-4" />
-                            <Skeleton className="h-4 w-24" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="pt-4 border-t space-y-3">
-                      <Skeleton className="h-10 w-full" />
-                      <Skeleton className="h-8 w-full" />
-                    </div>
+                                         <div className="space-y-4">
+                       <Skeleton className="h-4 w-16" />
+                       <div className="space-y-3">
+                         {Array.from({ length: 6 }, (_, i) => (
+                           <div key={i} className="flex items-center space-x-2">
+                             <Skeleton className="h-4 w-4" />
+                             <Skeleton className="h-4 w-20" />
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                     <div className="space-y-4">
+                       <Skeleton className="h-4 w-24" />
+                       <div className="space-y-3">
+                         {Array.from({ length: 8 }, (_, i) => (
+                           <div key={i} className="flex items-center space-x-2">
+                             <Skeleton className="h-4 w-4" />
+                             <Skeleton className="h-4 w-24" />
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                     <div className="pt-4 border-t space-y-3">
+                       <Skeleton className="h-10 w-full" />
+                       <Skeleton className="h-8 w-full" />
+                     </div>
                   </div>
                 </CardContent>
               </Card>
@@ -751,8 +844,8 @@ export function BrowseStudiosContent() {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col lg:flex-row gap-6">
+    <div className="p-4 md:p-6 min-h-screen max-h-screen overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-6 h-full">
         {/* Mobile Filters */}
         <div className="lg:hidden">
           <Sheet>
@@ -760,11 +853,15 @@ export function BrowseStudiosContent() {
               <Button variant="outline" className="mb-4">
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
-                {(filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) && (
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)}
-                  </Badge>
-                )}
+                <Badge 
+                  variant="secondary" 
+                  className={`ml-2 text-xs transition-opacity ${
+                    (filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) 
+                      ? 'opacity-100' : 'opacity-0'
+                  }`}
+                >
+                  {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)}
+                </Badge>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80 overflow-y-auto">
@@ -787,17 +884,21 @@ export function BrowseStudiosContent() {
         </div>
 
         {/* Desktop Filters Sidebar */}
-        <div className="hidden lg:block lg:w-80">
+        <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
           <div className="sticky top-6">
             <Card className="shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">Filters</h2>
-                  {(filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) && (
-                    <Badge variant="secondary" className="text-xs">
-                      {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)} active
-                    </Badge>
-                  )}
+                  <Badge 
+                    variant="secondary" 
+                    className={`text-xs transition-opacity ${
+                      (filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) 
+                        ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)} active
+                  </Badge>
                 </div>
                 <FiltersContent
                   filters={filters}
@@ -814,15 +915,42 @@ export function BrowseStudiosContent() {
         </div>
 
         {/* Studios Grid */}
-        <div className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold">Browse Studios</h1>
-            <p className="text-muted-foreground mt-1">
-              Found {totalCount} studio{totalCount !== 1 ? 's' : ''}
+            <h1 className="text-3xl font-bold mb-2">Browse Recording Studios</h1>
+            <p className="text-muted-foreground">
+              {loading ? "Loading studios..." : `${totalCount} studios found`}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="h-48 w-full" />
+                  <CardContent className="p-4">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-2" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : studios.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground mb-4">
+                <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No studios found</h3>
+                <p>Try adjusting your filters or search criteria.</p>
+              </div>
+              <Button onClick={handleClearFilters} variant="outline">
+                Clear all filters
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {studios.map((studio) => (
               <Link key={studio.id} href={`/studios/${studio.id}`} className="block">
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col">
@@ -884,32 +1012,28 @@ export function BrowseStudiosContent() {
             ))}
           </div>
 
-          {/* Load More Button */}
-          {hasMore && (
-            <div className="mt-8 text-center">
-              <Button 
-                onClick={loadMore}
-                disabled={loadingMore}
-                variant="outline"
-                className="min-w-32"
-              >
-                {loadingMore ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  'Load More Studios'
-                )}
-              </Button>
-            </div>
-          )}
 
-          {studios.length === 0 && !loading && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No studios found matching your criteria.</p>
-              <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters.</p>
-            </div>
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="flex justify-center mt-8 mb-4">
+                  <Button 
+                    onClick={loadMore} 
+                    disabled={loadingMore}
+                    variant="outline"
+                    size="lg"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading More...
+                      </>
+                    ) : (
+                      "Load More Studios"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -122,19 +122,20 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
     return unsubscribe
   }, [studio.id, profile])
 
+  // Consistent loading state - always two button slots
   if (loading) {
     return (
-      <div className="flex gap-2">
+      <div className="flex gap-2 h-8">
         <div className="h-8 bg-muted animate-pulse rounded-md flex-1"></div>
         <div className="h-8 bg-muted animate-pulse rounded-md flex-1"></div>
       </div>
     )
   }
 
-  // If user is not logged in - show creator actions
+  // If user is not logged in - show creator actions (two buttons)
   if (!profile) {
     return (
-      <div className="flex gap-2">
+      <div className="flex gap-2 h-8">
         <Button 
           variant="outline" 
           size="sm" 
@@ -161,14 +162,14 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
     )
   }
 
-  // If user owns this studio OR is an admin - only show view details
+  // If user owns this studio OR is an admin - show single button but maintain consistent height
   if (profile.role === 'admin' || parseInt(studio.owner_id) === profile.id) {
     return (
-      <div className="flex gap-2">
+      <div className="flex gap-2 h-8">
         <Button 
           variant="outline" 
           size="sm" 
-          className="flex-1 pointer-events-none"
+          className="w-full pointer-events-none"
         >
           <Eye className="h-4 w-4 mr-1" />
           View Details
@@ -177,9 +178,9 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
     )
   }
 
-  // For creators - show view details and either "View Inquiry" or "Add to Quote"
+  // For creators - show view details and either "View Conversation" or "Add to Quote" (two buttons)
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 h-8">
       <Button 
         variant="outline" 
         size="sm" 

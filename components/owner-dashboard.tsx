@@ -210,21 +210,27 @@ export function OwnerDashboard() {
     }
 
     try {
-      const { error } = await supabase
-        .from('studios')
-        .delete()
-        .eq('id', studioToDelete.id)
+      const { data, error } = await supabase.rpc('delete_studio_safely', {
+        studio_id_param: studioToDelete.id
+      })
 
       if (error) throw error
 
-      toast.success('Studio deleted successfully')
-      setDeleteDialogOpen(false)
-      setStudioToDelete(null)
-      setDeleteConfirmationName('')
-      fetchOwnerData()
-    } catch (error) {
+      if (data.success) {
+        const stats = data.cleanup_stats
+        toast.success(
+          `Studio deleted successfully! Cleaned up ${stats.conversations_deleted} conversations, ${stats.bookings_deleted} bookings, and ${stats.messages_deleted} messages.`
+        )
+        setDeleteDialogOpen(false)
+        setStudioToDelete(null)
+        setDeleteConfirmationName('')
+        fetchOwnerData()
+      } else {
+        throw new Error(data.error || 'Failed to delete studio')
+      }
+    } catch (error: any) {
       console.error('Error deleting studio:', error)
-      toast.error('Failed to delete studio')
+      toast.error(`Failed to delete studio: ${error.message}`)
     }
   }
 

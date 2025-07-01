@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Star, MapPin, Plus, Filter, Loader2 } from "lucide-react"
+import { Star, MapPin, Plus, Filter, Loader2, Search, RotateCcw, X } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioCardActions } from "@/components/studio-card-actions"
@@ -43,7 +43,43 @@ interface GearItem {
   item: string
 }
 
+interface FilterState {
+  location: string
+  priceRange: [number, number]
+  selectedAmenities: string[]
+  selectedGear: string[]
+  amenitySearch: string
+  gearSearch: string
+}
+
+interface FiltersContentProps {
+  filters: FilterState
+  amenities: Amenity[]
+  availableGear: GearItem[]
+  onFilterChange: (filters: Partial<FilterState>) => void
+  onSearchFilters: () => void
+  onClearFilters: () => void
+  isLoading?: boolean
+}
+
 const STUDIOS_PER_PAGE = 9
+
+// Custom hook for debounced values
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
 
 // Skeleton component for loading studio cards
 function StudioCardSkeleton() {
@@ -103,6 +139,288 @@ function StudioCardSkeleton() {
   )
 }
 
+// Moved FiltersContent outside of the main component to prevent recreation on each render
+function FiltersContent({ 
+  filters, 
+  amenities, 
+  availableGear, 
+  onFilterChange, 
+  onSearchFilters, 
+  onClearFilters,
+  isLoading = false
+}: FiltersContentProps) {
+  // Memoize filtered lists to prevent unnecessary recalculations
+  const filteredAmenities = useMemo(() => {
+    if (!filters.amenitySearch.trim()) return amenities
+    return amenities.filter(amenity => 
+      amenity.name.toLowerCase().includes(filters.amenitySearch.toLowerCase())
+    )
+  }, [amenities, filters.amenitySearch])
+
+  const filteredGear = useMemo(() => {
+    if (!filters.gearSearch.trim()) return availableGear
+    return availableGear.filter(gear => 
+      gear.item.toLowerCase().includes(filters.gearSearch.toLowerCase())
+    )
+  }, [availableGear, filters.gearSearch])
+
+  // Memoize event handlers to prevent recreation
+  const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange({ location: e.target.value })
+  }, [onFilterChange])
+
+  const handleAmenitySearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange({ amenitySearch: e.target.value })
+  }, [onFilterChange])
+
+  const handleGearSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange({ gearSearch: e.target.value })
+  }, [onFilterChange])
+
+  const handlePriceRangeChange = useCallback((value: number[]) => {
+    onFilterChange({ priceRange: [value[0], value[1]] })
+  }, [onFilterChange])
+
+  const handleAmenityToggle = useCallback((amenityName: string, checked: boolean) => {
+    const newAmenities = checked
+      ? [...filters.selectedAmenities, amenityName]
+      : filters.selectedAmenities.filter(a => a !== amenityName)
+    onFilterChange({ selectedAmenities: newAmenities })
+  }, [filters.selectedAmenities, onFilterChange])
+
+  const handleGearToggle = useCallback((gearItem: string, checked: boolean) => {
+    const newGear = checked
+      ? [...filters.selectedGear, gearItem]
+      : filters.selectedGear.filter(g => g !== gearItem)
+    onFilterChange({ selectedGear: newGear })
+  }, [filters.selectedGear, onFilterChange])
+
+  const hasActiveFilters = useMemo(() => {
+    return filters.location || 
+           filters.priceRange[0] > 0 || 
+           filters.priceRange[1] < 500 ||
+           filters.selectedAmenities.length > 0 ||
+           filters.selectedGear.length > 0
+  }, [filters])
+
+  const handleFormSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault()
+    onSearchFilters()
+  }, [onSearchFilters])
+
+  return (
+    <form onSubmit={handleFormSubmit} className="space-y-6">
+      {/* Location Filter */}
+      <div className="space-y-2">
+        <Label htmlFor="location-filter" className="text-sm font-medium">
+          Location
+        </Label>
+        <div className="relative">
+          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="location-filter"
+            type="text"
+            placeholder="Enter city or area..."
+            value={filters.location}
+            onChange={handleLocationChange}
+            className="pl-10"
+            disabled={isLoading}
+          />
+          {filters.location && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+              onClick={() => onFilterChange({ location: "" })}
+            >
+              <X className="h-3 w-3" />
+              <span className="sr-only">Clear location</span>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Price Range Filter */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Price Range (Per Hour)</Label>
+          <div className="text-sm text-muted-foreground">
+            ${filters.priceRange[0]} - ${filters.priceRange[1]}
+          </div>
+        </div>
+        <Slider 
+          value={filters.priceRange}
+          onValueChange={handlePriceRangeChange}
+          max={500} 
+          min={0} 
+          step={10} 
+          className="w-full"
+          disabled={isLoading}
+        />
+      </div>
+
+      {/* Amenities Filter */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Amenities</Label>
+          {filters.selectedAmenities.length > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {filters.selectedAmenities.length} selected
+            </Badge>
+          )}
+        </div>
+        
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search amenities..."
+            value={filters.amenitySearch}
+            onChange={handleAmenitySearchChange}
+            className="pl-10"
+            disabled={isLoading}
+          />
+          {filters.amenitySearch && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+              onClick={() => onFilterChange({ amenitySearch: "" })}
+            >
+              <X className="h-3 w-3" />
+              <span className="sr-only">Clear search</span>
+            </Button>
+          )}
+        </div>
+
+        <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-input p-3">
+          {filteredAmenities.length > 0 ? (
+            filteredAmenities.map((amenity) => (
+              <div key={amenity.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`amenity-${amenity.id}`}
+                  checked={filters.selectedAmenities.includes(amenity.name)}
+                  onCheckedChange={(checked) => handleAmenityToggle(amenity.name, checked as boolean)}
+                  disabled={isLoading}
+                />
+                <Label 
+                  htmlFor={`amenity-${amenity.id}`} 
+                  className="text-sm font-normal cursor-pointer flex-1"
+                >
+                  {amenity.name}
+                </Label>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              {filters.amenitySearch ? `No amenities found matching "${filters.amenitySearch}"` : "Loading amenities..."}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Equipment & Gear Filter */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Equipment & Gear</Label>
+          {filters.selectedGear.length > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {filters.selectedGear.length} selected
+            </Badge>
+          )}
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search equipment..."
+            value={filters.gearSearch}
+            onChange={handleGearSearchChange}
+            className="pl-10"
+            disabled={isLoading}
+          />
+          {filters.gearSearch && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+              onClick={() => onFilterChange({ gearSearch: "" })}
+            >
+              <X className="h-3 w-3" />
+              <span className="sr-only">Clear search</span>
+            </Button>
+          )}
+        </div>
+
+        <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-input p-3">
+          {filteredGear.length > 0 ? (
+            filteredGear.map((gear, index) => (
+              <div key={`${gear.item}-${index}`} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`gear-${index}`}
+                  checked={filters.selectedGear.includes(gear.item)}
+                  onCheckedChange={(checked) => handleGearToggle(gear.item, checked as boolean)}
+                  disabled={isLoading}
+                />
+                <Label 
+                  htmlFor={`gear-${index}`} 
+                  className="text-sm font-normal cursor-pointer flex-1"
+                >
+                  {gear.item}
+                </Label>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              {filters.gearSearch ? `No equipment found matching "${filters.gearSearch}"` : "Loading equipment..."}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="pt-4 border-t space-y-3">
+        <Button 
+          type="submit"
+          className="w-full"
+          size="lg"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Searching...
+            </>
+          ) : (
+            <>
+              <Search className="h-4 w-4 mr-2" />
+              Search Studios
+            </>
+          )}
+        </Button>
+        
+        {hasActiveFilters && (
+          <Button 
+            type="button"
+            onClick={onClearFilters}
+            variant="outline" 
+            className="w-full"
+            size="sm"
+            disabled={isLoading}
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Clear All Filters
+          </Button>
+        )}
+      </div>
+    </form>
+  )
+}
+
 export function BrowseStudiosContent() {
   const [studios, setStudios] = useState<Studio[]>([])
   const [amenities, setAmenities] = useState<Amenity[]>([])
@@ -114,23 +432,41 @@ export function BrowseStudiosContent() {
   const [totalCount, setTotalCount] = useState(0)
   const { addStudio, studios: basketStudios } = useQuoteBasket()
 
-  // Filter state
-  const [locationFilter, setLocationFilter] = useState("")
-  const [priceRange, setPriceRange] = useState([0, 500])
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
-  const [selectedGear, setSelectedGear] = useState<string[]>([])
+  // Consolidated filter state
+  const [filters, setFilters] = useState<FilterState>({
+    location: "",
+    priceRange: [0, 500],
+    selectedAmenities: [],
+    selectedGear: [],
+    amenitySearch: "",
+    gearSearch: ""
+  })
 
+  // Debounce location filter to prevent excessive API calls
+  const debouncedLocationFilter = useDebounce(filters.location, 500)
+
+  // Memoized filter change handler to prevent recreation
+  const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }))
+  }, [])
+
+  // Initialize data on mount
   useEffect(() => {
     fetchStudios(true) // Reset to first page
     fetchAmenities()
     fetchAvailableGear()
   }, [])
 
+  // Trigger search when debounced location changes
   useEffect(() => {
-    fetchStudios(true) // Reset and apply filters
-  }, [locationFilter, priceRange, selectedAmenities, selectedGear])
+    if (debouncedLocationFilter !== filters.location) {
+      // Only trigger if the debounced value is different from current
+      return
+    }
+    fetchStudios(true)
+  }, [debouncedLocationFilter])
 
-  const buildQuery = () => {
+  const buildQuery = useCallback(() => {
     let query = supabase
       .from("studios")
       .select(`
@@ -142,14 +478,14 @@ export function BrowseStudiosContent() {
       .eq("published", true)
       .eq("verification_status", "verified")
 
-    if (locationFilter) {
-      query = query.ilike("location", `%${locationFilter}%`)
+    if (debouncedLocationFilter) {
+      query = query.ilike("location", `%${debouncedLocationFilter}%`)
     }
 
-    query = query.gte("hourly_rate", priceRange[0]).lte("hourly_rate", priceRange[1])
+    query = query.gte("hourly_rate", filters.priceRange[0]).lte("hourly_rate", filters.priceRange[1])
 
     return query
-  }
+  }, [debouncedLocationFilter, filters.priceRange])
 
   const fetchStudios = async (reset = false) => {
     const pageToFetch = reset ? 0 : currentPage
@@ -181,14 +517,14 @@ export function BrowseStudiosContent() {
         }))
 
         // Apply amenity filter on client side since it's complex
-        if (selectedAmenities.length > 0) {
+        if (filters.selectedAmenities.length > 0) {
           studiosWithStats = studiosWithStats.filter((studio) =>
-            selectedAmenities.every((amenity) => studio.amenities?.includes(amenity)),
+            filters.selectedAmenities.every((amenity) => studio.amenities?.includes(amenity)),
           )
         }
 
         // Apply gear filter on client side
-        if (selectedGear.length > 0) {
+        if (filters.selectedGear.length > 0) {
           studiosWithStats = studiosWithStats.filter((studio) => {
             if (!studio.gear) return false
             
@@ -208,7 +544,7 @@ export function BrowseStudiosContent() {
             }
             
             // Check if any selected gear is in the studio's gear
-            return selectedGear.some((selectedItem) =>
+            return filters.selectedGear.some((selectedItem) =>
               studioGearItems.some(studioItem => 
                 studioItem.includes(selectedItem.toLowerCase()) || 
                 selectedItem.toLowerCase().includes(studioItem)
@@ -241,11 +577,11 @@ export function BrowseStudiosContent() {
     }
   }
 
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!loadingMore && hasMore) {
       fetchStudios(false)
     }
-  }
+  }, [loadingMore, hasMore])
 
   const fetchAmenities = async () => {
     const { data } = await supabase.from("amenities").select("*").order("name")
@@ -312,21 +648,24 @@ export function BrowseStudiosContent() {
     }
   }
 
-  const handleAmenityChange = (amenityName: string, checked: boolean) => {
-    if (checked) {
-      setSelectedAmenities([...selectedAmenities, amenityName])
-    } else {
-      setSelectedAmenities(selectedAmenities.filter((a) => a !== amenityName))
-    }
-  }
+  const handleSearchFilters = useCallback(() => {
+    fetchStudios(true) // Reset and apply filters
+  }, [])
 
-  const handleGearChange = (gearItem: string, checked: boolean) => {
-    if (checked) {
-      setSelectedGear([...selectedGear, gearItem])
-    } else {
-      setSelectedGear(selectedGear.filter((g) => g !== gearItem))
-    }
-  }
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      location: "",
+      priceRange: [0, 500],
+      selectedAmenities: [],
+      selectedGear: [],
+      amenitySearch: "",
+      gearSearch: ""
+    })
+    // Fetch all studios after clearing filters
+    setTimeout(() => {
+      fetchStudios(true)
+    }, 0)
+  }, [])
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -336,75 +675,6 @@ export function BrowseStudiosContent() {
       />
     ))
   }
-
-  const FiltersContent = () => (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
-        <Input
-          id="location"
-          placeholder="Enter City Or Area"
-          value={locationFilter}
-          onChange={(e) => setLocationFilter(e.target.value)}
-        />
-      </div>
-
-      <div className="space-y-4">
-        <Label>Price Range (Per Hour)</Label>
-        <Slider 
-          defaultValue={priceRange} 
-          onValueCommit={setPriceRange}
-          max={500} 
-          min={0} 
-          step={10} 
-          className="w-full" 
-        />
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>${priceRange[0]}</span>
-          <span>${priceRange[1]}</span>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Label>Amenities</Label>
-        <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto">
-          {amenities.map((amenity) => (
-            <div key={amenity.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={amenity.id}
-                checked={selectedAmenities.includes(amenity.name)}
-                onCheckedChange={(checked) => handleAmenityChange(amenity.name, checked as boolean)}
-              />
-              <Label htmlFor={amenity.id} className="text-sm font-normal cursor-pointer">
-                {amenity.name}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Label>Equipment & Gear</Label>
-        <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto">
-          {availableGear.map((gear, index) => (
-            <div key={`${gear.item}-${index}`} className="flex items-center space-x-2">
-              <Checkbox
-                id={`gear-${index}`}
-                checked={selectedGear.includes(gear.item)}
-                onCheckedChange={(checked) => handleGearChange(gear.item, checked as boolean)}
-              />
-              <Label htmlFor={`gear-${index}`} className="text-sm font-normal cursor-pointer">
-                {gear.item}
-              </Label>
-            </div>
-          ))}
-        </div>
-        {availableGear.length === 0 && (
-          <p className="text-sm text-muted-foreground">Loading equipment options...</p>
-        )}
-      </div>
-    </div>
-  )
 
   if (loading) {
     return (
@@ -430,28 +700,32 @@ export function BrowseStudiosContent() {
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-4 w-full" />
                     </div>
-                                         <div className="space-y-4">
-                       <Skeleton className="h-4 w-16" />
-                       <div className="space-y-3">
-                         {Array.from({ length: 6 }, (_, i) => (
-                           <div key={i} className="flex items-center space-x-2">
-                             <Skeleton className="h-4 w-4" />
-                             <Skeleton className="h-4 w-20" />
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                     <div className="space-y-4">
-                       <Skeleton className="h-4 w-24" />
-                       <div className="space-y-3">
-                         {Array.from({ length: 8 }, (_, i) => (
-                           <div key={i} className="flex items-center space-x-2">
-                             <Skeleton className="h-4 w-4" />
-                             <Skeleton className="h-4 w-24" />
-                           </div>
-                         ))}
-                       </div>
-                     </div>
+                    <div className="space-y-4">
+                      <Skeleton className="h-4 w-16" />
+                      <div className="space-y-3">
+                        {Array.from({ length: 6 }, (_, i) => (
+                          <div key={i} className="flex items-center space-x-2">
+                            <Skeleton className="h-4 w-4" />
+                            <Skeleton className="h-4 w-20" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <Skeleton className="h-4 w-24" />
+                      <div className="space-y-3">
+                        {Array.from({ length: 8 }, (_, i) => (
+                          <div key={i} className="flex items-center space-x-2">
+                            <Skeleton className="h-4 w-4" />
+                            <Skeleton className="h-4 w-24" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t space-y-3">
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -486,14 +760,27 @@ export function BrowseStudiosContent() {
               <Button variant="outline" className="mb-4">
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
+                {(filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)}
+                  </Badge>
+                )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80">
+            <SheetContent side="left" className="w-80 overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>Filters</SheetTitle>
               </SheetHeader>
               <div className="mt-6">
-                <FiltersContent />
+                <FiltersContent
+                  filters={filters}
+                  amenities={amenities}
+                  availableGear={availableGear}
+                  onFilterChange={handleFilterChange}
+                  onSearchFilters={handleSearchFilters}
+                  onClearFilters={handleClearFilters}
+                  isLoading={loading}
+                />
               </div>
             </SheetContent>
           </Sheet>
@@ -502,10 +789,25 @@ export function BrowseStudiosContent() {
         {/* Desktop Filters Sidebar */}
         <div className="hidden lg:block lg:w-80">
           <div className="sticky top-6">
-            <Card>
+            <Card className="shadow-sm">
               <CardContent className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Filters</h2>
-                <FiltersContent />
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Filters</h2>
+                  {(filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) && (
+                    <Badge variant="secondary" className="text-xs">
+                      {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)} active
+                    </Badge>
+                  )}
+                </div>
+                <FiltersContent
+                  filters={filters}
+                  amenities={amenities}
+                  availableGear={availableGear}
+                  onFilterChange={handleFilterChange}
+                  onSearchFilters={handleSearchFilters}
+                  onClearFilters={handleClearFilters}
+                  isLoading={loading}
+                />
               </CardContent>
             </Card>
           </div>
@@ -603,7 +905,7 @@ export function BrowseStudiosContent() {
             </div>
           )}
 
-          {studios.length === 0 && (
+          {studios.length === 0 && !loading && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No studios found matching your criteria.</p>
               <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters.</p>

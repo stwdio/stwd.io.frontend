@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,7 @@ export function FloatingCartButton() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const { studios: basketStudios, toggleBasket } = useQuoteBasket()
+  const pathname = usePathname()
 
   useEffect(() => {
     const getProfile = async () => {
@@ -43,8 +45,8 @@ export function FloatingCartButton() {
     getProfile()
   }, [])
 
-  // Only show for creators
-  if (loading || !profile || profile.role !== 'creator') {
+  // Hide on profile pages or if not a creator
+  if (loading || !profile || profile.role !== 'creator' || pathname.startsWith('/profile')) {
     return null
   }
 

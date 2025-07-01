@@ -30,11 +30,17 @@ interface Studio {
   average_rating?: number
   review_count?: number
   amenities?: string[]
+  gear?: any
 }
 
 interface Amenity {
   id: string
   name: string
+}
+
+interface GearItem {
+  category: string
+  item: string
 }
 
 const STUDIOS_PER_PAGE = 9
@@ -100,6 +106,7 @@ function StudioCardSkeleton() {
 export function BrowseStudiosContent() {
   const [studios, setStudios] = useState<Studio[]>([])
   const [amenities, setAmenities] = useState<Amenity[]>([])
+  const [availableGear, setAvailableGear] = useState<GearItem[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -111,15 +118,17 @@ export function BrowseStudiosContent() {
   const [locationFilter, setLocationFilter] = useState("")
   const [priceRange, setPriceRange] = useState([0, 500])
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
+  const [selectedGear, setSelectedGear] = useState<string[]>([])
 
   useEffect(() => {
     fetchStudios(true) // Reset to first page
     fetchAmenities()
+    fetchAvailableGear()
   }, [])
 
   useEffect(() => {
     fetchStudios(true) // Reset and apply filters
-  }, [locationFilter, priceRange, selectedAmenities])
+  }, [locationFilter, priceRange, selectedAmenities, selectedGear])
 
   const buildQuery = () => {
     let query = supabase
@@ -178,6 +187,36 @@ export function BrowseStudiosContent() {
           )
         }
 
+        // Apply gear filter on client side
+        if (selectedGear.length > 0) {
+          studiosWithStats = studiosWithStats.filter((studio) => {
+            if (!studio.gear) return false
+            
+            // Extract all gear items from the studio's gear object
+            const studioGearItems: string[] = []
+            
+            if (typeof studio.gear === 'object') {
+              Object.values(studio.gear).forEach((value) => {
+                if (Array.isArray(value)) {
+                  studioGearItems.push(...value.map(item => item.toLowerCase()))
+                } else if (typeof value === 'string') {
+                  studioGearItems.push(value.toLowerCase())
+                }
+              })
+            } else if (typeof studio.gear === 'string') {
+              studioGearItems.push(studio.gear.toLowerCase())
+            }
+            
+            // Check if any selected gear is in the studio's gear
+            return selectedGear.some((selectedItem) =>
+              studioGearItems.some(studioItem => 
+                studioItem.includes(selectedItem.toLowerCase()) || 
+                selectedItem.toLowerCase().includes(studioItem)
+              )
+            )
+          })
+        }
+
         if (reset) {
           setStudios(studiosWithStats)
           setCurrentPage(1)
@@ -215,11 +254,77 @@ export function BrowseStudiosContent() {
     }
   }
 
+  const fetchAvailableGear = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("studios")
+        .select("gear")
+        .eq("published", true)
+        .eq("verification_status", "verified")
+        .not("gear", "is", null)
+
+      if (error) {
+        console.error("Error fetching gear:", error)
+        return
+      }
+
+      if (data) {
+        const allGearItems = new Set<string>()
+        
+        data.forEach((studio) => {
+          if (studio.gear && typeof studio.gear === 'object') {
+            Object.entries(studio.gear).forEach(([category, items]) => {
+              if (Array.isArray(items)) {
+                items.forEach((item: string) => {
+                  if (typeof item === 'string' && item.trim()) {
+                    allGearItems.add(item.trim())
+                  }
+                })
+              } else if (typeof items === 'string' && items.trim()) {
+                allGearItems.add(items.trim())
+              }
+            })
+          } else if (typeof studio.gear === 'string' && studio.gear.trim()) {
+            // Handle plain text gear descriptions
+            const gearWords = studio.gear.toLowerCase().split(/[,\s]+/)
+            gearWords.forEach(word => {
+              if (word.length > 2) { // Only include meaningful words
+                allGearItems.add(word)
+              }
+            })
+          }
+        })
+
+        // Convert to array and sort
+        const gearArray = Array.from(allGearItems)
+          .sort((a, b) => a.localeCompare(b))
+          .slice(0, 100) // Limit to most common 100 items for performance
+
+        const gearItems: GearItem[] = gearArray.map(item => ({
+          category: 'equipment',
+          item: item
+        }))
+
+        setAvailableGear(gearItems)
+      }
+    } catch (error) {
+      console.error("Error processing gear data:", error)
+    }
+  }
+
   const handleAmenityChange = (amenityName: string, checked: boolean) => {
     if (checked) {
       setSelectedAmenities([...selectedAmenities, amenityName])
     } else {
       setSelectedAmenities(selectedAmenities.filter((a) => a !== amenityName))
+    }
+  }
+
+  const handleGearChange = (gearItem: string, checked: boolean) => {
+    if (checked) {
+      setSelectedGear([...selectedGear, gearItem])
+    } else {
+      setSelectedGear(selectedGear.filter((g) => g !== gearItem))
     }
   }
 
@@ -262,7 +367,7 @@ export function BrowseStudiosContent() {
 
       <div className="space-y-4">
         <Label>Amenities</Label>
-        <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+        <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto">
           {amenities.map((amenity) => (
             <div key={amenity.id} className="flex items-center space-x-2">
               <Checkbox
@@ -276,6 +381,27 @@ export function BrowseStudiosContent() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <Label>Equipment & Gear</Label>
+        <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto">
+          {availableGear.map((gear, index) => (
+            <div key={`${gear.item}-${index}`} className="flex items-center space-x-2">
+              <Checkbox
+                id={`gear-${index}`}
+                checked={selectedGear.includes(gear.item)}
+                onCheckedChange={(checked) => handleGearChange(gear.item, checked as boolean)}
+              />
+              <Label htmlFor={`gear-${index}`} className="text-sm font-normal cursor-pointer">
+                {gear.item}
+              </Label>
+            </div>
+          ))}
+        </div>
+        {availableGear.length === 0 && (
+          <p className="text-sm text-muted-foreground">Loading equipment options...</p>
+        )}
       </div>
     </div>
   )
@@ -304,17 +430,28 @@ export function BrowseStudiosContent() {
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-4 w-full" />
                     </div>
-                    <div className="space-y-4">
-                      <Skeleton className="h-4 w-16" />
-                      <div className="space-y-3">
-                        {Array.from({ length: 6 }, (_, i) => (
-                          <div key={i} className="flex items-center space-x-2">
-                            <Skeleton className="h-4 w-4" />
-                            <Skeleton className="h-4 w-20" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                                         <div className="space-y-4">
+                       <Skeleton className="h-4 w-16" />
+                       <div className="space-y-3">
+                         {Array.from({ length: 6 }, (_, i) => (
+                           <div key={i} className="flex items-center space-x-2">
+                             <Skeleton className="h-4 w-4" />
+                             <Skeleton className="h-4 w-20" />
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                     <div className="space-y-4">
+                       <Skeleton className="h-4 w-24" />
+                       <div className="space-y-3">
+                         {Array.from({ length: 8 }, (_, i) => (
+                           <div key={i} className="flex items-center space-x-2">
+                             <Skeleton className="h-4 w-4" />
+                             <Skeleton className="h-4 w-24" />
+                           </div>
+                         ))}
+                       </div>
+                     </div>
                   </div>
                 </CardContent>
               </Card>

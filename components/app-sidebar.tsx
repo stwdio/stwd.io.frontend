@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import {
   IconBuilding,
   IconSearch,
@@ -12,8 +13,8 @@ import {
   IconPlus,
   IconUser,
   IconLogout,
+  IconBookmark,
 } from "@tabler/icons-react"
-import { supabase } from "@/lib/supabase"
 import { generateIdenticon } from "@/lib/identicon"
 
 import { NavMain } from "@/components/nav-main"
@@ -26,6 +27,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -46,6 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {
@@ -70,7 +74,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [supabase])
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -111,6 +115,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: IconSearch,
       },
     ]
+
+    // Add My Lists for creators and admins
+    if (profile?.role === 'creator' || profile?.role === 'admin') {
+      baseItems.push({
+        title: "My Lists",
+        url: "/lists",
+        icon: IconBookmark,
+      })
+    }
 
     return baseItems
   }

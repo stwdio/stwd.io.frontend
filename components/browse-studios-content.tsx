@@ -14,6 +14,7 @@ import { Star, MapPin, Plus, Filter, Loader2, Search, RotateCcw, X } from "lucid
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioCardActions } from "@/components/studio-card-actions"
+import { StudioListMembershipIndicators } from "@/components/studio-list-membership-indicators"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
@@ -1020,6 +1021,13 @@ export function BrowseStudiosContent() {
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">
                       {studio.description}
                     </p>
+
+                    {/* List membership indicators */}
+                    <StudioListMembershipIndicators 
+                      studioId={studio.id.toString()} 
+                      className="mb-3"
+                      maxVisible={2}
+                    />
 
                     <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
                       {studio.amenities?.slice(0, 3).map((amenity) => (

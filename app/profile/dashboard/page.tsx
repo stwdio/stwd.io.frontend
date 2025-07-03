@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { CreatorDashboard } from '@/components/creator-dashboard'
 import { OwnerDashboard } from '@/components/owner-dashboard'
 import { AdminDashboard } from '@/components/admin-dashboard'
@@ -23,6 +23,7 @@ export default function ProfileDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [authorized, setAuthorized] = useState(false)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -79,7 +80,7 @@ export default function ProfileDashboardPage() {
     })
 
     return () => subscription.unsubscribe()
-  }, [router])
+  }, [router, supabase])
 
   // Render role-specific dashboard content
   const renderDashboardContent = () => {

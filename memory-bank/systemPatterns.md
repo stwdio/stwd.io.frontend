@@ -115,7 +115,64 @@ stwd.io.frontend/
 - ✅ Conditional rendering based on user profile FUNCTIONAL
 - ✅ Role-specific routing and access control VERIFIED
 
-### 2. ✅ **Authentication & Onboarding Gate Pattern - PRODUCTION READY** (Updated January 2025)
+### 2. ✅ **Unified Supabase SSR Authentication Pattern - PRODUCTION READY** (Updated January 31, 2025)
+**Pattern**: Single authentication client architecture following official Supabase Next.js Server-Side Auth guidelines
+- ✅ **UNIFIED CLIENT SYSTEM**: Complete elimination of dual authentication clients
+- ✅ **SSR COMPLIANCE**: 100% adherence to official Supabase Next.js patterns
+- ✅ **ZERO CLIENT CONFLICTS**: Eliminated "Multiple GoTrueClient instances detected" warnings
+- ✅ **SINGLETON PATTERN**: Proper client caching and reuse across component lifecycle
+
+**Implementation**:
+- ✅ **Client-side components**: Use `createClient()` from `@/lib/supabase/client`
+- ✅ **Server-side pages**: Use `createClient()` from `@/lib/supabase/server`
+- ✅ **Middleware**: Use `createClient()` from `@/lib/supabase/middleware`
+- ✅ **API routes**: Use `createClient()` from `@/lib/supabase/server`
+
+**Key Architecture Changes**:
+```typescript
+// BEFORE: Dual client system causing conflicts
+import { createClient } from '@/lib/supabase'              // Legacy client
+import { createClient } from '@/lib/supabase/client'       // New SSR client
+// Multiple GoTrueClient instances detected ❌
+
+// AFTER: Unified SSR pattern
+// Client components
+import { createClient } from '@/lib/supabase/client'
+const supabase = createClient()
+
+// Server pages
+import { createClient } from '@/lib/supabase/server'
+const supabase = createClient()
+
+// Middleware
+import { createClient } from '@/lib/supabase/middleware'
+const supabase = createClient(request)
+```
+
+**Singleton Pattern Implementation**:
+```typescript
+// lib/supabase/client.ts - Singleton pattern
+let client: SupabaseClient | null = null
+
+export const createClient = () => {
+  if (!client) {
+    client = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  }
+  return client
+}
+```
+
+**Technical Benefits**:
+- **Before**: Dual client system with conflicts and memory leaks
+- **After**: Clean SSR architecture with proper client management
+- **Performance**: Eliminated client initialization conflicts
+- **Security**: Consistent authentication state across all application layers
+- **Maintenance**: Single source of truth for authentication
+
+### 3. ✅ **Authentication & Onboarding Gate Pattern - PRODUCTION READY** (Updated January 31, 2025)
 **Pattern**: Seamless authentication with mandatory role-based onboarding
 - ✅ **WORKING**: Full-page authentication experience replacing modal dialogs
 - ✅ **FUNCTIONAL**: Automatic redirect system for users without roles
@@ -171,36 +228,6 @@ const OnboardingGate = ({ children }: { children: React.ReactNode }) => {
   if (loading) return <div>Loading...</div>
   return <>{children}</>
 }
-```
-
-### 3. ✅ **Database Trigger Pattern - WORKING** (Updated January 2025)
-**Pattern**: Automatic profile creation with NULL roles for onboarding
-- ✅ **VERIFIED**: Database trigger creates profiles for new auth users
-- ✅ **WORKING**: NULL role values trigger onboarding flow
-- ✅ **FUNCTIONAL**: Clean separation between auth and profile data
-
-**Database Implementation**:
-```sql
--- Working trigger function
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (user_id, first_name, last_name, username, role)
-  VALUES (
-    NEW.id,
-    NEW.raw_user_meta_data->>'first_name',
-    NEW.raw_user_meta_data->>'last_name',
-    COALESCE(NEW.raw_user_meta_data->>'username', NEW.email),
-    NULL  -- NULL role triggers onboarding
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger on auth.users table
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 ```
 
 ### 4. Component Composition

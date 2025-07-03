@@ -362,9 +362,7 @@ export async function getListDetails(listId: string): Promise<ActionResult<ListD
           name,
           description,
           hourly_rate,
-          location,
-          average_rating,
-          review_count
+          location
         )
       `)
       .eq('list_id', parseInt(listId))
@@ -381,8 +379,8 @@ export async function getListDetails(listId: string): Promise<ActionResult<ListD
       description: item.studios.description,
       hourly_rate: item.studios.hourly_rate,
       location: item.studios.location,
-      average_rating: item.studios.average_rating,
-      review_count: item.studios.review_count,
+      average_rating: 0, // TODO: Calculate from reviews when rating system is implemented
+      review_count: 0, // TODO: Calculate from reviews when rating system is implemented
       notes: item.notes
     }))
 

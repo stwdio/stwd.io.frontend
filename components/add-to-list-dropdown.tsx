@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Heart, Plus, Check, BookmarkPlus, Loader2 } from 'lucide-react'
-import { addStudioToList, removeStudioFromList, getUserLists, getStudioListMemberships, ListWithCount } from '@/lib/actions/lists'
+import { addStudioToList, removeStudioFromList, getUserLists, ListWithCount } from '@/lib/actions/lists'
 import { toast } from 'sonner'
 import CreateListDialog from './create-list-dialog'
 
@@ -20,22 +20,27 @@ interface AddToListDropdownProps {
   studioName: string
   trigger?: React.ReactNode
   onSuccess?: () => void
+  // OPTIMIZED: Receive membership data as props instead of fetching on render
+  initialMemberships?: {list_id: number, list_name: string, list_icon_emoji: string}[]
 }
 
 export default function AddToListDropdown({ 
   studioId, 
   studioName, 
   trigger,
-  onSuccess 
+  onSuccess,
+  initialMemberships = []
 }: AddToListDropdownProps) {
   const [lists, setLists] = useState<ListWithCount[]>([])
-  const [listMemberships, setListMemberships] = useState<Set<number>>(new Set())
+  const [listMemberships, setListMemberships] = useState<Set<number>>(() => 
+    new Set(initialMemberships.map(m => m.list_id))
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [actionLoadingStates, setActionLoadingStates] = useState<Set<number>>(new Set())
 
-  // Load user's lists and studio memberships when dropdown opens
+  // Load user's lists when dropdown opens
   useEffect(() => {
     if (isDropdownOpen) {
       loadData()
@@ -45,25 +50,13 @@ export default function AddToListDropdown({
   const loadData = async () => {
     setIsLoading(true)
     try {
-      // Load user's lists and which lists contain this studio
-      const [listsResult, membershipsResult] = await Promise.all([
-        getUserLists(),
-        getStudioListMemberships(studioId)
-      ])
+      // Load user's lists (memberships are provided as props)
+      const listsResult = await getUserLists()
 
       if (listsResult.success) {
         setLists(listsResult.data || [])
       } else {
         toast.error('Failed to load your lists')
-      }
-
-      if (membershipsResult.success) {
-        const membershipIds = new Set(
-          (membershipsResult.data || []).map(m => m.list_id)
-        )
-        setListMemberships(membershipIds)
-      } else {
-        toast.error('Failed to check list memberships')
       }
     } catch (error) {
       console.error('Error loading data:', error)

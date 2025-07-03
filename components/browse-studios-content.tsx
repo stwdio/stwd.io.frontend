@@ -18,6 +18,7 @@ import { StudioListMembershipIndicators } from "@/components/studio-list-members
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
+import { getBatchStudioListMemberships } from "@/lib/actions/lists"
 
 interface Studio {
   id: number
@@ -62,6 +63,13 @@ interface FiltersContentProps {
   onSearchFilters: () => void
   onClearFilters: () => void
   isLoading?: boolean
+}
+
+// OPTIMIZED: Shared profile type
+interface Profile {
+  id: number
+  user_id: string
+  role: 'creator' | 'owner' | 'admin' | null
 }
 
 const STUDIOS_PER_PAGE = 12
@@ -469,6 +477,14 @@ export function BrowseStudiosContent() {
   const [totalCount, setTotalCount] = useState(0)
   const { addStudio, studios: basketStudios } = useQuoteBasket()
   
+  // OPTIMIZED: Batch list memberships state
+  const [batchMemberships, setBatchMemberships] = useState<Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]>>({})
+  const [membershipsLoading, setMembershipsLoading] = useState(false)
+  
+  // OPTIMIZED: Shared profile state to eliminate individual auth calls per studio card
+  const [sharedProfile, setSharedProfile] = useState<Profile | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  
   // Use refs to avoid stale closure issues
   const currentPageRef = useRef(0)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -523,6 +539,30 @@ export function BrowseStudiosContent() {
     router.replace(newURL, { scroll: false })
   }, [router])
 
+  // OPTIMIZED: Batch fetch list memberships for all visible studios
+  const fetchBatchMemberships = useCallback(async (studioList: Studio[]) => {
+    if (studioList.length === 0) return
+    
+    setMembershipsLoading(true)
+    try {
+      const studioIds = studioList.map(studio => studio.id.toString())
+      const result = await getBatchStudioListMemberships(studioIds)
+      
+      if (result.success) {
+        setBatchMemberships(result.data || {})
+      } else {
+        console.error('Failed to fetch batch memberships:', result.error)
+        // Set empty memberships instead of error to not break the UI
+        setBatchMemberships({})
+      }
+    } catch (error) {
+      console.error('Error fetching batch memberships:', error)
+      setBatchMemberships({})
+    } finally {
+      setMembershipsLoading(false)
+    }
+  }, [])
+
   const fetchStudios = useCallback(async (reset = false) => {
     // Prevent duplicate requests
     if (isLoadingRef.current) return
@@ -539,11 +579,20 @@ export function BrowseStudiosContent() {
     }
 
     try {
-      // Build the base query
+      // OPTIMIZED: Build the base query with specific columns only
       let query = createClient()
         .from("studios")
         .select(`
-          *,
+          id,
+          name,
+          description,
+          hourly_rate,
+          location,
+          owner_id,
+          published,
+          verification_status,
+          created_at,
+          gear,
           studio_amenities (
             amenities (name)
           )
@@ -652,13 +701,19 @@ export function BrowseStudiosContent() {
         if (reset) {
           setStudios(studiosWithStats)
           currentPageRef.current = 1
+          // OPTIMIZED: Fetch memberships for initial load
+          fetchBatchMemberships(studiosWithStats)
         } else {
           // Prevent duplicates by filtering out studios that already exist
-          setStudios(prev => {
+          const updatedStudios = (prev: Studio[]) => {
             const existingIds = new Set(prev.map(s => s.id))
             const newStudios = studiosWithStats.filter((studio: any) => !existingIds.has(studio.id))
-            return [...prev, ...newStudios]
-          })
+            const result = [...prev, ...newStudios]
+            // OPTIMIZED: Fetch memberships for all visible studios
+            fetchBatchMemberships(result)
+            return result
+          }
+          setStudios(updatedStudios)
           currentPageRef.current = currentPageRef.current + 1
         }
 
@@ -698,6 +753,36 @@ export function BrowseStudiosContent() {
       observer.unobserve(currentRef)
     }
   }, [hasMore, loadingMore, loading, fetchStudios])
+
+  // OPTIMIZED: Fetch shared profile once on mount
+  useEffect(() => {
+    const fetchSharedProfile = async () => {
+      try {
+        const { data: { user } } = await createClient().auth.getUser()
+        
+        if (!user) {
+          setSharedProfile(null)
+          setProfileLoading(false)
+          return
+        }
+
+        const { data: profileData } = await createClient()
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        setSharedProfile(profileData)
+      } catch (error) {
+        console.error('Error fetching shared profile:', error)
+        setSharedProfile(null)
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+
+    fetchSharedProfile()
+  }, [])
 
   // Initialize data on mount
   useEffect(() => {
@@ -1022,11 +1107,13 @@ export function BrowseStudiosContent() {
                       {studio.description}
                     </p>
 
-                    {/* List membership indicators */}
+                    {/* List membership indicators - OPTIMIZED: Use batched data */}
                     <StudioListMembershipIndicators 
                       studioId={studio.id.toString()} 
                       className="mb-3"
                       maxVisible={2}
+                      memberships={batchMemberships[studio.id.toString()] || []}
+                      isLoading={membershipsLoading}
                     />
 
                     <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
@@ -1042,9 +1129,14 @@ export function BrowseStudiosContent() {
                       )}
                     </div>
 
-                    {/* Fixed height action area */}
+                    {/* Fixed height action area - OPTIMIZED: Pass batched membership data and shared profile */}
                     <div className="mt-auto">
-                      <StudioCardActions studio={studio} />
+                      <StudioCardActions 
+                        studio={studio}
+                        memberships={batchMemberships[studio.id.toString()] || []}
+                        sharedProfile={sharedProfile}
+                        profileLoading={profileLoading}
+                      />
                     </div>
                   </CardContent>
                 </Card>

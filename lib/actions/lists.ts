@@ -97,7 +97,75 @@ export async function createList(data: CreateListData): Promise<ActionResult<Lis
 }
 
 /**
- * Add a studio to a list using the database function
+ * OPTIMIZED: Get list memberships for multiple studios in a single query
+ * This replaces individual getStudioListMemberships calls to eliminate the N+1 query problem
+ */
+export async function getBatchStudioListMemberships(
+  studioIds: string[]
+): Promise<ActionResult<Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]>>> {
+  try {
+    const supabase = await createClient()
+    
+    // Get current user - RLS will handle authorization automatically
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      // Return empty result for non-authenticated users instead of error
+      const emptyResult: Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]> = {}
+      studioIds.forEach(id => emptyResult[id] = [])
+      return { success: true, data: emptyResult }
+    }
+
+    // Get profile once
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!profile) {
+      const emptyResult: Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]> = {}
+      studioIds.forEach(id => emptyResult[id] = [])
+      return { success: true, data: emptyResult }
+    }
+
+    // OPTIMIZED: Use new database function for better performance
+    const { data, error } = await supabase.rpc('get_batch_studio_list_memberships_optimized', {
+      studio_ids: studioIds.map(id => parseInt(id)),
+      user_profile_id: profile.id
+    })
+
+    if (error) {
+      console.error('Error fetching batch studio list memberships:', error)
+      return { success: false, error: 'Failed to fetch list memberships' }
+    }
+
+    // OPTIMIZED: Process results from optimized database function
+    const result: Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]> = {}
+    
+    // Initialize empty arrays for all studios
+    studioIds.forEach(id => result[id] = [])
+    
+    // Populate with actual memberships (function returns flattened results)
+    data?.forEach((item: any) => {
+      const studioId = item.studio_id.toString()
+      if (result[studioId]) {
+        result[studioId].push({
+          list_id: item.list_id,
+          list_name: item.list_name,
+          list_icon_emoji: item.list_icon_emoji
+        })
+      }
+    })
+
+    return { success: true, data: result }
+  } catch (error) {
+    console.error('Unexpected error fetching batch studio list memberships:', error)
+    return { success: false, error: 'An unexpected error occurred' }
+  }
+}
+
+/**
+ * OPTIMIZED: Lightweight add studio to list - removed redundant auth calls
  */
 export async function addStudioToList(
   listId: string, 
@@ -107,7 +175,7 @@ export async function addStudioToList(
   try {
     const supabase = await createClient()
     
-    // Call the database function
+    // Call the database function directly - RLS policies handle authorization
     const { data, error } = await supabase.rpc('add_studio_to_list', {
       list_id_param: parseInt(listId),
       studio_id_param: parseInt(studioId),
@@ -135,7 +203,7 @@ export async function addStudioToList(
 }
 
 /**
- * Remove a studio from a list using the database function
+ * OPTIMIZED: Lightweight remove studio from list - removed redundant auth calls
  */
 export async function removeStudioFromList(
   listId: string, 
@@ -144,7 +212,7 @@ export async function removeStudioFromList(
   try {
     const supabase = await createClient()
     
-    // Call the database function
+    // Call the database function directly - RLS policies handle authorization  
     const { data, error } = await supabase.rpc('remove_studio_from_list', {
       list_id_param: parseInt(listId),
       studio_id_param: parseInt(studioId)
@@ -171,47 +239,8 @@ export async function removeStudioFromList(
 }
 
 /**
- * Get user's lists with studio counts
- */
-export async function getUserLists(): Promise<ActionResult<ListWithCount[]>> {
-  try {
-    const supabase = await createClient()
-    
-    // Get current user profile
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return { success: false, error: 'You must be logged in to view lists' }
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!profile) {
-      return { success: false, error: 'Profile not found' }
-    }
-
-    // Call the database function
-    const { data, error } = await supabase.rpc('get_user_lists_with_counts', {
-      user_profile_id: profile.id
-    })
-
-    if (error) {
-      console.error('Error fetching user lists:', error)
-      return { success: false, error: 'Failed to fetch lists' }
-    }
-
-    return { success: true, data: data || [] }
-  } catch (error) {
-    console.error('Unexpected error fetching lists:', error)
-    return { success: false, error: 'An unexpected error occurred' }
-  }
-}
-
-/**
  * Get which lists contain a specific studio for the current user
+ * DEPRECATED: Use getBatchStudioListMemberships for better performance
  */
 export async function getStudioListMemberships(studioId: string): Promise<ActionResult<{list_id: number, list_name: string, list_icon_emoji: string}[]>> {
   try {
@@ -308,6 +337,46 @@ export async function updateList(
     return { success: true, data: updatedList }
   } catch (error) {
     console.error('Unexpected error updating list:', error)
+    return { success: false, error: 'An unexpected error occurred' }
+  }
+}
+
+/**
+ * Get user's lists with studio counts
+ */
+export async function getUserLists(): Promise<ActionResult<ListWithCount[]>> {
+  try {
+    const supabase = await createClient()
+    
+    // Get current user profile
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return { success: false, error: 'You must be logged in to view lists' }
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!profile) {
+      return { success: false, error: 'Profile not found' }
+    }
+
+    // Call the database function
+    const { data, error } = await supabase.rpc('get_user_lists_with_counts', {
+      user_profile_id: profile.id
+    })
+
+    if (error) {
+      console.error('Error fetching user lists:', error)
+      return { success: false, error: 'Failed to fetch lists' }
+    }
+
+    return { success: true, data: data || [] }
+  } catch (error) {
+    console.error('Unexpected error fetching lists:', error)
     return { success: false, error: 'An unexpected error occurred' }
   }
 }

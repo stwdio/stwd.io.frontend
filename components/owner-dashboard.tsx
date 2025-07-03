@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -106,6 +106,7 @@ export function OwnerDashboard() {
     quote_amount: ''
   })
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     fetchOwnerData()
@@ -136,7 +137,7 @@ export function OwnerDashboard() {
       setStudios(studiosData || [])
 
       // Get studio IDs for fetching leads and bookings
-      const studioIds = studiosData?.map(studio => studio.id) || []
+      const studioIds = studiosData?.map((studio: any) => studio.id) || []
 
       if (studioIds.length > 0) {
         // Fetch incoming leads using RPC function for proper access control

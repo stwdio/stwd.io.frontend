@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { Plus, Eye, MessageSquare, BookmarkPlus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -41,7 +41,7 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
 
     try {
       // Find the conversation for this studio and creator
-      const { data: conversation, error } = await supabase
+      const { data: conversation, error } = await createClient()
         .from('conversations')
         .select('id')
         .eq('studio_id', studio.id)
@@ -73,7 +73,7 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
   const checkInquiryStatus = async (profileData: Profile) => {
     if (profileData.role !== 'creator') return
     
-    const { data: inquiryCheck } = await supabase
+    const { data: inquiryCheck } = await createClient()
       .from('inquiry_recipients')
       .select(`
         inquiry_id,
@@ -88,14 +88,14 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
 
   useEffect(() => {
     const getProfileAndCheckInquiry = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await createClient().auth.getUser()
       
       if (!user) {
         setLoading(false)
         return
       }
 
-      const { data: profileData } = await supabase
+      const { data: profileData } = await createClient()
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)

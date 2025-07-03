@@ -1,6 +1,6 @@
 'use client'
 
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { STWDConversationList } from './stwd-conversation-list'
 import { STWDChatArea } from './stwd-message-display'
@@ -65,7 +65,7 @@ export function STWDChatLayout() {
   // Get current user
   useEffect(() => {
     const getCurrentUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser()
+      const { data: { user }, error } = await createClient().auth.getUser()
       
       if (error || !user) {
         console.error('Error getting user:', error)
@@ -73,7 +73,7 @@ export function STWDChatLayout() {
       }
 
       // Get user profile with role
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await createClient()
         .from('profiles')
         .select('id, role')
         .eq('user_id', user.id)
@@ -88,7 +88,7 @@ export function STWDChatLayout() {
     }
 
     getCurrentUser()
-  }, [supabase])
+  }, [createClient])
 
   // Handle mobile responsiveness
   useEffect(() => {

@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { X, Upload, MapPin, DollarSign, Building, Camera, Settings, Eye } from "lucide-react"
 import { StudioImage } from "@/components/studio-image-placeholder"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 
 interface Studio {
@@ -43,6 +43,7 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
   const [selectedAmenities, setSelectedAmenities] = useState<number[]>([])
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const { toast } = useToast()
+  const supabase = createClient()
 
   // Form state
   const [formData, setFormData] = useState({
@@ -79,7 +80,7 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
   const fetchStudioAmenities = async (studioId: number) => {
     const { data } = await supabase.from("studio_amenities").select("amenity_id").eq("studio_id", studioId)
     if (data) {
-      setSelectedAmenities(data.map((item) => item.amenity_id))
+      setSelectedAmenities(data.map((item: any) => item.amenity_id))
     }
   }
 

@@ -30,21 +30,7 @@ async function getUserProfile() {
   return profile
 }
 
-async function ListsContent() {
-  const profile = await getUserProfile()
-  const listsResult = await getUserLists()
-
-  if (!listsResult.success) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Failed to load your lists</p>
-        <p className="text-sm text-red-500">{listsResult.error}</p>
-      </div>
-    )
-  }
-
-  const lists = listsResult.data || []
-
+function ListsContent({ lists }: { lists: any[] }) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -141,7 +127,21 @@ async function ListsContent() {
   )
 }
 
-export default function ListsPage() {
+export default async function ListsPage() {
+  const profile = await getUserProfile()
+  const listsResult = await getUserLists()
+
+  if (!listsResult.success) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Failed to load your lists</p>
+        <p className="text-sm text-red-500">{listsResult.error}</p>
+      </div>
+    )
+  }
+
+  const lists = listsResult.data || []
+
   return (
     <Suspense fallback={
       <div className="container mx-auto px-4 py-8">
@@ -160,7 +160,7 @@ export default function ListsPage() {
         </div>
       </div>
     }>
-      <ListsContent />
+      <ListsContent lists={lists} />
     </Suspense>
   )
 } 

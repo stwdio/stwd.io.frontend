@@ -1,6 +1,6 @@
 'use client'
 
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useState } from 'react'
 
 interface UseSTWDRealtimeChatProps {
@@ -54,7 +54,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
       setIsLoading(true)
       
       // Fetch conversation details
-      const { data: conversationData, error: conversationError } = await supabase
+      const { data: conversationData, error: conversationError } = await createClient()
         .from('conversations')
         .select('*')
         .eq('id', conversationId)
@@ -68,7 +68,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
       setConversation(conversationData)
 
       // Fetch messages with sender profiles
-      const { data: messagesData, error: messagesError } = await supabase
+      const { data: messagesData, error: messagesError } = await createClient()
         .from('messages')
         .select(`
           *,
@@ -94,7 +94,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
     } finally {
       setIsLoading(false)
     }
-  }, [conversationId, supabase])
+  }, [conversationId, createClient])
 
   // Set up realtime subscription
   useEffect(() => {
@@ -102,7 +102,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
     
     fetchInitialData()
 
-    const channel = supabase
+    const channel = createClient()
       .channel(`conversation_${conversationId}`)
       .on(
         'postgres_changes',
@@ -116,7 +116,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
           console.log('New message received:', payload)
           
           // Fetch the complete message with sender profile
-          const { data: newMessage, error } = await supabase
+          const { data: newMessage, error } = await createClient()
             .from('messages')
             .select(`
               *,
@@ -154,7 +154,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
           console.log('Message updated:', payload)
           
           // Fetch updated message with sender profile
-          const { data: updatedMessage, error } = await supabase
+          const { data: updatedMessage, error } = await createClient()
             .from('messages')
             .select(`
               *,
@@ -186,9 +186,9 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
       })
 
     return () => {
-      supabase.removeChannel(channel)
+      createClient().removeChannel(channel)
     }
-  }, [conversationId, supabase, fetchInitialData])
+  }, [conversationId, createClient, fetchInitialData])
 
   // Send a new message
   const sendMessage = useCallback(
@@ -212,7 +212,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
           quote_amount: additionalData?.quoteAmount || null,
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await createClient()
           .from('messages')
           .insert(messageData)
           .select(`
@@ -233,7 +233,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
         }
 
         // Update conversation's last_message_at
-        await supabase
+        await createClient()
           .from('conversations')
           .update({ last_message_at: new Date().toISOString() })
           .eq('id', conversationId)
@@ -243,7 +243,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
         console.error('Error sending message:', error)
       }
     },
-    [conversationId, currentUserId, isConnected, conversation, supabase]
+    [conversationId, currentUserId, isConnected, conversation, createClient]
   )
 
   return {

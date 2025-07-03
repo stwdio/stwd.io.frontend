@@ -13,9 +13,9 @@ import { StudioCardActions } from '@/components/studio-card-actions'
 import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
 
 interface Props {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 async function getUserProfile() {
@@ -172,24 +172,7 @@ function ListStudioCard({ studio, listId }: { studio: any, listId: string }) {
   )
 }
 
-async function ListDetailContent({ listId }: { listId: string }) {
-  const profile = await getUserProfile()
-  const listResult = await getListDetails(listId)
-
-  if (!listResult.success) {
-    if (listResult.error?.includes('not found') || listResult.error?.includes('permission denied')) {
-      notFound()
-    }
-    
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Failed to load list</p>
-        <p className="text-sm text-red-500">{listResult.error}</p>
-      </div>
-    )
-  }
-
-  const list = listResult.data!
+function ListDetailContent({ listId, list }: { listId: string, list: any }) {
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -260,7 +243,7 @@ async function ListDetailContent({ listId }: { listId: string }) {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {list.studios.map((studio) => (
+            {list.studios.map((studio: any) => (
               <ListStudioCard 
                 key={studio.id} 
                 studio={studio} 
@@ -289,7 +272,25 @@ async function ListDetailContent({ listId }: { listId: string }) {
   )
 }
 
-export default function ListDetailPage({ params }: Props) {
+export default async function ListDetailPage({ params }: Props) {
+  const { id } = await params
+  const listResult = await getListDetails(id)
+
+  if (!listResult.success) {
+    if (listResult.error?.includes('not found') || listResult.error?.includes('permission denied')) {
+      notFound()
+    }
+    
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Failed to load list</p>
+        <p className="text-sm text-red-500">{listResult.error}</p>
+      </div>
+    )
+  }
+
+  const list = listResult.data!
+
   return (
     <Suspense fallback={
       <div className="container mx-auto px-4 py-8">
@@ -320,7 +321,7 @@ export default function ListDetailPage({ params }: Props) {
         </div>
       </div>
     }>
-      <ListDetailContent listId={params.id} />
+      <ListDetailContent listId={id} list={list} />
     </Suspense>
   )
 } 

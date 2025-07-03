@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -81,6 +81,7 @@ export function CreatorDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     fetchCreatorData()
@@ -117,7 +118,7 @@ export function CreatorDashboard() {
       setInquiries(inquiriesData || [])
 
       // Get inquiry IDs for fetching responses
-      const inquiryIds = inquiriesData?.map(inquiry => inquiry.id) || []
+      const inquiryIds = inquiriesData?.map((inquiry: any) => inquiry.id) || []
 
       if (inquiryIds.length > 0) {
         // Fetch inquiry responses

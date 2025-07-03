@@ -22,6 +22,10 @@ interface AddToListDropdownProps {
   onSuccess?: () => void
   // OPTIMIZED: Receive membership data as props instead of fetching on render
   initialMemberships?: {list_id: number, list_name: string, list_icon_emoji: string}[]
+  // OPTIMIZED: Receive shared lists data to eliminate individual fetches
+  sharedLists?: ListWithCount[]
+  listsLoading?: boolean
+  onListsChange?: () => void
 }
 
 export default function AddToListDropdown({ 
@@ -29,42 +33,23 @@ export default function AddToListDropdown({
   studioName, 
   trigger,
   onSuccess,
-  initialMemberships = []
+  initialMemberships = [],
+  sharedLists = [],
+  listsLoading = false,
+  onListsChange
 }: AddToListDropdownProps) {
-  const [lists, setLists] = useState<ListWithCount[]>([])
+  // OPTIMIZED: Use shared lists instead of individual fetching
+  const lists = sharedLists
+  const isLoading = listsLoading
+  
   const [listMemberships, setListMemberships] = useState<Set<number>>(() => 
     new Set(initialMemberships.map(m => m.list_id))
   )
-  const [isLoading, setIsLoading] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [actionLoadingStates, setActionLoadingStates] = useState<Set<number>>(new Set())
 
-  // Load user's lists when dropdown opens
-  useEffect(() => {
-    if (isDropdownOpen) {
-      loadData()
-    }
-  }, [isDropdownOpen])
-
-  const loadData = async () => {
-    setIsLoading(true)
-    try {
-      // Load user's lists (memberships are provided as props)
-      const listsResult = await getUserLists()
-
-      if (listsResult.success) {
-        setLists(listsResult.data || [])
-      } else {
-        toast.error('Failed to load your lists')
-      }
-    } catch (error) {
-      console.error('Error loading data:', error)
-      toast.error('Failed to load lists')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // OPTIMIZED: Lists are now provided as shared props, no individual fetching needed
 
   const handleToggleStudio = async (listId: number, listName: string, isInList: boolean) => {
     setActionLoadingStates(prev => new Set(prev).add(listId))
@@ -89,17 +74,7 @@ export default function AddToListDropdown({
           return updated
         })
         
-        // Update list counts
-        setLists(prev => prev.map(list => 
-          list.id === listId.toString() 
-            ? { 
-                ...list, 
-                studio_count: isInList 
-                  ? Math.max(0, list.studio_count - 1)
-                  : list.studio_count + 1
-              }
-            : list
-        ))
+        // Note: List counts are managed at the parent level with shared lists
         
         onSuccess?.()
       } else {
@@ -119,8 +94,9 @@ export default function AddToListDropdown({
 
   const handleCreateListSuccess = () => {
     setShowCreateDialog(false)
-    // Reload data to show the new list
-    loadData()
+    // Refresh shared lists to show the new list
+    onListsChange?.()
+    onSuccess?.()
   }
 
   const defaultTrigger = (

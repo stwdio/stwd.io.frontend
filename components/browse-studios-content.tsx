@@ -19,7 +19,7 @@ import { StudioCard } from "@/components/studio-card"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
-import { getBatchStudioListMemberships } from "@/lib/actions/lists"
+import { getBatchStudioListMemberships, getUserLists, ListWithCount } from "@/lib/actions/lists"
 
 interface Studio {
   id: number
@@ -486,6 +486,10 @@ export function BrowseStudiosContent() {
   const [sharedProfile, setSharedProfile] = useState<Profile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
   
+  // OPTIMIZED: Shared lists state to eliminate individual list fetches per dropdown
+  const [sharedLists, setSharedLists] = useState<ListWithCount[]>([])
+  const [listsLoading, setListsLoading] = useState(false)
+  
   // Use refs to avoid stale closure issues
   const currentPageRef = useRef(0)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -791,6 +795,36 @@ export function BrowseStudiosContent() {
     fetchSharedProfile()
   }, [])
 
+  // OPTIMIZED: Fetch shared lists once on mount for authenticated users
+  const fetchSharedLists = useCallback(async () => {
+    // Only fetch lists if user is authenticated
+    if (sharedProfile && !profileLoading) {
+      setListsLoading(true)
+      try {
+        const result = await getUserLists()
+        if (result.success) {
+          setSharedLists(result.data || [])
+        } else {
+          console.error('Failed to fetch shared lists:', result.error)
+          setSharedLists([])
+        }
+      } catch (error) {
+        console.error('Error fetching shared lists:', error)
+        setSharedLists([])
+      } finally {
+        setListsLoading(false)
+      }
+    } else if (!profileLoading && !sharedProfile) {
+      // User is not authenticated, clear lists
+      setSharedLists([])
+      setListsLoading(false)
+    }
+  }, [sharedProfile, profileLoading])
+
+  useEffect(() => {
+    fetchSharedLists()
+  }, [fetchSharedLists])
+
   // Initialize data on mount
   useEffect(() => {
     fetchStudios(true) // Reset to first page
@@ -1086,6 +1120,9 @@ export function BrowseStudiosContent() {
                 memberships={batchMemberships[studio.id.toString()] || []}
                 sharedProfile={sharedProfile}
                 profileLoading={profileLoading}
+                sharedLists={sharedLists}
+                listsLoading={listsLoading}
+                onListsChange={fetchSharedLists}
                 showAmenities={true}
                 linkToStudio={true}
               />

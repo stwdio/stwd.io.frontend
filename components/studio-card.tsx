@@ -38,6 +38,9 @@ interface StudioCardProps {
   memberships?: {list_id: number, list_name: string, list_icon_emoji: string}[]
   sharedProfile?: Profile | null
   profileLoading?: boolean
+  sharedLists?: any[]
+  listsLoading?: boolean
+  onListsChange?: () => void
   // Customization props
   showAmenities?: boolean
   showNotes?: boolean
@@ -52,6 +55,9 @@ export function StudioCard({
   memberships = [],
   sharedProfile,
   profileLoading = false,
+  sharedLists = [],
+  listsLoading = false,
+  onListsChange,
   showAmenities = true,
   showNotes = false,
   customActions,
@@ -155,6 +161,9 @@ export function StudioCard({
               memberships={memberships}
               sharedProfile={sharedProfile}
               profileLoading={profileLoading}
+              sharedLists={sharedLists}
+              listsLoading={listsLoading}
+              onListsChange={onListsChange}
             />
           )}
         </div>

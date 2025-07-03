@@ -30,13 +30,20 @@ interface StudioCardActionsProps {
   // OPTIMIZED: Receive shared profile data to eliminate individual auth calls
   sharedProfile?: Profile | null
   profileLoading?: boolean
+  // OPTIMIZED: Receive shared lists data to eliminate individual list fetches per dropdown
+  sharedLists?: any[]
+  listsLoading?: boolean
+  onListsChange?: () => void
 }
 
 export function StudioCardActions({ 
   studio, 
   memberships = [], 
   sharedProfile, 
-  profileLoading = false 
+  profileLoading = false,
+  sharedLists = [],
+  listsLoading = false,
+  onListsChange
 }: StudioCardActionsProps) {
   // OPTIMIZED: Use shared profile instead of individual fetching
   const profile = sharedProfile
@@ -143,6 +150,9 @@ export function StudioCardActions({
           studioId={studio.id.toString()}
           studioName={studio.name}
           initialMemberships={memberships}
+          sharedLists={sharedLists}
+          listsLoading={listsLoading}
+          onSuccess={onListsChange}
           trigger={
             <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
               <BookmarkPlus className="h-4 w-4 mr-1" />
@@ -198,6 +208,10 @@ export function StudioCardActions({
       <AddToListDropdown
         studioId={studio.id.toString()}
         studioName={studio.name}
+        initialMemberships={memberships}
+        sharedLists={sharedLists}
+        listsLoading={listsLoading}
+        onSuccess={onListsChange}
         trigger={
           <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
             <BookmarkPlus className="h-4 w-4 mr-1" />

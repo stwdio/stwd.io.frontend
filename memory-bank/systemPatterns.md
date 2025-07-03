@@ -281,6 +281,8 @@ export async function addStudioToList(studioId: number, listId: number) {
 - **Functions For Complex Logic**: Use database functions for complex multi-table operations
 - **React Rules Compliance**: Never trigger state updates during render phase
 - **Async Deferral**: Use `setTimeout(() => {}, 0)` to defer async operations from render phase
+- **Shared State Pattern**: Centralize data fetching in parent components and pass as props
+- **Authentication-Aware Fetching**: Only fetch user-specific data when authenticated
 
 ### 2. ✅ **React setState-during-render Anti-Pattern Prevention - CRITICAL** (Added January 31, 2025)
 **Pattern**: Critical React performance and functionality pattern to prevent setState-during-render errors
@@ -355,7 +357,59 @@ setTimeout(() => {
 - Use setTimeout to defer async operations when needed
 - Extract reusable components for better code organization
 
-### 3. ✅ **Role-Based User Experience - WORKING**
+### 3. ✅ **Shared Data State Pattern - PERFORMANCE OPTIMIZATION** (Added January 31, 2025)
+**Pattern**: Eliminate redundant data fetching by centralizing data management in parent components
+- ✅ **Centralized Fetching**: Parent component fetches data once and passes to all children as props
+- ✅ **Shared State Management**: Use shared state for commonly used data (profiles, lists, memberships)
+- ✅ **Authentication-Aware**: Only fetch user-specific data when user is authenticated
+- ✅ **Refresh Callbacks**: Provide callbacks for children to trigger data refresh when needed
+
+**Shared Lists Pattern Applied**:
+```typescript
+// PARENT: BrowseStudiosContent - Centralized data management
+const [sharedLists, setSharedLists] = useState<ListWithCount[]>([])
+const [listsLoading, setListsLoading] = useState(false)
+
+const fetchSharedLists = useCallback(async () => {
+  if (sharedProfile && !profileLoading) {
+    setListsLoading(true)
+    const result = await getUserLists()
+    if (result.success) {
+      setSharedLists(result.data || [])
+    }
+    setListsLoading(false)
+  }
+}, [sharedProfile, profileLoading])
+
+// CHILD: AddToListDropdown - Uses shared data
+const AddToListDropdown = ({ 
+  sharedLists, 
+  listsLoading, 
+  onListsChange 
+}) => {
+  const lists = sharedLists      // ✅ No individual fetching
+  const isLoading = listsLoading // ✅ Shared loading state
+  
+  const handleCreateSuccess = () => {
+    onListsChange?.() // ✅ Trigger refresh when needed
+  }
+}
+```
+
+**Performance Benefits**:
+- **Before**: N individual `getUserLists()` calls per dropdown
+- **After**: 1 shared fetch per session, passed as props
+- **UX**: Eliminates "Loading..." states for cached data
+- **Scalability**: Scales efficiently with increasing component count
+
+**Implementation Pattern**:
+1. **Centralize**: Move data fetching to parent component
+2. **Share**: Pass data and loading states as props to children
+3. **Callback**: Provide refresh mechanism for data modifications
+4. **Authentication**: Only fetch when user is authenticated
+5. **Cleanup**: Clear data when user logs out
+
+### 4. ✅ **Role-Based User Experience - WORKING**
 **Pattern**: Different user journeys based on user type (Creator vs Studio Owner)
 - ✅ **FUNCTIONAL**: Onboarding flow branches based on selected role
 - ✅ **WORKING**: Dashboard content customized per user type

@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioCardActions } from "@/components/studio-card-actions"
 import { StudioListMembershipIndicators } from "@/components/studio-list-membership-indicators"
+import { StudioCard } from "@/components/studio-card"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
@@ -705,16 +706,22 @@ export function BrowseStudiosContent() {
           fetchBatchMemberships(studiosWithStats)
         } else {
           // Prevent duplicates by filtering out studios that already exist
-          const updatedStudios = (prev: Studio[]) => {
+          let updatedStudiosList: Studio[] = []
+          
+          setStudios(prev => {
             const existingIds = new Set(prev.map(s => s.id))
             const newStudios = studiosWithStats.filter((studio: any) => !existingIds.has(studio.id))
-            const result = [...prev, ...newStudios]
-            // OPTIMIZED: Fetch memberships for all visible studios
-            fetchBatchMemberships(result)
-            return result
-          }
-          setStudios(updatedStudios)
+            updatedStudiosList = [...prev, ...newStudios]
+            return updatedStudiosList
+          })
+          
           currentPageRef.current = currentPageRef.current + 1
+          
+          // OPTIMIZED: Fetch memberships for all visible studios (after state update)
+          // Use setTimeout to ensure this runs after the state update is complete
+          setTimeout(() => {
+            fetchBatchMemberships(updatedStudiosList)
+          }, 0)
         }
 
         setTotalCount(count || 0)
@@ -1070,77 +1077,18 @@ export function BrowseStudiosContent() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 bg-muted/20 p-6 rounded-lg border">
             {studios.map((studio) => (
-              <Link key={studio.id} href={`/studios/${studio.id}`} className="block">
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col">
-                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                    <StudioImage
-                      src={null} // TODO: Replace with actual studio image URL from database
-                      alt={studio.name}
-                      fill
-                      width={300}
-                      height={200}
-                      className="object-cover"
-                    />
-                  </div>
-                  <CardContent className="p-4 flex flex-col flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg truncate">{studio.name}</h3>
-                      <div className="text-right">
-                        <p className="font-bold text-lg">${studio.hourly_rate}</p>
-                        <p className="text-sm text-muted-foreground">per hour</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center mb-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mr-1" />
-                      <span className="text-sm text-muted-foreground">{studio.location}</span>
-                    </div>
-
-                    <div className="flex items-center mb-3">
-                      <div className="flex">{renderStars(studio.average_rating || 0)}</div>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        ({studio.review_count || 0} reviews)
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">
-                      {studio.description}
-                    </p>
-
-                    {/* List membership indicators - OPTIMIZED: Use batched data */}
-                    <StudioListMembershipIndicators 
-                      studioId={studio.id.toString()} 
-                      className="mb-3"
-                      maxVisible={2}
-                      memberships={batchMemberships[studio.id.toString()] || []}
-                      isLoading={membershipsLoading}
-                    />
-
-                    <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
-                      {studio.amenities?.slice(0, 3).map((amenity) => (
-                        <Badge key={amenity} variant="secondary" className="text-xs">
-                          {amenity}
-                        </Badge>
-                      ))}
-                      {studio.amenities && studio.amenities.length > 3 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{studio.amenities.length - 3} more
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Fixed height action area - OPTIMIZED: Pass batched membership data and shared profile */}
-                    <div className="mt-auto">
-                      <StudioCardActions 
-                        studio={studio}
-                        memberships={batchMemberships[studio.id.toString()] || []}
-                        sharedProfile={sharedProfile}
-                        profileLoading={profileLoading}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+              <StudioCard
+                key={studio.id}
+                studio={{
+                  ...studio,
+                  verification_status: studio.verification_status || 'unverified'
+                }}
+                memberships={batchMemberships[studio.id.toString()] || []}
+                sharedProfile={sharedProfile}
+                profileLoading={profileLoading}
+                showAmenities={true}
+                linkToStudio={true}
+              />
             ))}
           </div>
 

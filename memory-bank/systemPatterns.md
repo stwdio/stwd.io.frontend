@@ -102,9 +102,260 @@ stwd.io.frontend/
 - Enhanced with explicit search_path protection
 - Ultimate layer of security model
 
+## Critical Development Process Rules
+
+### 🔄 **MANDATORY POST-FIX MEMORY BANK UPDATE RULE** (Added January 31, 2025)
+**CRITICAL RULE**: After every bug fix, performance optimization, or architectural change, ALL learnings MUST be documented in the memory bank to prevent repeating the same issues.
+
+**Process Requirements**:
+- **✅ Document the Problem**: Record the exact error, symptoms, and root cause
+- **✅ Document the Solution**: Include the specific code changes and patterns used
+- **✅ Extract Patterns**: Identify reusable patterns and anti-patterns for future reference
+- **✅ Update Multiple Files**: Update `activeContext.md`, `systemPatterns.md`, and relevant context files
+- **✅ Create Implementation Plans**: Document complex fixes in `/implementation-plans/` directory
+
+**Example Documentation Structure**:
+```markdown
+### ✅ [ISSUE NAME] - COMPLETED (Date)
+- **Status**: ✅ **COMPLETED** - Brief description of achievement
+- **Issue**: Exact error message or problem description
+- **Root Cause**: Why the issue occurred
+- **Solution Applied**: How it was fixed
+- **Code Pattern**: Before/after code examples
+- **Files Modified**: List of changed files
+- **Learnings**: Key takeaways and rules discovered
+- **Result**: Impact and verification of fix
+```
+
+**Memory Bank Update Targets**:
+- `activeContext.md`: Add to recently completed work
+- `systemPatterns.md`: Add new patterns and anti-patterns
+- `techContext.md`: Add technical implementation details
+- `progress.md`: Update milestone achievements
+- `implementation-plans/`: Create detailed implementation docs
+
+**Why This Rule is Critical**:
+- **Prevents Repeated Mistakes**: Documented patterns prevent the same issues from recurring
+- **Accelerates Development**: Future developers can reference solutions immediately
+- **Builds Institutional Knowledge**: Creates a comprehensive knowledge base
+- **Improves Code Quality**: Establishes best practices and anti-patterns
+- **Reduces Debug Time**: Common issues are already documented with solutions
+
+**This rule ensures every fix becomes a learning opportunity that benefits all future development work.**
+
 ## Key Design Patterns
 
-### 1. ✅ **Role-Based User Experience - WORKING**
+### 1. ✅ **Performance Optimization Patterns - ENTERPRISE READY** (Added January 31, 2025)
+**Pattern**: Comprehensive performance optimization strategies for React/Next.js applications with Supabase
+- ✅ **N+1 Query Elimination**: Replace individual component queries with batched server actions
+- ✅ **Shared State Management**: Pass data down as props instead of individual fetches per component
+- ✅ **Database Query Optimization**: Use specific column selection and optimized indexes
+- ✅ **Server Action Streamlining**: Leverage RLS policies instead of redundant authorization checks
+
+**N+1 Query Problem Pattern**:
+```typescript
+// BEFORE: N+1 Problem - Individual queries per component
+const StudioCard = ({ studio }) => {
+  const [memberships, setMemberships] = useState([])
+  useEffect(() => {
+    // This runs for EVERY studio card on the page
+    getStudioListMemberships(studio.id).then(setMemberships)
+  }, [studio.id])
+  // Result: 30 studios = 30+ individual database queries
+}
+
+// AFTER: Batched Query Pattern
+const BrowseContent = () => {
+  const [batchMemberships, setBatchMemberships] = useState({})
+  useEffect(() => {
+    // Single batch query for ALL studios at once
+    getBatchStudioListMemberships(allStudioIds).then(setBatchMemberships)
+  }, [allStudioIds])
+  
+  return studios.map(studio => (
+    <StudioCard 
+      studio={studio} 
+      memberships={batchMemberships[studio.id] || []}
+    />
+  ))
+  // Result: 30 studios = 1 single optimized database query
+}
+```
+
+**Shared Profile State Pattern**:
+```typescript
+// BEFORE: Individual auth calls per component
+const StudioCardActions = ({ studio }) => {
+  const [profile, setProfile] = useState(null)
+  useEffect(() => {
+    // This auth call happens for EVERY studio card
+    supabase.auth.getUser().then(/* ... */)
+  }, [])
+  // Result: 30 studios = 30+ auth calls
+}
+
+// AFTER: Shared state pattern
+const BrowseContent = () => {
+  const [sharedProfile, setSharedProfile] = useState(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  
+  useEffect(() => {
+    // Single auth call for entire browse page
+    fetchUserProfile().then(setSharedProfile)
+  }, [])
+  
+  return studios.map(studio => (
+    <StudioCardActions 
+      studio={studio}
+      sharedProfile={sharedProfile}
+      profileLoading={profileLoading}
+    />
+  ))
+  // Result: 30 studios = 1 single auth call
+}
+```
+
+**Database Optimization Pattern**:
+```sql
+-- BEFORE: Inefficient queries
+SELECT * FROM studios WHERE published = true; -- Returns all columns
+SELECT list_items.* FROM list_items WHERE studio_id = $1; -- Individual queries
+
+-- AFTER: Optimized queries with batching and indexing
+SELECT id, name, description, hourly_rate, location 
+FROM studios WHERE published = true; -- Only needed columns
+
+-- Batch query with optimized function
+CREATE OR REPLACE FUNCTION get_batch_studio_list_memberships_optimized(studio_ids bigint[])
+RETURNS TABLE(studio_id bigint, list_id bigint, notes text, list_name text) 
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT li.studio_id, li.list_id, li.notes, l.name as list_name
+  FROM list_items li
+  JOIN lists l ON li.list_id = l.id
+  WHERE li.studio_id = ANY(studio_ids);
+END;
+$$;
+
+-- Optimized indexes for common queries
+CREATE INDEX CONCURRENTLY idx_studios_published_verified 
+ON studios (published, verified) WHERE published = true;
+```
+
+**Server Action Optimization Pattern**:
+```typescript
+// BEFORE: Redundant authorization in every action
+export async function addStudioToList(studioId: number, listId: number) {
+  // Redundant auth check - RLS already handles this
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  
+  // Additional profile query - unnecessary
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+    
+  // Database operation
+  return supabase.from('list_items').insert({ studio_id: studioId, list_id: listId })
+}
+
+// AFTER: Streamlined action leveraging RLS
+export async function addStudioToList(studioId: number, listId: number) {
+  // No manual auth checks - RLS policies handle authorization
+  // Database operation only - RLS ensures user can only modify their own lists
+  return supabase.from('list_items').insert({ studio_id: studioId, list_id: listId })
+}
+```
+
+**Implementation Principles**:
+- **Batch Over Individual**: Always prefer batched queries over individual component queries
+- **Props Over Fetches**: Pass data down as props instead of fetching in each component
+- **RLS Over Manual Auth**: Leverage Row Level Security instead of manual authorization checks
+- **Specific Over Wildcard**: Use specific column selection instead of `SELECT *`
+- **Indexes For Performance**: Add database indexes for commonly queried patterns
+- **Functions For Complex Logic**: Use database functions for complex multi-table operations
+- **React Rules Compliance**: Never trigger state updates during render phase
+- **Async Deferral**: Use `setTimeout(() => {}, 0)` to defer async operations from render phase
+
+### 2. ✅ **React setState-during-render Anti-Pattern Prevention - CRITICAL** (Added January 31, 2025)
+**Pattern**: Critical React performance and functionality pattern to prevent setState-during-render errors
+- ✅ **Error Prevention**: Avoid calling async functions or triggering state updates inside render phase
+- ✅ **Async Operation Deferral**: Use setTimeout to push async operations to next tick
+- ✅ **State Update Separation**: Separate state updates from side effects completely
+- ✅ **Component Lifecycle Compliance**: Follow React's strict rules for state management
+
+**setState-during-render Anti-Pattern**:
+```typescript
+// ❌ WRONG: Async call during render (setState-during-render error)
+const [studios, setStudios] = useState([])
+const [memberships, setMemberships] = useState({})
+
+// This causes React error: "Cannot update a component while rendering a different component"
+setStudios(prev => {
+  const result = [...prev, ...newData]
+  // ❌ This async function triggers setBatchMemberships during render
+  fetchBatchMemberships(result).then(data => setMemberships(data))
+  return result
+})
+
+// ✅ CORRECT: Defer async operations to next tick
+let updatedStudiosList = []
+setStudios(prev => {
+  const existingIds = new Set(prev.map(s => s.id))
+  const newStudios = newData.filter(studio => !existingIds.has(studio.id))
+  updatedStudiosList = [...prev, ...newStudios]
+  return updatedStudiosList
+})
+
+// Defer async call to avoid setState-during-render
+setTimeout(() => {
+  fetchBatchMemberships(updatedStudiosList).then(data => setMemberships(data))
+}, 0)
+```
+
+**Component Refactoring Pattern**:
+```typescript
+// ✅ GOOD: Extract reusable components for better maintainability
+// Before: Inline JSX (60+ lines per item)
+{items.map(item => (
+  <div key={item.id}>
+    {/* 60+ lines of JSX */}
+  </div>
+))}
+
+// After: Clean component extraction
+{items.map(item => (
+  <ItemCard
+    key={item.id}
+    item={item}
+    memberships={batchMemberships[item.id] || []}
+    sharedProfile={sharedProfile}
+    profileLoading={profileLoading}
+  />
+))}
+```
+
+**React Performance Debugging Process**:
+1. **Error Analysis**: Look for async calls inside state updater functions
+2. **Render Phase Identification**: Identify operations happening during render
+3. **Async Operation Deferral**: Move async operations outside render phase
+4. **State Update Separation**: Separate state updates from side effects
+5. **setTimeout Deferral**: Use `setTimeout(() => {}, 0)` for async operations
+6. **Functionality Verification**: Ensure all features work after fix
+
+**Critical React Rules**:
+- Never call async functions inside state updater functions
+- Never trigger state updates during component render phase
+- Always separate state updates from side effects
+- Use setTimeout to defer async operations when needed
+- Extract reusable components for better code organization
+
+### 3. ✅ **Role-Based User Experience - WORKING**
 **Pattern**: Different user journeys based on user type (Creator vs Studio Owner)
 - ✅ **FUNCTIONAL**: Onboarding flow branches based on selected role
 - ✅ **WORKING**: Dashboard content customized per user type

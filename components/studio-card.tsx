@@ -1,0 +1,175 @@
+'use client'
+
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Star, MapPin } from 'lucide-react'
+import Link from 'next/link'
+import { StudioImage } from '@/components/studio-image-placeholder'
+import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
+import { StudioCardActions } from '@/components/studio-card-actions'
+import { ReactNode } from 'react'
+
+interface Studio {
+  id: number
+  name: string
+  description: string
+  hourly_rate: number
+  location: string
+  owner_id: string
+  published?: boolean
+  verification_status: string
+  created_at?: string
+  average_rating?: number
+  review_count?: number
+  amenities?: string[]
+  gear?: any
+  notes?: string // For lists view
+}
+
+interface Profile {
+  id: number
+  user_id: string
+  role: 'creator' | 'owner' | 'admin' | null
+}
+
+interface StudioCardProps {
+  studio: Studio
+  // Props for optimized performance
+  memberships?: {list_id: number, list_name: string, list_icon_emoji: string}[]
+  sharedProfile?: Profile | null
+  profileLoading?: boolean
+  // Customization props
+  showAmenities?: boolean
+  showNotes?: boolean
+  customActions?: ReactNode
+  // Link behavior
+  linkToStudio?: boolean
+  className?: string
+}
+
+export function StudioCard({
+  studio,
+  memberships = [],
+  sharedProfile,
+  profileLoading = false,
+  showAmenities = true,
+  showNotes = false,
+  customActions,
+  linkToStudio = true,
+  className = ''
+}: StudioCardProps) {
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`h-4 w-4 ${
+          i < rating
+            ? 'fill-yellow-400 text-yellow-400'
+            : 'text-gray-300'
+        }`}
+      />
+    ))
+  }
+
+  const cardContent = (
+    <Card className={`overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col ${className}`}>
+      {/* Image */}
+      <div className="aspect-video relative overflow-hidden rounded-t-lg">
+        <StudioImage
+          src={null} // TODO: Replace with actual studio image URL from database
+          alt={studio.name}
+          fill
+          width={300}
+          height={200}
+          className="object-cover"
+        />
+      </div>
+      
+      <CardContent className="p-4 flex flex-col flex-1">
+        {/* Header with title and price */}
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-semibold text-lg truncate">{studio.name}</h3>
+          <div className="text-right">
+            <p className="font-bold text-lg">${studio.hourly_rate}</p>
+            <p className="text-sm text-muted-foreground">per hour</p>
+          </div>
+        </div>
+        
+        {/* Location */}
+        <div className="flex items-center mb-2">
+          <MapPin className="h-4 w-4 text-muted-foreground mr-1" />
+          <span className="text-sm text-muted-foreground">{studio.location}</span>
+        </div>
+
+        {/* Rating */}
+        <div className="flex items-center mb-3">
+          <div className="flex">{renderStars(studio.average_rating || 0)}</div>
+          <span className="text-sm text-muted-foreground ml-2">
+            ({studio.review_count || 0} reviews)
+          </span>
+        </div>
+
+        {/* Description */}
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">
+          {studio.description}
+        </p>
+
+        {/* Notes (for lists view) */}
+        {showNotes && studio.notes && (
+          <div className="mb-3 p-2 bg-muted rounded-md">
+            <p className="text-xs text-muted-foreground mb-1">My notes:</p>
+            <p className="text-sm">{studio.notes}</p>
+          </div>
+        )}
+
+        {/* List membership indicators */}
+        <StudioListMembershipIndicators 
+          studioId={studio.id.toString()} 
+          className="mb-3"
+          maxVisible={2}
+          memberships={memberships}
+          isLoading={profileLoading}
+        />
+
+        {/* Amenities */}
+        {showAmenities && (
+          <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
+            {studio.amenities?.slice(0, 3).map((amenity) => (
+              <Badge key={amenity} variant="secondary" className="text-xs">
+                {amenity}
+              </Badge>
+            ))}
+            {studio.amenities && studio.amenities.length > 3 && (
+              <Badge variant="secondary" className="text-xs">
+                +{studio.amenities.length - 3} more
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="mt-auto">
+          {customActions || (
+            <StudioCardActions 
+              studio={studio}
+              memberships={memberships}
+              sharedProfile={sharedProfile}
+              profileLoading={profileLoading}
+            />
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  // Wrap with link if linkToStudio is true
+  if (linkToStudio) {
+    return (
+      <Link href={`/studios/${studio.id}`} className="block">
+        {cardContent}
+      </Link>
+    )
+  }
+
+  return cardContent
+} 

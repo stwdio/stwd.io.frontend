@@ -128,7 +128,7 @@ export async function getBatchStudioListMemberships(
       return { success: true, data: emptyResult }
     }
 
-    // OPTIMIZED: Use new database function for better performance
+    // OPTIMIZED: Use new database function for better performance (fixed types)
     const { data, error } = await supabase.rpc('get_batch_studio_list_memberships_optimized', {
       studio_ids: studioIds.map(id => parseInt(id)),
       user_profile_id: profile.id

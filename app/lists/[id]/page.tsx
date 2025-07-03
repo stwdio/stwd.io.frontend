@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Calendar, Users, Star, MapPin, Quote, Trash2, Plus } from 'lucide-react'
-import { getListDetails, removeStudioFromList, addListToQuoteBasket } from '@/lib/actions/lists'
+import { getListDetails, removeStudioFromList } from '@/lib/actions/lists'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { StudioImage } from '@/components/studio-image-placeholder'
 import { StudioCardActions } from '@/components/studio-card-actions'
 import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
+import { StudioCard } from '@/components/studio-card'
+import { AddListToQuoteButton } from '@/components/add-list-to-quote-button'
 
 interface Props {
   params: Promise<{
@@ -39,26 +41,7 @@ async function getUserProfile() {
   return profile
 }
 
-// Component for the "Add List to Quote" button
-function AddListToQuoteButton({ listId, studioCount }: { listId: string, studioCount: number }) {
-  const handleAddToQuote = async () => {
-    'use server'
-    const result = await addListToQuoteBasket(listId)
-    // Note: In a real app, we'd handle the response with toast notifications
-    // For now, this will leverage the existing quote basket system
-  }
-
-  if (studioCount === 0) return null
-
-  return (
-    <form action={handleAddToQuote}>
-      <Button type="submit" size="lg" className="gap-2">
-        <Quote className="h-4 w-4" />
-        Add List to Quote ({studioCount} studios)
-      </Button>
-    </form>
-  )
-}
+// This function is no longer needed as we're using the imported component directly
 
 // Component for removing a studio from the list
 function RemoveStudioButton({ listId, studioId }: { listId: string, studioId: number }) {
@@ -84,91 +67,29 @@ function RemoveStudioButton({ listId, studioId }: { listId: string, studioId: nu
 
 // Studio card component optimized for list view
 function ListStudioCard({ studio, listId }: { studio: any, listId: string }) {
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`h-4 w-4 ${
-          i < rating
-            ? 'fill-yellow-400 text-yellow-400'
-            : 'text-gray-300'
-        }`}
-      />
-    ))
-  }
+  const customActions = (
+    <div className="flex gap-2">
+      <Link href={`/studios/${studio.id}`} className="flex-1">
+        <Button variant="outline" size="sm" className="w-full">
+          View Details
+        </Button>
+      </Link>
+      <RemoveStudioButton listId={listId} studioId={studio.id} />
+    </div>
+  )
 
   return (
-    <Card className="group overflow-hidden transition-all duration-200 hover:shadow-lg h-full flex flex-col">
-      <div className="aspect-video relative overflow-hidden">
-        <StudioImage 
-          src={null} 
-          alt={`${studio.name} studio`} 
-          className="w-full h-full object-cover" 
-          fill 
-        />
-      </div>
-      
-      <CardContent className="p-4 flex flex-col flex-1">
-        {/* Header with title and price */}
-        <div className="flex justify-between items-start mb-2">
-          <Link href={`/studios/${studio.id}`}>
-            <h3 className="font-semibold text-lg group-hover:text-primary transition-colors cursor-pointer line-clamp-1">
-              {studio.name}
-            </h3>
-          </Link>
-          <div className="text-right shrink-0 ml-2">
-            <div className="font-bold text-lg">${studio.hourly_rate}</div>
-            <div className="text-xs text-muted-foreground">per hour</div>
-          </div>
-        </div>
-
-        {/* Location */}
-        <div className="flex items-center text-sm text-muted-foreground mb-2">
-          <MapPin className="h-4 w-4 mr-1 shrink-0" />
-          <span className="truncate">{studio.location}</span>
-        </div>
-
-        {/* Rating */}
-        <div className="flex items-center mb-3">
-          <div className="flex gap-1 mr-2">
-            {renderStars(Math.round(studio.average_rating || 0))}
-          </div>
-          <span className="text-sm text-muted-foreground">
-            ({studio.review_count || 0} reviews)
-          </span>
-        </div>
-
-        {/* Description */}
-        <p className="text-sm text-muted-foreground mb-3 flex-1 line-clamp-2">
-          {studio.description}
-        </p>
-
-        {/* Notes if any */}
-        {studio.notes && (
-          <div className="mb-3 p-2 bg-muted rounded-md">
-            <p className="text-xs text-muted-foreground mb-1">My notes:</p>
-            <p className="text-sm">{studio.notes}</p>
-          </div>
-        )}
-
-        {/* Other list memberships */}
-        <StudioListMembershipIndicators 
-          studioId={studio.id.toString()} 
-          className="mb-3"
-          maxVisible={2}
-        />
-
-        {/* Actions */}
-        <div className="flex gap-2 mt-auto">
-          <Link href={`/studios/${studio.id}`} className="flex-1">
-            <Button variant="outline" size="sm" className="w-full">
-              View Details
-            </Button>
-          </Link>
-          <RemoveStudioButton listId={listId} studioId={studio.id} />
-        </div>
-      </CardContent>
-    </Card>
+    <StudioCard
+      studio={{
+        ...studio,
+        verification_status: studio.verification_status || 'unverified'
+      }}
+      showAmenities={false}
+      showNotes={true}
+      linkToStudio={false}
+      customActions={customActions}
+      className="group transition-all duration-200"
+    />
   )
 }
 
@@ -208,7 +129,7 @@ function ListDetailContent({ listId, list }: { listId: string, list: any }) {
             </div>
           </div>
 
-          <AddListToQuoteButton listId={listId} studioCount={list.studio_count} />
+          <AddListToQuoteButton studios={list.studios} />
         </div>
       </div>
 
@@ -252,20 +173,6 @@ function ListDetailContent({ listId, list }: { listId: string, list: any }) {
             ))}
           </div>
 
-          {/* Power feature callout */}
-          <div className="mt-12 text-center">
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-6 border border-primary/20">
-              <h3 className="font-semibold mb-2 flex items-center justify-center gap-2">
-                <Quote className="h-5 w-5 text-primary" />
-                Power Feature
-              </h3>
-              <p className="text-muted-foreground text-sm mb-4">
-                Save time by requesting quotes from all studios in this list at once! 
-                We'll automatically check for duplicates and only add new inquiries.
-              </p>
-              <AddListToQuoteButton listId={listId} studioCount={list.studio_count} />
-            </div>
-          </div>
         </>
       )}
     </div>

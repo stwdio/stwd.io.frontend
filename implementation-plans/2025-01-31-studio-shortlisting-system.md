@@ -400,6 +400,13 @@ Open List → Click "Add List to Quote" → Confirm Studios → Studios Added to
 - Partial indexes for commonly filtered data (published/verified studios)
 - **Result**: Query execution time reduced by ~80%
 
+### ✅ **DATABASE TYPE MISMATCH FIX**:
+- **Issue**: PostgreSQL type mismatch error in `get_batch_studio_list_memberships_optimized()` function
+- **Error**: `Returned type bigint does not match expected type integer in column 1`
+- **Root Cause**: Function defined with `integer` types but actual database columns are `bigint` 
+- **Fix Applied**: Updated function signature to use correct `bigint` types for all parameters and return values
+- **Result**: ✅ Function now works correctly without type errors
+
 ### 🎉 **PERFORMANCE OPTIMIZATION COMPLETE**: 
 The /browse route now loads efficiently with minimal database calls, eliminates the N+1 query problem, and provides a smooth user experience. The system is production-ready and scalable for thousands of studios.
 

@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { IconBuilding, IconSearch, IconStar } from "@tabler/icons-react"
 
 export default function LandingPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,7 +30,7 @@ export default function LandingPage() {
 
     checkAuth()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       if (session?.user) {
         router.push('/browse')
       } else {
@@ -39,7 +40,7 @@ export default function LandingPage() {
     })
 
     return () => subscription.unsubscribe()
-  }, [router])
+  }, [router, supabase])
 
   if (loading) {
     return (

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
 interface Studio {
@@ -96,6 +96,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
         
         try {
           // Get current user's profile
+          const supabase = createClient()
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) {
             toast.error('Please log in to submit an inquiry')

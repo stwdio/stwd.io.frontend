@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { User, CheckCircle, AlertCircle } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 
 interface Profile {
@@ -24,6 +24,7 @@ interface Profile {
 export default function ProfileSettingsPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = createClient()
   
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -59,20 +60,20 @@ export default function ProfileSettingsPage() {
     }
   }, [username, initialUsername])
 
-  const fetchProfile = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.user) {
-        router.push("/auth/login")
-        return
-      }
+      const fetchProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!session?.user) {
+          router.push("/auth/login")
+          return
+        }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .single()
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .single()
 
       if (error || !data) {
         toast({

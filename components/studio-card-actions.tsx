@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { Plus, Eye, MessageSquare } from 'lucide-react'
+import { Plus, Eye, MessageSquare, BookmarkPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import AddToListDropdown from './add-to-list-dropdown'
 
 interface Profile {
   id: number
@@ -40,7 +41,7 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
 
     try {
       // Find the conversation for this studio and creator
-      const { data: conversation, error } = await supabase
+      const { data: conversation, error } = await createClient()
         .from('conversations')
         .select('id')
         .eq('studio_id', studio.id)
@@ -72,7 +73,7 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
   const checkInquiryStatus = async (profileData: Profile) => {
     if (profileData.role !== 'creator') return
     
-    const { data: inquiryCheck } = await supabase
+    const { data: inquiryCheck } = await createClient()
       .from('inquiry_recipients')
       .select(`
         inquiry_id,
@@ -87,14 +88,14 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
 
   useEffect(() => {
     const getProfileAndCheckInquiry = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await createClient().auth.getUser()
       
       if (!user) {
         setLoading(false)
         return
       }
 
-      const { data: profileData } = await supabase
+      const { data: profileData } = await createClient()
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
@@ -122,28 +123,39 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
     return unsubscribe
   }, [studio.id, profile])
 
-  // Consistent loading state - always two button slots
+  // Consistent loading state - always three button slots
   if (loading) {
     return (
-      <div className="flex gap-2 h-8">
+      <div className="flex gap-1 h-8">
+        <div className="h-8 bg-muted animate-pulse rounded-md flex-1"></div>
         <div className="h-8 bg-muted animate-pulse rounded-md flex-1"></div>
         <div className="h-8 bg-muted animate-pulse rounded-md flex-1"></div>
       </div>
     )
   }
 
-  // If user is not logged in - show creator actions (two buttons)
+  // If user is not logged in - show creator actions (three buttons)
   if (!profile) {
     return (
-      <div className="flex gap-2 h-8">
+      <div className="flex gap-1 h-8">
         <Button 
           variant="outline" 
           size="sm" 
-          className="flex-1 pointer-events-none"
+          className="flex-1 pointer-events-none text-xs px-2"
         >
           <Eye className="h-4 w-4 mr-1" />
-          View Details
+          View
         </Button>
+        <AddToListDropdown
+          studioId={studio.id.toString()}
+          studioName={studio.name}
+          trigger={
+            <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
+              <BookmarkPlus className="h-4 w-4 mr-1" />
+              List
+            </Button>
+          }
+        />
         <Button
           size="sm"
           onClick={(e) => {
@@ -151,25 +163,25 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
             e.stopPropagation()
             addStudio(studio)
           }}
-          className="flex-1"
+          className="flex-1 text-xs px-2"
           disabled={isInBasket}
           variant={isInBasket ? "secondary" : "default"}
         >
           <Plus className="h-4 w-4 mr-1" />
-          {isInBasket ? 'In Quote Basket' : 'Add to Quote'}
+          {isInBasket ? 'Quote' : 'Quote'}
         </Button>
       </div>
     )
   }
 
-  // If user owns this studio OR is an admin - show single button but maintain consistent height
+  // If user owns this studio OR is an admin - show only view button but maintain consistent height
   if (profile.role === 'admin' || parseInt(studio.owner_id) === profile.id) {
     return (
-      <div className="flex gap-2 h-8">
+      <div className="flex gap-1 h-8">
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full pointer-events-none"
+          className="w-full pointer-events-none text-xs px-2"
         >
           <Eye className="h-4 w-4 mr-1" />
           View Details
@@ -178,17 +190,27 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
     )
   }
 
-  // For creators - show view details and either "View Conversation" or "Add to Quote" (two buttons)
+  // For creators - show view details, list, and either "View Conversation" or "Add to Quote" (three buttons)
   return (
-    <div className="flex gap-2 h-8">
+    <div className="flex gap-1 h-8">
       <Button 
         variant="outline" 
         size="sm" 
-        className="flex-1 pointer-events-none"
+        className="flex-1 pointer-events-none text-xs px-2"
       >
         <Eye className="h-4 w-4 mr-1" />
-        View Details
+        View
       </Button>
+      <AddToListDropdown
+        studioId={studio.id.toString()}
+        studioName={studio.name}
+        trigger={
+          <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
+            <BookmarkPlus className="h-4 w-4 mr-1" />
+            List
+          </Button>
+        }
+      />
       {hasInquiry ? (
         <Button
           size="sm"
@@ -197,11 +219,11 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
             e.stopPropagation()
             handleViewConversation()
           }}
-          className="flex-1"
+          className="flex-1 text-xs px-2"
           variant="outline"
         >
           <MessageSquare className="h-4 w-4 mr-1" />
-          View Conversation
+          Chat
         </Button>
       ) : (
         <Button
@@ -211,12 +233,12 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
             e.stopPropagation()
             addStudio(studio)
           }}
-          className="flex-1"
+          className="flex-1 text-xs px-2"
           disabled={isInBasket}
           variant={isInBasket ? "secondary" : "default"}
         >
           <Plus className="h-4 w-4 mr-1" />
-          {isInBasket ? 'In Quote Basket' : 'Add to Quote'}
+          {isInBasket ? 'Quote' : 'Quote'}
         </Button>
       )}
     </div>

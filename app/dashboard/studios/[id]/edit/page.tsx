@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { StudioFormStandalone } from "@/components/studio-form-standalone"
 
 interface Studio {
@@ -28,6 +28,7 @@ export default function EditStudioPage({ params }: EditStudioPageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     const initializePage = async () => {

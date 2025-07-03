@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 
 interface OnboardingGateProps {
   children: React.ReactNode
@@ -14,6 +14,7 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const supabase = createClient()
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -93,7 +94,7 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
     })
 
     return () => subscription.unsubscribe()
-  }, [pathname, router])
+  }, [pathname, router, supabase])
 
   // Show loading while checking auth status
   if (isLoading) {

@@ -8,7 +8,7 @@ import { Star, MapPin, Wifi, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioDetailActions } from "@/components/studio-detail-client"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
 
 interface Studio {
   id: number
@@ -39,6 +39,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
   const { id: studioId } = await params
 
   // Fetch studio details server-side
+  const supabase = await createClient()
   const { data: studioData, error: studioError } = await supabase
     .from("studios")
     .select("*")

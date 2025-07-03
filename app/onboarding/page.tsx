@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { User, Building } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 
 export default function OnboardingPage() {
@@ -14,6 +14,7 @@ export default function OnboardingPage() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = createClient()
 
   useEffect(() => {
     setMounted(true)
@@ -64,7 +65,7 @@ export default function OnboardingPage() {
     }
 
     checkAuth()
-  }, [router])
+  }, [router, supabase])
 
   const handleRoleSelection = async (role: "creator" | "owner") => {
     if (!user) return

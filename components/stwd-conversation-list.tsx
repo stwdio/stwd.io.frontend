@@ -1,10 +1,13 @@
 'use client'
 
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, User } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { generateIdenticon } from '@/lib/identicon'
 
 interface ConversationWithDetails {
   id: number
@@ -57,6 +60,7 @@ export function STWDConversationList({
 }: STWDConversationListProps) {
   const [conversations, setConversations] = useState<ConversationWithDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClient()
 
   const fetchConversations = useCallback(async () => {
     try {

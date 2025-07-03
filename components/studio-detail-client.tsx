@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { Plus, Edit, MessageCircle, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
@@ -32,6 +32,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   const [hasInquiry, setHasInquiry] = useState(false)
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
+  const supabase = createClient()
 
   const isInBasket = isStudioInBasket(studio.id)
 

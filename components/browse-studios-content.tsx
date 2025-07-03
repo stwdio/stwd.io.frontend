@@ -14,8 +14,9 @@ import { Star, MapPin, Plus, Filter, Loader2, Search, RotateCcw, X } from "lucid
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioCardActions } from "@/components/studio-card-actions"
+import { StudioListMembershipIndicators } from "@/components/studio-list-membership-indicators"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
 
 interface Studio {
@@ -539,7 +540,7 @@ export function BrowseStudiosContent() {
 
     try {
       // Build the base query
-      let query = supabase
+      let query = createClient()
         .from("studios")
         .select(`
           *,
@@ -560,20 +561,20 @@ export function BrowseStudiosContent() {
       // If we have amenity filters, we need to get studios that have ALL selected amenities
       if (filters.selectedAmenities.length > 0) {
         // First get all studios that have at least one of the selected amenities
-        const { data: studioIds } = await supabase
+        const { data: studioIds } = await createClient()
           .from("studio_amenities")
           .select("studio_id")
           .in("amenity_id", 
-            await supabase
+            await createClient()
               .from("amenities")
-              .select("id")
-              .in("name", filters.selectedAmenities)
-              .then(({ data }) => data?.map(a => a.id) || [])
+                              .select("id")
+                .in("name", filters.selectedAmenities)
+                .then(({ data }: any) => data?.map((a: any) => a.id) || [])
           )
 
         if (studioIds && studioIds.length > 0) {
           // Group by studio_id and count amenities to find studios with ALL selected amenities
-          const studioIdCounts = studioIds.reduce((acc, { studio_id }) => {
+          const studioIdCounts = studioIds.reduce((acc: any, { studio_id }: any) => {
             acc[studio_id] = (acc[studio_id] || 0) + 1
             return acc
           }, {} as Record<number, number>)
@@ -611,7 +612,7 @@ export function BrowseStudiosContent() {
       }
 
       if (data) {
-        let studiosWithStats = data.map((studio) => ({
+        let studiosWithStats = data.map((studio: any) => ({
           ...studio,
           average_rating: 0,
           review_count: 0,
@@ -620,7 +621,7 @@ export function BrowseStudiosContent() {
 
         // Apply gear filter on client side (since gear structure is complex)
         if (filters.selectedGear.length > 0) {
-          studiosWithStats = studiosWithStats.filter((studio) => {
+          studiosWithStats = studiosWithStats.filter((studio: any) => {
             if (!studio.gear) return false
             
             // Extract all gear items from the studio's gear object
@@ -655,7 +656,7 @@ export function BrowseStudiosContent() {
           // Prevent duplicates by filtering out studios that already exist
           setStudios(prev => {
             const existingIds = new Set(prev.map(s => s.id))
-            const newStudios = studiosWithStats.filter(studio => !existingIds.has(studio.id))
+            const newStudios = studiosWithStats.filter((studio: any) => !existingIds.has(studio.id))
             return [...prev, ...newStudios]
           })
           currentPageRef.current = currentPageRef.current + 1
@@ -706,7 +707,7 @@ export function BrowseStudiosContent() {
   }, [])
 
   const fetchAmenities = async () => {
-    const { data } = await supabase.from("amenities").select("*").order("name")
+    const { data } = await createClient().from("amenities").select("*").order("name")
     if (data) {
       setAmenities(data)
     }
@@ -714,7 +715,7 @@ export function BrowseStudiosContent() {
 
   const fetchAvailableGear = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await createClient()
         .from("studios")
         .select("gear")
         .eq("published", true)
@@ -729,7 +730,7 @@ export function BrowseStudiosContent() {
       if (data) {
         const allGearItems = new Set<string>()
         
-        data.forEach((studio) => {
+        data.forEach((studio: any) => {
           if (studio.gear && typeof studio.gear === 'object') {
             Object.entries(studio.gear).forEach(([category, items]) => {
               if (Array.isArray(items)) {
@@ -745,7 +746,7 @@ export function BrowseStudiosContent() {
           } else if (typeof studio.gear === 'string' && studio.gear.trim()) {
             // Handle plain text gear descriptions
             const gearWords = studio.gear.toLowerCase().split(/[,\s]+/)
-            gearWords.forEach(word => {
+            gearWords.forEach((word: any) => {
               if (word.length > 2) { // Only include meaningful words
                 allGearItems.add(word)
               }
@@ -1020,6 +1021,13 @@ export function BrowseStudiosContent() {
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">
                       {studio.description}
                     </p>
+
+                    {/* List membership indicators */}
+                    <StudioListMembershipIndicators 
+                      studioId={studio.id.toString()} 
+                      className="mb-3"
+                      maxVisible={2}
+                    />
 
                     <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
                       {studio.amenities?.slice(0, 3).map((amenity) => (

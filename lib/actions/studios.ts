@@ -95,8 +95,7 @@ export async function createDraftStudio(data: CreateDraftStudioData): Promise<Ac
  */
 export async function uploadStudioImage(
   studioId: number,
-  fileName: string,
-  fileBuffer: ArrayBuffer
+  file: File
 ): Promise<ActionResult<string>> {
   try {
     const supabase = await createClient()
@@ -138,15 +137,17 @@ export async function uploadStudioImage(
       return { success: false, error: 'Maximum 10 images allowed per studio' }
     }
 
-    // Generate unique file path: studios/{studio_id}/{timestamp}_{filename}
+    // Generate unique filename with original extension
     const timestamp = Date.now()
-    const filePath = `studios/${studioId}/${timestamp}_${fileName}`
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const fileName = `${timestamp}_${file.name.replace(/\.[^/.]+$/, '')}.${fileExtension}`
+    const filePath = `studios/${studioId}/${fileName}`
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('studio-photos')
-      .upload(filePath, fileBuffer, {
-        contentType: 'image/webp',
+      .upload(filePath, file, {
+        contentType: file.type,
         upsert: false
       })
 

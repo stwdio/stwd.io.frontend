@@ -319,7 +319,6 @@ Sequential implementation starting with Phase 1 (Backend Setup) to ensure solid 
 - Database schema updated with `photo_urls` column and 10-image limit constraint
 - Supabase Storage bucket `studio-photos` created with proper RLS policies
 - TypeScript interfaces updated across all components
-- All required dependencies installed (`react-image-crop`)
 
 **✅ Phase 2: Two-Step Studio Creation & Server Actions (COMPLETED)**
 - `createDraftStudio` server action implemented
@@ -331,9 +330,8 @@ Sequential implementation starting with Phase 1 (Backend Setup) to ensure solid 
 - `StudioDraftForm` component for initial studio creation
 - `StudioPhotoUploader` component with full functionality:
   - Drag-and-drop and file selection
-  - Required 16:9 aspect ratio cropping using `react-image-crop`
-  - Client-side WebP conversion and compression
-  - Immediate upload after cropping
+  - Original file upload (no client-side processing)
+  - Supabase Image Transformation for 16:9 aspect ratio display
   - Image gallery with delete functionality
   - Loading states and error handling
 - Integration with existing `StudioFormStandalone` component
@@ -342,6 +340,19 @@ Sequential implementation starting with Phase 1 (Backend Setup) to ensure solid 
 - Scheduled cleanup function code created for orphaned file removal
 - Instructions provided for Supabase Edge Function deployment
 - Daily cron job setup documentation included
+
+### 🔄 MAJOR REFACTOR: Client-Side Cropping → Supabase Image Transformation
+
+**Issue Resolved**: Canvas errors and reliability issues with client-side image cropping
+**Solution**: Migrated to Supabase Image Transformation API for robust server-side processing
+
+**Key Changes Made**:
+- **✅ Removed Client-Side Processing**: Eliminated `react-image-crop` dependency and canvas operations
+- **✅ Direct File Upload**: Upload original files directly to Supabase Storage
+- **✅ Server-Side Transformation**: Use Supabase's transformation API for 16:9 aspect ratio display
+- **✅ Improved Reliability**: No more "Canvas is empty" errors or browser compatibility issues
+- **✅ Better Performance**: Reduced client-side processing and improved upload speed
+- **✅ Cost Optimization**: Supabase handles transformation on-demand, reducing storage costs
 
 ### Ready for Testing
 
@@ -355,10 +366,10 @@ The studio photo management system is now fully functional:
 ### Key Features Implemented
 
 - ✅ Maximum 10 images per studio
-- ✅ Required 16:9 aspect ratio cropping
-- ✅ Immediate upload after cropping
-- ✅ WebP format conversion for optimization
-- ✅ Storage path: `studios/{studio_id}/{timestamp}_{filename}.webp`
+- ✅ Automatic 16:9 aspect ratio display using Supabase Image Transformation
+- ✅ Direct file upload (no client-side processing)
+- ✅ On-demand image optimization via Supabase
+- ✅ Storage path: `studios/{studio_id}/{timestamp}_{filename}.{ext}`
 - ✅ Comprehensive error handling and validation
 - ✅ Mobile-responsive design
 - ✅ Secure RLS policies for ownership verification

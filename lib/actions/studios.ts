@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 // Types for studio operations
 export type Studio = {
@@ -145,18 +145,12 @@ export async function uploadStudioImage(
     const fileName = `${timestamp}_${file.name.replace(/\.[^/.]+$/, '')}.${fileExtension}`
     const filePath = `studios/${studioId}/${fileName}`
 
-    // Upload file to Supabase Storage using service role client
-    const serviceSupabase = createServiceClient()
-    const { data: uploadData, error: uploadError } = await serviceSupabase.storage
+    // Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('studio-photos')
       .upload(filePath, file, {
         contentType: file.type,
-        upsert: false,
-        metadata: {
-          studio_id: studioId.toString(),
-          uploaded_by: user.id,
-          owner_id: user.id
-        }
+        upsert: false
       })
 
     if (uploadError) {
@@ -165,7 +159,7 @@ export async function uploadStudioImage(
     }
 
     // Get public URL
-    const { data: { publicUrl } } = serviceSupabase.storage
+    const { data: { publicUrl } } = supabase.storage
       .from('studio-photos')
       .getPublicUrl(filePath)
 
@@ -181,7 +175,7 @@ export async function uploadStudioImage(
       console.error('Error updating studio photo_urls:', updateError)
       
       // Clean up uploaded file if database update fails
-      await serviceSupabase.storage
+      await supabase.storage
         .from('studio-photos')
         .remove([filePath])
       
@@ -267,9 +261,8 @@ export async function deleteStudioImage(
       return { success: false, error: 'Failed to update studio photos' }
     }
 
-    // Delete file from storage using service role client
-    const serviceSupabase = createServiceClient()
-    const { error: deleteError } = await serviceSupabase.storage
+    // Delete file from storage
+    const { error: deleteError } = await supabase.storage
       .from('studio-photos')
       .remove([filePath])
 

@@ -24,6 +24,7 @@ interface Studio {
   amenities?: string[]
   gear?: any
   notes?: string // For lists view
+  photo_urls?: string[]
 }
 
 interface Profile {

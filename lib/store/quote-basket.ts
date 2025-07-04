@@ -10,6 +10,7 @@ interface Studio {
   location: string
   hourly_rate: number
   verification_status: string
+  photo_urls?: string[]
 }
 
 interface InquiryData {

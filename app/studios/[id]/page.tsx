@@ -21,6 +21,7 @@ interface Studio {
   created_at: string
   verification_status: string
   published: boolean
+  photo_urls?: string[]
 }
 
 interface Review {

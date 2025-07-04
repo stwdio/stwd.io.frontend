@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { X, Upload, MapPin, DollarSign, Building, Camera, Settings, Eye } from "lucide-react"
 import { StudioImage } from "@/components/studio-image-placeholder"
+import { StudioPhotoUploader } from "@/components/studio-photo-uploader"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 
@@ -23,6 +24,7 @@ interface Studio {
   published: boolean
   gear: any
   location?: string
+  photo_urls?: string[]
 }
 
 interface Amenity {
@@ -41,7 +43,6 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
   const [loading, setLoading] = useState(false)
   const [amenities, setAmenities] = useState<Amenity[]>([])
   const [selectedAmenities, setSelectedAmenities] = useState<number[]>([])
-  const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const { toast } = useToast()
   const supabase = createClient()
 
@@ -96,18 +97,13 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
     }
   }
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (files) {
-      // Mock image upload - in real implementation, upload to storage
-      const newImages = Array.from(files).map((file) => URL.createObjectURL(file))
-      setUploadedImages([...uploadedImages, ...newImages])
-    }
+  const handlePhotosUpdate = (newPhotoUrls: string[]) => {
+    // Update the local studio state with new photo URLs
+    // This will be automatically handled by the StudioPhotoUploader component
+    // No additional action needed here as the component handles server updates
   }
 
-  const removeImage = (index: number) => {
-    setUploadedImages(uploadedImages.filter((_, i) => i !== index))
-  }
+
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -325,73 +321,18 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
             </CardContent>
           </Card>
 
-          {/* Studio Photos Card - Moved up to fill space */}
-          <Card className="flex-1">
-            <CardHeader className="pb-6">
-              <div className="flex items-center gap-3">
-                <Camera className="h-5 w-5 text-primary" />
-                <div>
-                  <CardTitle>Studio Photos</CardTitle>
-                  <CardDescription>Showcase your studio with high-quality images</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6 h-full">
-              {/* Upload Area */}
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
-                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                <h3 className="text-base font-medium mb-2">Upload Studio Photos</h3>
-                <p className="text-sm text-muted-foreground mb-4">Drag and drop your images here, or click to browse</p>
-                <Input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="image-upload"
-                />
-                <Label htmlFor="image-upload">
-                  <Button variant="outline" asChild className="cursor-pointer">
-                    <span>Choose Files</span>
-                  </Button>
-                </Label>
-              </div>
-
-              {/* Image Previews */}
-              {uploadedImages.length > 0 && (
-                <div className="flex-1">
-                  <h4 className="font-medium mb-4 flex items-center gap-2">
-                    Uploaded Photos
-                    <Badge variant="secondary">{uploadedImages.length}</Badge>
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {uploadedImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden border">
-                          <StudioImage
-                            src={image}
-                            alt={`Studio image ${index + 1}`}
-                            fill
-                            width={300}
-                            height={225}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Studio Photos Section - Only available in edit mode */}
+          {studio && (
+            <div className="flex-1">
+              <StudioPhotoUploader 
+                studioId={studio.id}
+                photoUrls={studio.photo_urls || []}
+                onPhotosUpdate={handlePhotosUpdate}
+                maxPhotos={10}
+                disabled={loading}
+              />
+            </div>
+          )}
         </div>
 
         {/* Right Column - Amenities & Settings */}
@@ -516,10 +457,10 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
                     <p className="text-sm">{selectedAmenities.length} selected</p>
                   </div>
                 )}
-                {uploadedImages.length > 0 && (
+                {studio?.photo_urls && studio.photo_urls.length > 0 && (
                   <div>
                     <Label className="text-xs text-muted-foreground">PHOTOS</Label>
-                    <p className="text-sm">{uploadedImages.length} uploaded</p>
+                    <p className="text-sm">{studio.photo_urls.length} uploaded</p>
                   </div>
                 )}
               </CardContent>

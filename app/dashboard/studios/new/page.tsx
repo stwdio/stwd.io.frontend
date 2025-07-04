@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { StudioFormStandalone } from "@/components/studio-form-standalone"
+import { StudioDraftForm } from "@/components/studio-draft-form"
 
 export default function NewStudioPage() {
   const [profile, setProfile] = useState<any>(null)
@@ -52,9 +52,9 @@ export default function NewStudioPage() {
     initializePage()
   }, [router])
 
-  const handleSaved = () => {
-    // Navigate back to Owner Dashboard after successful save
-    router.push("/profile/dashboard")
+  const handleSuccess = (studioId: number) => {
+    // The StudioDraftForm component will handle the redirect to edit page
+    // This callback can be used for any additional logic if needed
   }
 
   if (loading) {
@@ -87,12 +87,7 @@ export default function NewStudioPage() {
         <p className="text-muted-foreground mt-2">Create a new recording studio listing.</p>
       </div>
 
-      <StudioFormStandalone 
-        studio={null} 
-        onSaved={handleSaved} 
-        ownerId={profile.id}
-        showActions={true}
-      />
+      <StudioDraftForm onSuccess={handleSuccess} />
     </div>
   )
 } 

@@ -15,6 +15,7 @@ interface Studio {
   owner_id: number
   created_at: string
   location: string
+  photo_urls?: string[]
 }
 
 interface EditStudioPageProps {

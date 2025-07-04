@@ -43,6 +43,7 @@ interface Studio {
     username: string
   }
   hourly_rate?: number
+  photo_urls?: string[]
 }
 
 interface Profile {

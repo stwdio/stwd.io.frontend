@@ -111,18 +111,6 @@ function ListsContent({ lists }: { lists: any[] }) {
           ))}
         </div>
       )}
-
-      {lists.length > 0 && (
-        <div className="mt-12 text-center">
-          <div className="bg-muted/50 rounded-lg p-6">
-            <h3 className="font-semibold mb-2">Power Feature</h3>
-            <p className="text-muted-foreground text-sm">
-              💡 Click on any list to view studios and use the "Add List to Quote" feature 
-              to request quotes from multiple studios at once!
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

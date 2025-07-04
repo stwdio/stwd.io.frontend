@@ -1,42 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BookmarkCheck } from 'lucide-react'
-import { getStudioListMemberships } from '@/lib/actions/lists'
 
 interface StudioListMembershipIndicatorsProps {
   studioId: string
   className?: string
   maxVisible?: number
+  memberships?: {list_id: number, list_name: string, list_icon_emoji: string}[]
+  isLoading?: boolean
 }
 
 export function StudioListMembershipIndicators({ 
   studioId, 
   className = '',
-  maxVisible = 3 
+  maxVisible = 3,
+  memberships = [],
+  isLoading = false 
 }: StudioListMembershipIndicatorsProps) {
-  const [memberships, setMemberships] = useState<{list_id: number, list_name: string, list_icon_emoji: string}[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const loadMemberships = async () => {
-      try {
-        const result = await getStudioListMemberships(studioId)
-        if (result.success) {
-          setMemberships(result.data || [])
-        }
-      } catch (error) {
-        console.error('Error loading list memberships:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadMemberships()
-  }, [studioId])
-
   if (isLoading) {
     return (
       <div className={`flex flex-wrap gap-1 ${className}`}>

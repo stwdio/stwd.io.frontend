@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Heart, Plus, Check, BookmarkPlus, Loader2 } from 'lucide-react'
-import { addStudioToList, removeStudioFromList, getUserLists, getStudioListMemberships, ListWithCount } from '@/lib/actions/lists'
+import { addStudioToList, removeStudioFromList, getUserLists, ListWithCount } from '@/lib/actions/lists'
 import { toast } from 'sonner'
 import CreateListDialog from './create-list-dialog'
 
@@ -20,58 +20,36 @@ interface AddToListDropdownProps {
   studioName: string
   trigger?: React.ReactNode
   onSuccess?: () => void
+  // OPTIMIZED: Receive membership data as props instead of fetching on render
+  initialMemberships?: {list_id: number, list_name: string, list_icon_emoji: string}[]
+  // OPTIMIZED: Receive shared lists data to eliminate individual fetches
+  sharedLists?: ListWithCount[]
+  listsLoading?: boolean
+  onListsChange?: () => void
 }
 
 export default function AddToListDropdown({ 
   studioId, 
   studioName, 
   trigger,
-  onSuccess 
+  onSuccess,
+  initialMemberships = [],
+  sharedLists = [],
+  listsLoading = false,
+  onListsChange
 }: AddToListDropdownProps) {
-  const [lists, setLists] = useState<ListWithCount[]>([])
-  const [listMemberships, setListMemberships] = useState<Set<number>>(new Set())
-  const [isLoading, setIsLoading] = useState(false)
+  // OPTIMIZED: Use shared lists instead of individual fetching
+  const lists = sharedLists
+  const isLoading = listsLoading
+  
+  const [listMemberships, setListMemberships] = useState<Set<number>>(() => 
+    new Set(initialMemberships.map(m => m.list_id))
+  )
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [actionLoadingStates, setActionLoadingStates] = useState<Set<number>>(new Set())
 
-  // Load user's lists and studio memberships when dropdown opens
-  useEffect(() => {
-    if (isDropdownOpen) {
-      loadData()
-    }
-  }, [isDropdownOpen])
-
-  const loadData = async () => {
-    setIsLoading(true)
-    try {
-      // Load user's lists and which lists contain this studio
-      const [listsResult, membershipsResult] = await Promise.all([
-        getUserLists(),
-        getStudioListMemberships(studioId)
-      ])
-
-      if (listsResult.success) {
-        setLists(listsResult.data || [])
-      } else {
-        toast.error('Failed to load your lists')
-      }
-
-      if (membershipsResult.success) {
-        const membershipIds = new Set(
-          (membershipsResult.data || []).map(m => m.list_id)
-        )
-        setListMemberships(membershipIds)
-      } else {
-        toast.error('Failed to check list memberships')
-      }
-    } catch (error) {
-      console.error('Error loading data:', error)
-      toast.error('Failed to load lists')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // OPTIMIZED: Lists are now provided as shared props, no individual fetching needed
 
   const handleToggleStudio = async (listId: number, listName: string, isInList: boolean) => {
     setActionLoadingStates(prev => new Set(prev).add(listId))
@@ -96,17 +74,7 @@ export default function AddToListDropdown({
           return updated
         })
         
-        // Update list counts
-        setLists(prev => prev.map(list => 
-          list.id === listId.toString() 
-            ? { 
-                ...list, 
-                studio_count: isInList 
-                  ? Math.max(0, list.studio_count - 1)
-                  : list.studio_count + 1
-              }
-            : list
-        ))
+        // Note: List counts are managed at the parent level with shared lists
         
         onSuccess?.()
       } else {
@@ -126,8 +94,9 @@ export default function AddToListDropdown({
 
   const handleCreateListSuccess = () => {
     setShowCreateDialog(false)
-    // Reload data to show the new list
-    loadData()
+    // Refresh shared lists to show the new list
+    onListsChange?.()
+    onSuccess?.()
   }
 
   const defaultTrigger = (

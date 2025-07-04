@@ -25,11 +25,29 @@ interface StudioCardActionsProps {
     owner_id: string
     verification_status: string
   }
+  // OPTIMIZED: Receive membership data as props to avoid individual server action calls
+  memberships?: {list_id: number, list_name: string, list_icon_emoji: string}[]
+  // OPTIMIZED: Receive shared profile data to eliminate individual auth calls
+  sharedProfile?: Profile | null
+  profileLoading?: boolean
+  // OPTIMIZED: Receive shared lists data to eliminate individual list fetches per dropdown
+  sharedLists?: any[]
+  listsLoading?: boolean
+  onListsChange?: () => void
 }
 
-export function StudioCardActions({ studio }: StudioCardActionsProps) {
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
+export function StudioCardActions({ 
+  studio, 
+  memberships = [], 
+  sharedProfile, 
+  profileLoading = false,
+  sharedLists = [],
+  listsLoading = false,
+  onListsChange
+}: StudioCardActionsProps) {
+  // OPTIMIZED: Use shared profile instead of individual fetching
+  const profile = sharedProfile
+  const loading = profileLoading
   const [hasInquiry, setHasInquiry] = useState(false)
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
@@ -86,30 +104,12 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
     setHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
   }
 
+  // OPTIMIZED: Check inquiry status when profile is available
   useEffect(() => {
-    const getProfileAndCheckInquiry = async () => {
-      const { data: { user } } = await createClient().auth.getUser()
-      
-      if (!user) {
-        setLoading(false)
-        return
-      }
-
-      const { data: profileData } = await createClient()
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-
-      if (profileData) {
-        setProfile(profileData)
-        await checkInquiryStatus(profileData)
-      }
-      setLoading(false)
+    if (profile && !loading) {
+      checkInquiryStatus(profile)
     }
-
-    getProfileAndCheckInquiry()
-  }, [studio.id])
+  }, [profile, loading, studio.id])
   
   // Listen for inquiry submissions in a separate effect
   useEffect(() => {
@@ -149,6 +149,10 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
         <AddToListDropdown
           studioId={studio.id.toString()}
           studioName={studio.name}
+          initialMemberships={memberships}
+          sharedLists={sharedLists}
+          listsLoading={listsLoading}
+          onSuccess={onListsChange}
           trigger={
             <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
               <BookmarkPlus className="h-4 w-4 mr-1" />
@@ -204,6 +208,10 @@ export function StudioCardActions({ studio }: StudioCardActionsProps) {
       <AddToListDropdown
         studioId={studio.id.toString()}
         studioName={studio.name}
+        initialMemberships={memberships}
+        sharedLists={sharedLists}
+        listsLoading={listsLoading}
+        onSuccess={onListsChange}
         trigger={
           <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
             <BookmarkPlus className="h-4 w-4 mr-1" />

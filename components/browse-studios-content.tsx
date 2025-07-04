@@ -15,9 +15,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioCardActions } from "@/components/studio-card-actions"
 import { StudioListMembershipIndicators } from "@/components/studio-list-membership-indicators"
+import { StudioCard } from "@/components/studio-card"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
+import { getBatchStudioListMemberships, getUserLists, ListWithCount } from "@/lib/actions/lists"
 
 interface Studio {
   id: number
@@ -62,6 +64,13 @@ interface FiltersContentProps {
   onSearchFilters: () => void
   onClearFilters: () => void
   isLoading?: boolean
+}
+
+// OPTIMIZED: Shared profile type
+interface Profile {
+  id: number
+  user_id: string
+  role: 'creator' | 'owner' | 'admin' | null
 }
 
 const STUDIOS_PER_PAGE = 12
@@ -469,6 +478,18 @@ export function BrowseStudiosContent() {
   const [totalCount, setTotalCount] = useState(0)
   const { addStudio, studios: basketStudios } = useQuoteBasket()
   
+  // OPTIMIZED: Batch list memberships state
+  const [batchMemberships, setBatchMemberships] = useState<Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]>>({})
+  const [membershipsLoading, setMembershipsLoading] = useState(false)
+  
+  // OPTIMIZED: Shared profile state to eliminate individual auth calls per studio card
+  const [sharedProfile, setSharedProfile] = useState<Profile | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  
+  // OPTIMIZED: Shared lists state to eliminate individual list fetches per dropdown
+  const [sharedLists, setSharedLists] = useState<ListWithCount[]>([])
+  const [listsLoading, setListsLoading] = useState(false)
+  
   // Use refs to avoid stale closure issues
   const currentPageRef = useRef(0)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -523,6 +544,30 @@ export function BrowseStudiosContent() {
     router.replace(newURL, { scroll: false })
   }, [router])
 
+  // OPTIMIZED: Batch fetch list memberships for all visible studios
+  const fetchBatchMemberships = useCallback(async (studioList: Studio[]) => {
+    if (studioList.length === 0) return
+    
+    setMembershipsLoading(true)
+    try {
+      const studioIds = studioList.map(studio => studio.id.toString())
+      const result = await getBatchStudioListMemberships(studioIds)
+      
+      if (result.success) {
+        setBatchMemberships(result.data || {})
+      } else {
+        console.error('Failed to fetch batch memberships:', result.error)
+        // Set empty memberships instead of error to not break the UI
+        setBatchMemberships({})
+      }
+    } catch (error) {
+      console.error('Error fetching batch memberships:', error)
+      setBatchMemberships({})
+    } finally {
+      setMembershipsLoading(false)
+    }
+  }, [])
+
   const fetchStudios = useCallback(async (reset = false) => {
     // Prevent duplicate requests
     if (isLoadingRef.current) return
@@ -539,11 +584,20 @@ export function BrowseStudiosContent() {
     }
 
     try {
-      // Build the base query
+      // OPTIMIZED: Build the base query with specific columns only
       let query = createClient()
         .from("studios")
         .select(`
-          *,
+          id,
+          name,
+          description,
+          hourly_rate,
+          location,
+          owner_id,
+          published,
+          verification_status,
+          created_at,
+          gear,
           studio_amenities (
             amenities (name)
           )
@@ -652,14 +706,26 @@ export function BrowseStudiosContent() {
         if (reset) {
           setStudios(studiosWithStats)
           currentPageRef.current = 1
+          // OPTIMIZED: Fetch memberships for initial load
+          fetchBatchMemberships(studiosWithStats)
         } else {
           // Prevent duplicates by filtering out studios that already exist
+          let updatedStudiosList: Studio[] = []
+          
           setStudios(prev => {
             const existingIds = new Set(prev.map(s => s.id))
             const newStudios = studiosWithStats.filter((studio: any) => !existingIds.has(studio.id))
-            return [...prev, ...newStudios]
+            updatedStudiosList = [...prev, ...newStudios]
+            return updatedStudiosList
           })
+          
           currentPageRef.current = currentPageRef.current + 1
+          
+          // OPTIMIZED: Fetch memberships for all visible studios (after state update)
+          // Use setTimeout to ensure this runs after the state update is complete
+          setTimeout(() => {
+            fetchBatchMemberships(updatedStudiosList)
+          }, 0)
         }
 
         setTotalCount(count || 0)
@@ -698,6 +764,66 @@ export function BrowseStudiosContent() {
       observer.unobserve(currentRef)
     }
   }, [hasMore, loadingMore, loading, fetchStudios])
+
+  // OPTIMIZED: Fetch shared profile once on mount
+  useEffect(() => {
+    const fetchSharedProfile = async () => {
+      try {
+        const { data: { user } } = await createClient().auth.getUser()
+        
+        if (!user) {
+          setSharedProfile(null)
+          setProfileLoading(false)
+          return
+        }
+
+        const { data: profileData } = await createClient()
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        setSharedProfile(profileData)
+      } catch (error) {
+        console.error('Error fetching shared profile:', error)
+        setSharedProfile(null)
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+
+    fetchSharedProfile()
+  }, [])
+
+  // OPTIMIZED: Fetch shared lists once on mount for authenticated users
+  const fetchSharedLists = useCallback(async () => {
+    // Only fetch lists if user is authenticated
+    if (sharedProfile && !profileLoading) {
+      setListsLoading(true)
+      try {
+        const result = await getUserLists()
+        if (result.success) {
+          setSharedLists(result.data || [])
+        } else {
+          console.error('Failed to fetch shared lists:', result.error)
+          setSharedLists([])
+        }
+      } catch (error) {
+        console.error('Error fetching shared lists:', error)
+        setSharedLists([])
+      } finally {
+        setListsLoading(false)
+      }
+    } else if (!profileLoading && !sharedProfile) {
+      // User is not authenticated, clear lists
+      setSharedLists([])
+      setListsLoading(false)
+    }
+  }, [sharedProfile, profileLoading])
+
+  useEffect(() => {
+    fetchSharedLists()
+  }, [fetchSharedLists])
 
   // Initialize data on mount
   useEffect(() => {
@@ -985,70 +1111,21 @@ export function BrowseStudiosContent() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 bg-muted/20 p-6 rounded-lg border">
             {studios.map((studio) => (
-              <Link key={studio.id} href={`/studios/${studio.id}`} className="block">
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col">
-                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                    <StudioImage
-                      src={null} // TODO: Replace with actual studio image URL from database
-                      alt={studio.name}
-                      fill
-                      width={300}
-                      height={200}
-                      className="object-cover"
-                    />
-                  </div>
-                  <CardContent className="p-4 flex flex-col flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg truncate">{studio.name}</h3>
-                      <div className="text-right">
-                        <p className="font-bold text-lg">${studio.hourly_rate}</p>
-                        <p className="text-sm text-muted-foreground">per hour</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center mb-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mr-1" />
-                      <span className="text-sm text-muted-foreground">{studio.location}</span>
-                    </div>
-
-                    <div className="flex items-center mb-3">
-                      <div className="flex">{renderStars(studio.average_rating || 0)}</div>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        ({studio.review_count || 0} reviews)
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">
-                      {studio.description}
-                    </p>
-
-                    {/* List membership indicators */}
-                    <StudioListMembershipIndicators 
-                      studioId={studio.id.toString()} 
-                      className="mb-3"
-                      maxVisible={2}
-                    />
-
-                    <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
-                      {studio.amenities?.slice(0, 3).map((amenity) => (
-                        <Badge key={amenity} variant="secondary" className="text-xs">
-                          {amenity}
-                        </Badge>
-                      ))}
-                      {studio.amenities && studio.amenities.length > 3 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{studio.amenities.length - 3} more
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Fixed height action area */}
-                    <div className="mt-auto">
-                      <StudioCardActions studio={studio} />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+              <StudioCard
+                key={studio.id}
+                studio={{
+                  ...studio,
+                  verification_status: studio.verification_status || 'unverified'
+                }}
+                memberships={batchMemberships[studio.id.toString()] || []}
+                sharedProfile={sharedProfile}
+                profileLoading={profileLoading}
+                sharedLists={sharedLists}
+                listsLoading={listsLoading}
+                onListsChange={fetchSharedLists}
+                showAmenities={true}
+                linkToStudio={true}
+              />
             ))}
           </div>
 

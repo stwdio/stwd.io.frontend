@@ -26,8 +26,11 @@ import {
   IconEdit,
   IconCheck,
   IconTrash,
-  IconDots
+  IconDots,
+  IconChevronUp,
+  IconChevronDown
 } from '@tabler/icons-react'
+import { MobileStudioCard, MobileInquiryCard } from '@/components/mobile-studio-card'
 
 interface Studio {
   id: number
@@ -91,9 +94,15 @@ interface Profile {
   role: string
 }
 
+type SortField = 'name' | 'location' | 'hourly_rate' | 'published' | 'verification_status' | 'created_at'
+type SortDirection = 'asc' | 'desc'
+
 export function OwnerDashboard() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [studios, setStudios] = useState<Studio[]>([])
+  const [sortedStudios, setSortedStudios] = useState<Studio[]>([])
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [incomingLeads, setIncomingLeads] = useState<InquiryRecipient[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
@@ -111,6 +120,58 @@ export function OwnerDashboard() {
   useEffect(() => {
     fetchOwnerData()
   }, [])
+
+  // Sort studios when studios data or sort criteria changes
+  useEffect(() => {
+    const sorted = [...studios].sort((a, b) => {
+      let aValue: any = a[sortField]
+      let bValue: any = b[sortField]
+
+      // Handle different data types
+      switch (sortField) {
+        case 'name':
+        case 'location':
+        case 'verification_status':
+          aValue = aValue?.toLowerCase() || ''
+          bValue = bValue?.toLowerCase() || ''
+          break
+        case 'hourly_rate':
+          aValue = Number(aValue) || 0
+          bValue = Number(bValue) || 0
+          break
+        case 'published':
+          aValue = aValue ? 1 : 0
+          bValue = bValue ? 1 : 0
+          break
+        case 'created_at':
+          aValue = new Date(aValue).getTime()
+          bValue = new Date(bValue).getTime()
+          break
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
+
+    setSortedStudios(sorted)
+  }, [studios, sortField, sortDirection])
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return null
+    return sortDirection === 'asc' ? 
+      <IconChevronUp className="h-4 w-4" /> : 
+      <IconChevronDown className="h-4 w-4" />
+  }
 
   const fetchOwnerData = async () => {
     try {
@@ -404,24 +465,105 @@ export function OwnerDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4">
+                    {sortedStudios.map((studio) => (
+                      <MobileStudioCard
+                        key={studio.id}
+                        studio={studio}
+                        onEdit={(studio) => router.push(`/dashboard/studios/${studio.id}/edit`)}
+                        onView={(studio) => window.open(`/studios/${studio.id}`, '_blank')}
+                        onDelete={(studio) => {
+                          setStudioToDelete(studio)
+                          setDeleteDialogOpen(true)
+                        }}
+                      />
+                    ))}
+                    {sortedStudios.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <IconBuilding className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No studios found. Create your first studio to get started!</p>
+                        <Button className="mt-4" onClick={() => router.push('/dashboard/studios/new')}>
+                          <IconPlus className="h-4 w-4 mr-2" />
+                          Add Studio
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block">
+                    <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Studio</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Rate/Hour</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Verification</TableHead>
-                        <TableHead>Created</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('name')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Studio
+                            {getSortIcon('name')}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('location')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Location
+                            {getSortIcon('location')}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('hourly_rate')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Rate/Hour
+                            {getSortIcon('hourly_rate')}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('published')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Status
+                            {getSortIcon('published')}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('verification_status')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Verification
+                            {getSortIcon('verification_status')}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 select-none"
+                          onClick={() => handleSort('created_at')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Created
+                            {getSortIcon('created_at')}
+                          </div>
+                        </TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {studios.map((studio) => (
+                      {sortedStudios.map((studio) => (
                         <TableRow key={studio.id}>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{studio.name}</div>
+                              <div 
+                                className="font-medium hover:text-primary cursor-pointer hover:underline"
+                                onClick={() => router.push(`/dashboard/studios/${studio.id}/edit`)}
+                              >
+                                {studio.name}
+                              </div>
                               <div className="text-sm text-muted-foreground truncate max-w-[200px]">
                                 {studio.description}
                               </div>
@@ -471,6 +613,7 @@ export function OwnerDashboard() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -484,7 +627,26 @@ export function OwnerDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4">
+                    {incomingLeads.map((lead) => (
+                      <MobileInquiryCard
+                        key={`${lead.inquiry_id}-${lead.studio_id}`}
+                        inquiry={lead}
+                        onRespond={(inquiry) => setRespondingTo(inquiry)}
+                      />
+                    ))}
+                    {incomingLeads.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <IconMessage className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No incoming leads yet. Make sure your studios are published to receive inquiries!</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block">
+                    <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Client</TableHead>
@@ -576,6 +738,7 @@ export function OwnerDashboard() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

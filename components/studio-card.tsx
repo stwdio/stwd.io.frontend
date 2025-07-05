@@ -8,6 +8,7 @@ import { StudioImage } from '@/components/studio-image-placeholder'
 import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
 import { StudioCardActions } from '@/components/studio-card-actions'
 import { ReactNode } from 'react'
+import { getStudioPrimaryImageUrl } from '@/lib/utils'
 
 interface Studio {
   id: number
@@ -24,6 +25,7 @@ interface Studio {
   amenities?: string[]
   gear?: any
   notes?: string // For lists view
+  photo_urls?: string[]
 }
 
 interface Profile {
@@ -82,7 +84,7 @@ export function StudioCard({
       {/* Image */}
       <div className="aspect-video relative overflow-hidden rounded-t-lg">
         <StudioImage
-          src={null} // TODO: Replace with actual studio image URL from database
+          src={getStudioPrimaryImageUrl(studio.photo_urls, 300)}
           alt={studio.name}
           fill
           width={300}

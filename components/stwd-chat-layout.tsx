@@ -49,6 +49,7 @@ export function STWDChatLayout() {
   const [selectedConversation, setSelectedConversation] = useState<ConversationDetails | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [showChat, setShowChat] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   // Chat functionality
   const {
@@ -102,9 +103,18 @@ export function STWDChatLayout() {
   }, [])
 
   const handleSelectConversation = (conversation: ConversationDetails) => {
-    setSelectedConversation(conversation)
-    if (isMobile) {
-      setShowChat(true)
+    // Only set transition state if switching to a different conversation
+    if (selectedConversation?.id !== conversation.id) {
+      setIsTransitioning(true)
+      
+      // Brief delay to prevent flash, then set new conversation
+      setTimeout(() => {
+        setSelectedConversation(conversation)
+        setIsTransitioning(false)
+        if (isMobile) {
+          setShowChat(true)
+        }
+      }, 150)
     }
   }
 
@@ -159,6 +169,13 @@ export function STWDChatLayout() {
               className="flex-1"
             />
           </div>
+        ) : isTransitioning ? (
+          <div className="flex-1 flex items-center justify-center text-center p-8">
+            <div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading conversation...</p>
+            </div>
+          </div>
         ) : selectedConversation ? (
           <STWDChatArea
             messages={messages}
@@ -176,21 +193,28 @@ export function STWDChatLayout() {
   return (
     <div className="flex h-full">
       {/* Sidebar with conversations */}
-      <div className="w-80 border-r border-border flex flex-col">
-        <div className="p-4 border-b border-border">
+      <div className="w-80 border-r border-border flex flex-col shrink-0">
+        <div className="p-4 border-b border-border shrink-0">
           <h1 className="text-xl font-semibold">Messages</h1>
         </div>
         <STWDConversationList
           currentUserId={currentUser.id}
           selectedConversationId={selectedConversation?.id}
           onSelectConversation={handleSelectConversation}
-          className="flex-1"
+          className="flex-1 min-h-0"
         />
       </div>
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col">
-        {selectedConversation ? (
+        {isTransitioning ? (
+          <div className="flex-1 flex items-center justify-center text-center p-8">
+            <div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading conversation...</p>
+            </div>
+          </div>
+        ) : selectedConversation ? (
           <STWDChatArea
             messages={messages}
             currentUserId={currentUser.id}

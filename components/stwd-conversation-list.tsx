@@ -244,13 +244,13 @@ export function STWDConversationList({
   }
 
   return (
-    <div className={cn("flex flex-col space-y-1 p-2", className)}>
+    <div className={cn("flex flex-col space-y-1 p-2 overflow-y-auto", className)}>
       {conversations.map((conversation) => (
         <Button
           key={conversation.id}
           variant={selectedConversationId === conversation.id ? "secondary" : "ghost"}
           className={cn(
-            "flex items-start space-x-3 p-4 h-auto text-left justify-start",
+            "flex items-start space-x-3 p-4 h-auto text-left justify-start w-full shrink-0",
             selectedConversationId === conversation.id && "bg-muted"
           )}
           onClick={() => onSelectConversation(conversation)}

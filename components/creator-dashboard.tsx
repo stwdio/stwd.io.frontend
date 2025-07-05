@@ -20,6 +20,7 @@ import {
   IconSend,
   IconBuilding
 } from '@tabler/icons-react'
+import { MobileInquiryCard, MobileResponseCard, MobileBookingCard } from '@/components/mobile-creator-cards'
 
 interface Inquiry {
   id: number
@@ -344,92 +345,117 @@ export function CreatorDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Project Type</TableHead>
-                    <TableHead>Genre</TableHead>
-                    <TableHead>Budget</TableHead>
-                    <TableHead>Preferred Dates</TableHead>
-                    <TableHead>Studios Contacted</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inquiries.map((inquiry) => {
-                    const responses = getResponsesForInquiry(inquiry.id)
-                    return (
-                      <TableRow key={inquiry.id}>
-                        <TableCell>
-                          <div className="font-medium">
-                            {getProjectTypeLabel(inquiry.project_type)}
-                          </div>
-                        </TableCell>
-                        <TableCell>{inquiry.genre || 'Not specified'}</TableCell>
-                        <TableCell>{inquiry.budget_range || 'Not specified'}</TableCell>
-                        <TableCell>{inquiry.preferred_dates || 'Flexible'}</TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {responses.length} studio{responses.length !== 1 ? 's' : ''}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(inquiry.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSelectedInquiry(inquiry)}
-                              >
-                                <IconEye className="h-4 w-4 mr-1" />
-                                View
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Inquiry Details</DialogTitle>
-                                <DialogDescription>
-                                  Details for your {getProjectTypeLabel(inquiry.project_type).toLowerCase()} inquiry
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <label className="text-sm font-medium">Project Type</label>
-                                  <p className="text-sm text-muted-foreground">{getProjectTypeLabel(inquiry.project_type)}</p>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {inquiries.map((inquiry) => {
+                  const responses = getResponsesForInquiry(inquiry.id)
+                  return (
+                    <MobileInquiryCard
+                      key={inquiry.id}
+                      inquiry={inquiry}
+                      responseCount={responses.length}
+                      onView={(inquiry) => setSelectedInquiry(inquiry)}
+                      getProjectTypeLabel={getProjectTypeLabel}
+                    />
+                  )
+                })}
+                {inquiries.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <IconSend className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No inquiries yet. Submit your first inquiry to get started!</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project Type</TableHead>
+                      <TableHead>Genre</TableHead>
+                      <TableHead>Budget</TableHead>
+                      <TableHead>Preferred Dates</TableHead>
+                      <TableHead>Studios Contacted</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inquiries.map((inquiry) => {
+                      const responses = getResponsesForInquiry(inquiry.id)
+                      return (
+                        <TableRow key={inquiry.id}>
+                          <TableCell>
+                            <div className="font-medium">
+                              {getProjectTypeLabel(inquiry.project_type)}
+                            </div>
+                          </TableCell>
+                          <TableCell>{inquiry.genre || 'Not specified'}</TableCell>
+                          <TableCell>{inquiry.budget_range || 'Not specified'}</TableCell>
+                          <TableCell>{inquiry.preferred_dates || 'Flexible'}</TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {responses.length} studio{responses.length !== 1 ? 's' : ''}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(inquiry.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedInquiry(inquiry)}
+                                >
+                                  <IconEye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Inquiry Details</DialogTitle>
+                                  <DialogDescription>
+                                    Details for your {getProjectTypeLabel(inquiry.project_type).toLowerCase()} inquiry
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <label className="text-sm font-medium">Project Type</label>
+                                    <p className="text-sm text-muted-foreground">{getProjectTypeLabel(inquiry.project_type)}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">Genre</label>
+                                    <p className="text-sm text-muted-foreground">{inquiry.genre || 'Not specified'}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">Budget Range</label>
+                                    <p className="text-sm text-muted-foreground">{inquiry.budget_range || 'Not specified'}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">Preferred Dates</label>
+                                    <p className="text-sm text-muted-foreground">{inquiry.preferred_dates || 'Flexible'}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">Location Preference</label>
+                                    <p className="text-sm text-muted-foreground">{inquiry.location_preference || 'No preference'}</p>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium">Custom Message</label>
+                                    <p className="text-sm text-muted-foreground">{inquiry.custom_message || 'No additional message'}</p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <label className="text-sm font-medium">Genre</label>
-                                  <p className="text-sm text-muted-foreground">{inquiry.genre || 'Not specified'}</p>
-                                </div>
-                                <div>
-                                  <label className="text-sm font-medium">Budget Range</label>
-                                  <p className="text-sm text-muted-foreground">{inquiry.budget_range || 'Not specified'}</p>
-                                </div>
-                                <div>
-                                  <label className="text-sm font-medium">Preferred Dates</label>
-                                  <p className="text-sm text-muted-foreground">{inquiry.preferred_dates || 'Flexible'}</p>
-                                </div>
-                                <div>
-                                  <label className="text-sm font-medium">Location Preference</label>
-                                  <p className="text-sm text-muted-foreground">{inquiry.location_preference || 'No preference'}</p>
-                                </div>
-                                <div>
-                                  <label className="text-sm font-medium">Custom Message</label>
-                                  <p className="text-sm text-muted-foreground">{inquiry.custom_message || 'No additional message'}</p>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+                              </DialogContent>
+                            </Dialog>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -443,61 +469,88 @@ export function CreatorDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Studio</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Project Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Quote</TableHead>
-                    <TableHead>Responded</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inquiryResponses.map((response) => {
-                    const inquiry = inquiries.find(i => i.id === response.inquiry_id)
-                    return (
-                      <TableRow key={`${response.inquiry_id}-${response.studio_id}`}>
-                        <TableCell>
-                          <div className="font-medium">
-                            {response.studios.name}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {response.studios.location}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStudioOwnerName(response.studios.profiles)}
-                        </TableCell>
-                        <TableCell>
-                          {getProjectTypeLabel(inquiry!.project_type)}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(response.status)}</TableCell>
-                        <TableCell>
-                          {response.quote_amount ? `$${response.quote_amount.toFixed(2)}` : 'No quote'}
-                        </TableCell>
-                        <TableCell>
-                          {response.responded_at ? new Date(response.responded_at).toLocaleDateString() : 'Not responded'}
-                        </TableCell>
-                        <TableCell>
-                          {response.status === 'responded' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleViewConversation(response.inquiry_id, response.studio_id)}
-                            >
-                              <IconMessage className="h-4 w-4 mr-1" />
-                              View Conversation
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {inquiryResponses.map((response) => {
+                  const inquiry = inquiries.find(i => i.id === response.inquiry_id)
+                  return (
+                    <MobileResponseCard
+                      key={`${response.inquiry_id}-${response.studio_id}`}
+                      response={response}
+                      inquiry={inquiry}
+                      onViewConversation={handleViewConversation}
+                      getProjectTypeLabel={getProjectTypeLabel}
+                      getStatusBadge={getStatusBadge}
+                      getStudioOwnerName={getStudioOwnerName}
+                    />
+                  )
+                })}
+                {inquiryResponses.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <IconMessage className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No responses yet. Studios will respond to your inquiries here!</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Studio</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Project Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Quote</TableHead>
+                      <TableHead>Responded</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inquiryResponses.map((response) => {
+                      const inquiry = inquiries.find(i => i.id === response.inquiry_id)
+                      return (
+                        <TableRow key={`${response.inquiry_id}-${response.studio_id}`}>
+                          <TableCell>
+                            <div className="font-medium">
+                              {response.studios.name}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {response.studios.location}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {getStudioOwnerName(response.studios.profiles)}
+                          </TableCell>
+                          <TableCell>
+                            {getProjectTypeLabel(inquiry!.project_type)}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(response.status)}</TableCell>
+                          <TableCell>
+                            {response.quote_amount ? `$${response.quote_amount.toFixed(2)}` : 'No quote'}
+                          </TableCell>
+                          <TableCell>
+                            {response.responded_at ? new Date(response.responded_at).toLocaleDateString() : 'Not responded'}
+                          </TableCell>
+                          <TableCell>
+                            {response.status === 'responded' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleViewConversation(response.inquiry_id, response.studio_id)}
+                              >
+                                <IconMessage className="h-4 w-4 mr-1" />
+                                View Conversation
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -511,48 +564,68 @@ export function CreatorDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Studio</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Booked</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell>
-                        <div className="font-medium">
-                          {booking.studios.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {booking.studios.location}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {bookings.map((booking) => (
+                  <MobileBookingCard
+                    key={booking.id}
+                    booking={booking}
+                    getStatusBadge={getStatusBadge}
+                  />
+                ))}
+                {bookings.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <IconBuilding className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No bookings yet. Book your first studio session!</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Studio</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Booked</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bookings.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell>
                           <div className="font-medium">
-                            {new Date(booking.start_time).toLocaleDateString()}
+                            {booking.studios.name}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {new Date(booking.start_time).toLocaleTimeString()} - {new Date(booking.end_time).toLocaleTimeString()}
+                            {booking.studios.location}
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                      <TableCell>
-                        {booking.total_paid ? `$${booking.total_paid.toFixed(2)}` : 'Pending'}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(booking.created_at).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {new Date(booking.start_time).toLocaleDateString()}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(booking.start_time).toLocaleTimeString()} - {new Date(booking.end_time).toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                        <TableCell>
+                          {booking.total_paid ? `$${booking.total_paid.toFixed(2)}` : 'Pending'}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(booking.created_at).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

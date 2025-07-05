@@ -30,6 +30,7 @@ import {
   IconChevronUp,
   IconChevronDown
 } from '@tabler/icons-react'
+import { MobileStudioCard, MobileInquiryCard } from '@/components/mobile-studio-card'
 
 interface Studio {
   id: number
@@ -464,7 +465,35 @@ export function OwnerDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4">
+                    {sortedStudios.map((studio) => (
+                      <MobileStudioCard
+                        key={studio.id}
+                        studio={studio}
+                        onEdit={(studio) => router.push(`/dashboard/studios/${studio.id}/edit`)}
+                        onView={(studio) => window.open(`/studios/${studio.id}`, '_blank')}
+                        onDelete={(studio) => {
+                          setStudioToDelete(studio)
+                          setDeleteDialogOpen(true)
+                        }}
+                      />
+                    ))}
+                    {sortedStudios.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <IconBuilding className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No studios found. Create your first studio to get started!</p>
+                        <Button className="mt-4" onClick={() => router.push('/dashboard/studios/new')}>
+                          <IconPlus className="h-4 w-4 mr-2" />
+                          Add Studio
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block">
+                    <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead 
@@ -584,6 +613,7 @@ export function OwnerDashboard() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -597,7 +627,26 @@ export function OwnerDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4">
+                    {incomingLeads.map((lead) => (
+                      <MobileInquiryCard
+                        key={`${lead.inquiry_id}-${lead.studio_id}`}
+                        inquiry={lead}
+                        onRespond={(inquiry) => setRespondingTo(inquiry)}
+                      />
+                    ))}
+                    {incomingLeads.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <IconMessage className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No incoming leads yet. Make sure your studios are published to receive inquiries!</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block">
+                    <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Client</TableHead>
@@ -689,6 +738,7 @@ export function OwnerDashboard() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

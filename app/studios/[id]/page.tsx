@@ -81,9 +81,9 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
             {/* Back Button */}
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <Button variant="ghost" asChild className="mb-4">
                 <Link href="/browse">
                   <ArrowLeft className="h-4 w-4 mr-2" />
@@ -92,9 +92,9 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
               </Button>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
               {/* Main Content */}
-              <div className="lg:col-span-2 space-y-8">
+              <div className="lg:col-span-2 space-y-6 lg:space-y-8">
                 {/* Main Studio Image */}
                 <div className="aspect-video relative overflow-hidden rounded-lg">
                   <StudioImage
@@ -111,7 +111,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
                 {/* Image Gallery */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Gallery</h3>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {studio.photo_urls && studio.photo_urls.length > 0 ? (
                       // Show actual uploaded photos
                       studio.photo_urls.slice(0, 4).map((photoUrl, i) => (
@@ -147,8 +147,8 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
                 {/* Studio Info */}
                 <div className="space-y-6">
                   <div>
-                    <h1 className="text-3xl font-bold mb-2">{studio.name}</h1>
-                    <div className="flex items-center space-x-4 text-muted-foreground">
+                    <h1 className="text-2xl md:text-3xl font-bold mb-2">{studio.name}</h1>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0 text-muted-foreground">
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 mr-1" />
                         {studio.location}
@@ -165,8 +165,8 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
                   {/* Amenities */}
                   {amenities.length > 0 && (
                     <div>
-                      <h3 className="text-xl font-semibold mb-3">Amenities</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <h3 className="text-lg md:text-xl font-semibold mb-3">Amenities</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         {amenities.map((amenity, index) => (
                           <div key={index} className="flex items-center space-x-2">
                             <Wifi className="h-4 w-4 text-muted-foreground" />
@@ -180,7 +180,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
                   {/* Gear List */}
                   {studio.gear && Object.keys(studio.gear).length > 0 && (
                     <div>
-                      <h3 className="text-xl font-semibold mb-3">Available Gear</h3>
+                      <h3 className="text-lg md:text-xl font-semibold mb-3">Available Gear</h3>
                       <div className="grid gap-4">
                         {Object.entries(studio.gear).map(([category, items]) => (
                           <div key={category}>
@@ -205,7 +205,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
 
                 {/* Reviews */}
                 <div>
-                  <h3 className="text-xl font-semibold mb-6">Reviews ({reviews.length})</h3>
+                  <h3 className="text-lg md:text-xl font-semibold mb-6">Reviews ({reviews.length})</h3>
                   <div className="space-y-6">
                     {reviews.map((review) => (
                       <Card key={review.id}>
@@ -238,12 +238,12 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
 
               {/* Booking/Contact Section */}
               <div className="lg:col-span-1">
-                <div className="sticky top-6">
+                <div className="lg:sticky lg:top-6">
                   <Card>
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 md:p-6">
                       <div className="space-y-4">
                         <div className="text-center">
-                          <div className="text-3xl font-bold">${studio.hourly_rate}</div>
+                          <div className="text-2xl md:text-3xl font-bold">${studio.hourly_rate}</div>
                           <div className="text-sm text-muted-foreground">per hour</div>
                         </div>
                         

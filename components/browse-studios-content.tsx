@@ -16,6 +16,7 @@ import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioCardActions } from "@/components/studio-card-actions"
 import { StudioListMembershipIndicators } from "@/components/studio-list-membership-indicators"
 import { StudioCard } from "@/components/studio-card"
+import { MobileFilterSheet } from "@/components/mobile-filter-sheet"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
@@ -495,6 +496,9 @@ export function BrowseStudiosContent() {
   const currentPageRef = useRef(0)
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const isLoadingRef = useRef(false) // Prevent duplicate requests
+  
+  // Mobile filter sheet state
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
 
   // Initialize filter state from URL parameters
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -993,7 +997,7 @@ export function BrowseStudiosContent() {
               <Skeleton className="h-5 w-32" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {Array.from({ length: STUDIOS_PER_PAGE }, (_, i) => (
                 <StudioCardSkeleton key={i} />
               ))}
@@ -1007,42 +1011,39 @@ export function BrowseStudiosContent() {
   return (
     <div className="p-4 md:p-6 min-h-screen max-h-screen overflow-hidden">
       <div className="flex flex-col lg:flex-row gap-6 h-full">
-        {/* Mobile Filters */}
+        {/* Mobile Filter Button - Floating */}
         <div className="lg:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="mb-4">
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-                <Badge 
-                  variant="secondary" 
-                  className={`ml-2 text-xs transition-opacity ${
-                    (filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) 
-                      ? 'opacity-100' : 'opacity-0'
-                  }`}
-                >
-                  {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)}
-                </Badge>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-80 overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <FiltersContent
-                  filters={filters}
-                  amenities={amenities}
-                  availableGear={availableGear}
-                  onFilterChange={handleFilterChange}
-                  onSearchFilters={handleSearchFilters}
-                  onClearFilters={handleClearFilters}
-                  isLoading={loading}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
+          <Button 
+            variant="outline" 
+            className="mb-4 w-full sm:w-auto"
+            onClick={() => setMobileFilterOpen(true)}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+            <Badge 
+              variant="secondary" 
+              className={`ml-2 text-xs transition-opacity ${
+                (filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) 
+                  ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)}
+            </Badge>
+          </Button>
         </div>
+
+        {/* Mobile Filter Sheet */}
+        <MobileFilterSheet
+          filters={filters}
+          amenities={amenities}
+          availableGear={availableGear}
+          onFilterChange={handleFilterChange}
+          onSearchFilters={handleSearchFilters}
+          onClearFilters={handleClearFilters}
+          isLoading={loading}
+          open={mobileFilterOpen}
+          onOpenChange={setMobileFilterOpen}
+        />
 
         {/* Desktop Filters Sidebar */}
         <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
@@ -1085,7 +1086,7 @@ export function BrowseStudiosContent() {
           </div> */}
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 bg-muted/20 p-6 rounded-lg border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="overflow-hidden">
                   <Skeleton className="h-48 w-full" />
@@ -1111,7 +1112,7 @@ export function BrowseStudiosContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 bg-muted/20 p-6 rounded-lg border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
             {studios.map((studio) => (
               <StudioCard
                 key={studio.id}

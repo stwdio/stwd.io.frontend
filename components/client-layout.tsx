@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { FloatingCartButton } from "@/components/floating-cart-button"
+import { SiteHeader } from "@/components/site-header"
 
 import { createClient } from "@/lib/supabase/client"
 
@@ -119,8 +120,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           <AppSidebar variant="inset" />
           <SidebarInset>
             <div className="flex flex-1 flex-col">
+              <SiteHeader />
               <div className="@container/main flex flex-1 flex-col">
-
                 {children}
               </div>
             </div>

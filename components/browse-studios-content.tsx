@@ -997,7 +997,7 @@ export function BrowseStudiosContent() {
               <Skeleton className="h-5 w-32" />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: STUDIOS_PER_PAGE }, (_, i) => (
                 <StudioCardSkeleton key={i} />
               ))}
@@ -1011,25 +1011,26 @@ export function BrowseStudiosContent() {
   return (
     <div className="p-4 md:p-6 min-h-screen max-h-screen overflow-hidden">
       <div className="flex flex-col lg:flex-row gap-6 h-full">
-        {/* Mobile Filter Button - Floating */}
-        <div className="lg:hidden">
-          <Button 
-            variant="outline" 
-            className="mb-4 w-full sm:w-auto"
-            onClick={() => setMobileFilterOpen(true)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-            <Badge 
-              variant="secondary" 
-              className={`ml-2 text-xs transition-opacity ${
-                (filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) 
-                  ? 'opacity-100' : 'opacity-0'
-              }`}
+        {/* Mobile Filter Button - Top Right */}
+        <div className="lg:hidden fixed top-14 right-4 z-40">
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              size="lg"
+              className="h-12 w-12 rounded-full shadow-lg border-2 border-black bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-0"
+              onClick={() => setMobileFilterOpen(true)}
             >
-              {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)}
-            </Badge>
-          </Button>
+              <Filter className="h-4 w-4" />
+            </Button>
+            {(filters.selectedAmenities.length > 0 || filters.selectedGear.length > 0 || filters.location) && (
+              <Badge 
+                variant="default" 
+                className="absolute -top-2 -right-2 h-6 w-6 p-0 flex items-center justify-center text-xs font-bold min-w-[1.5rem] border-2 border-black bg-primary/95 backdrop-blur supports-[backdrop-filter]:bg-primary/90"
+              >
+                {filters.selectedAmenities.length + filters.selectedGear.length + (filters.location ? 1 : 0)}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Mobile Filter Sheet */}
@@ -1086,7 +1087,7 @@ export function BrowseStudiosContent() {
           </div> */}
 
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="overflow-hidden">
                   <Skeleton className="h-48 w-full" />
@@ -1112,7 +1113,7 @@ export function BrowseStudiosContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
             {studios.map((studio) => (
               <StudioCard
                 key={studio.id}

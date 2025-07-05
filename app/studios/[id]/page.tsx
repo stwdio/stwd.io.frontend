@@ -9,6 +9,7 @@ import Link from "next/link"
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioDetailActions } from "@/components/studio-detail-client"
 import { createClient } from "@/lib/supabase/server"
+import { getStudioPrimaryImageUrl, getTransformedImageUrl } from "@/lib/utils"
 
 interface Studio {
   id: number
@@ -97,7 +98,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
                 {/* Main Studio Image */}
                 <div className="aspect-video relative overflow-hidden rounded-lg">
                   <StudioImage
-                    src={null} // TODO: Replace with actual studio image URL
+                    src={getStudioPrimaryImageUrl(studio.photo_urls, 800)}
                     alt={studio.name}
                     fill
                     width={600}
@@ -111,18 +112,35 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Gallery</h3>
                   <div className="grid grid-cols-4 gap-2">
-                    {Array.from({ length: 4 }, (_, i) => (
-                      <div key={i} className="aspect-square relative overflow-hidden rounded-lg">
-                        <StudioImage
-                          src={null}
-                          alt={`${studio.name} ${i + 1}`}
-                          fill
-                          width={150}
-                          height={150}
-                          className="object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                        />
-                      </div>
-                    ))}
+                    {studio.photo_urls && studio.photo_urls.length > 0 ? (
+                      // Show actual uploaded photos
+                      studio.photo_urls.slice(0, 4).map((photoUrl, i) => (
+                        <div key={i} className="aspect-square relative overflow-hidden rounded-lg">
+                          <StudioImage
+                            src={getTransformedImageUrl(photoUrl, 150)}
+                            alt={`${studio.name} ${i + 1}`}
+                            fill
+                            width={150}
+                            height={150}
+                            className="object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      // Show placeholder images if no photos uploaded
+                      Array.from({ length: 4 }, (_, i) => (
+                        <div key={i} className="aspect-square relative overflow-hidden rounded-lg">
+                          <StudioImage
+                            src={null}
+                            alt={`${studio.name} ${i + 1}`}
+                            fill
+                            width={150}
+                            height={150}
+                            className="object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          />
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 

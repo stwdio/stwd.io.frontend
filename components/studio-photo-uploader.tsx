@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Camera, Upload, X, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { uploadStudioImage, deleteStudioImage } from '@/lib/actions/studios'
+import { getTransformedImageUrl } from '@/lib/utils'
 
 interface StudioPhotoUploaderProps {
   studioId: number
@@ -14,28 +15,6 @@ interface StudioPhotoUploaderProps {
   onPhotosUpdate: (urls: string[]) => void
   maxPhotos?: number
   disabled?: boolean
-}
-
-// Helper function to get transformed image URL with 16:9 aspect ratio
-function getTransformedImageUrl(originalUrl: string, width: number = 800): string {
-  if (!originalUrl.includes('supabase')) {
-    return originalUrl
-  }
-
-  // Calculate height for 16:9 aspect ratio
-  const height = Math.round(width * 9 / 16)
-  
-  // Extract the file path from the URL
-  const urlParts = originalUrl.split('/storage/v1/object/public/studio-photos/')
-  if (urlParts.length < 2) {
-    return originalUrl
-  }
-  
-  const filePath = urlParts[1]
-  const baseUrl = urlParts[0] + '/storage/v1/object/public/studio-photos/'
-  
-  // Add transformation parameters
-  return `${baseUrl}${filePath}?width=${width}&height=${height}&resize=cover&quality=85`
 }
 
 export function StudioPhotoUploader({ 
@@ -47,64 +26,113 @@ export function StudioPhotoUploader({
 }: StudioPhotoUploaderProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set())
+  const [uploadProgress, setUploadProgress] = useState<{total: number, completed: number}>({ total: 0, completed: 0 })
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileValidation = useCallback((file: File) => {
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
-      return false
+  const handleFileValidation = useCallback((files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    const validFiles: File[] = []
+    let hasErrors = false
+
+    // Check if adding these files would exceed the limit
+    if (photoUrls.length + fileArray.length > maxPhotos) {
+      toast.error(`Cannot upload ${fileArray.length} files. Maximum ${maxPhotos} images allowed (${photoUrls.length} already uploaded)`)
+      return []
     }
 
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB')
-      return false
+    fileArray.forEach((file, index) => {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error(`File "${file.name}" is not an image`)
+        hasErrors = true
+        return
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`File "${file.name}" is too large. Maximum 5MB allowed`)
+        hasErrors = true
+        return
+      }
+
+      validFiles.push(file)
+    })
+
+    if (validFiles.length === 0 && hasErrors) {
+      return []
     }
 
-    // Check photo limit
-    if (photoUrls.length >= maxPhotos) {
-      toast.error(`Maximum ${maxPhotos} images allowed`)
-      return false
+    if (validFiles.length < fileArray.length) {
+      toast.warning(`${validFiles.length} of ${fileArray.length} files will be uploaded`)
     }
 
-    return true
+    return validFiles
   }, [photoUrls.length, maxPhotos])
 
-  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    if (!handleFileValidation(file)) return
+  const uploadFiles = useCallback(async (files: File[]) => {
+    if (files.length === 0) return
 
     try {
       setIsUploading(true)
+      setUploadProgress({ total: files.length, completed: 0 })
       
-      // Upload original file directly to Supabase
-      const result = await uploadStudioImage(studioId, file)
+      const uploadPromises = files.map(async (file, index) => {
+        try {
+          const result = await uploadStudioImage(studioId, file)
+          
+          if (result.success && result.data) {
+            setUploadProgress(prev => ({ ...prev, completed: prev.completed + 1 }))
+            return result.data
+          } else {
+            toast.error(`Failed to upload "${file.name}": ${result.error}`)
+            return null
+          }
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error)
+          toast.error(`Failed to upload "${file.name}"`)
+          return null
+        }
+      })
+
+      const results = await Promise.all(uploadPromises)
+      const successfulUploads = results.filter(url => url !== null) as string[]
       
-      if (result.success && result.data) {
-        // Update local state
-        const newUrls = [...photoUrls, result.data]
+      if (successfulUploads.length > 0) {
+        // Update local state with new URLs
+        const newUrls = [...photoUrls, ...successfulUploads]
         onPhotosUpdate(newUrls)
         
-        toast.success('Image uploaded successfully!')
-        
-        // Clear file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
-      } else {
-        toast.error(result.error || 'Failed to upload image')
+        toast.success(`Successfully uploaded ${successfulUploads.length} image${successfulUploads.length > 1 ? 's' : ''}!`)
+      }
+
+      if (successfulUploads.length < files.length) {
+        const failedCount = files.length - successfulUploads.length
+        toast.error(`${failedCount} image${failedCount > 1 ? 's' : ''} failed to upload`)
+      }
+      
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
       }
     } catch (error) {
-      console.error('Error uploading image:', error)
-      toast.error('Failed to upload image')
+      console.error('Error uploading files:', error)
+      toast.error('Failed to upload images')
     } finally {
       setIsUploading(false)
+      setUploadProgress({ total: 0, completed: 0 })
     }
-  }, [studioId, photoUrls, onPhotosUpdate, handleFileValidation])
+  }, [studioId, photoUrls, onPhotosUpdate])
+
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    const validFiles = handleFileValidation(files)
+    if (validFiles.length > 0) {
+      await uploadFiles(validFiles)
+    }
+  }, [handleFileValidation, uploadFiles])
 
   const handleDeleteImage = useCallback(async (imageUrl: string) => {
     const imageId = imageUrl.split('/').pop() || imageUrl
@@ -136,35 +164,23 @@ export function StudioPhotoUploader({
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
   }, [])
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
-    const file = e.dataTransfer.files[0]
-    if (!file || !handleFileValidation(file)) return
+    e.stopPropagation()
+    
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
 
-    try {
-      setIsUploading(true)
-      
-      // Upload original file directly to Supabase
-      const result = await uploadStudioImage(studioId, file)
-      
-      if (result.success && result.data) {
-        // Update local state
-        const newUrls = [...photoUrls, result.data]
-        onPhotosUpdate(newUrls)
-        
-        toast.success('Image uploaded successfully!')
-      } else {
-        toast.error(result.error || 'Failed to upload image')
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error)
-      toast.error('Failed to upload image')
-    } finally {
-      setIsUploading(false)
+    const validFiles = handleFileValidation(files)
+    if (validFiles.length > 0) {
+      await uploadFiles(validFiles)
     }
-  }, [studioId, photoUrls, onPhotosUpdate, handleFileValidation])
+  }, [handleFileValidation, uploadFiles])
+
+  const remainingSlots = maxPhotos - photoUrls.length
 
   return (
     <div className="space-y-6">
@@ -196,6 +212,7 @@ export function StudioPhotoUploader({
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               onChange={handleFileSelect}
               disabled={disabled}
               className="hidden"
@@ -208,20 +225,33 @@ export function StudioPhotoUploader({
               
               <div>
                 <p className="text-lg font-medium">
-                  Drop your image here, or{' '}
+                  Drop your images here, or{' '}
                   <span className="text-primary font-semibold">browse</span>
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  PNG, JPG, GIF up to 5MB • {photoUrls.length}/{maxPhotos} images
+                  PNG, JPG, GIF up to 5MB each • {photoUrls.length}/{maxPhotos} images
+                  {remainingSlots > 0 && (
+                    <span className="text-primary font-medium"> • {remainingSlots} slots available</span>
+                  )}
                 </p>
               </div>
             </div>
             
             {isUploading && (
               <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <span className="text-sm font-medium">Uploading...</span>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span className="text-sm font-medium">
+                      Uploading {uploadProgress.completed}/{uploadProgress.total} images...
+                    </span>
+                  </div>
+                  <div className="w-48 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${(uploadProgress.completed / uploadProgress.total) * 100}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -292,7 +322,26 @@ export function StudioPhotoUploader({
               <div>
                 <h4 className="font-medium text-blue-900">No photos uploaded yet</h4>
                 <p className="text-sm text-blue-700 mt-1">
-                  Upload high-quality photos to showcase your studio. Images will be automatically optimized and cropped to 16:9 aspect ratio for consistent display.
+                  Upload high-quality photos to showcase your studio. You can select or drag & drop multiple images at once (up to {maxPhotos} total).
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Helpful Tips */}
+      {photoUrls.length > 0 && photoUrls.length < maxPhotos && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-green-100 rounded-full">
+                <Camera className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h4 className="font-medium text-green-900">Looking great!</h4>
+                <p className="text-sm text-green-700 mt-1">
+                  You can upload {remainingSlots} more image{remainingSlots > 1 ? 's' : ''} to showcase different angles and features of your studio.
                 </p>
               </div>
             </div>

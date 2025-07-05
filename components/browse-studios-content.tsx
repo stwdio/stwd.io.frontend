@@ -35,6 +35,7 @@ interface Studio {
   review_count?: number
   amenities?: string[]
   gear?: any
+  photo_urls?: string[]
 }
 
 interface Amenity {
@@ -598,6 +599,7 @@ export function BrowseStudiosContent() {
           verification_status,
           created_at,
           gear,
+          photo_urls,
           studio_amenities (
             amenities (name)
           )

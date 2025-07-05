@@ -108,28 +108,34 @@ function ListDetailContent({ listId, list }: { listId: string, list: any }) {
           </Link>
         </div>
 
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start gap-4">
             <span className="text-4xl">{list.icon_emoji}</span>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{list.name}</h1>
-              <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-                <span>{list.studio_count} studio{list.studio_count !== 1 ? 's' : ''}</span>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">{list.name}</h1>
+              <div className="flex flex-col gap-2 mt-2 text-muted-foreground md:flex-row md:items-center md:gap-4">
+                <span className="text-sm md:text-base">{list.studio_count} studio{list.studio_count !== 1 ? 's' : ''}</span>
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>Created {new Date(list.created_at).toLocaleDateString()}</span>
+                  <Calendar className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="text-sm md:text-base">
+                    <span className="hidden md:inline">Created </span>
+                    {new Date(list.created_at).toLocaleDateString()}
+                  </span>
                 </div>
                 {list.is_public && (
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="w-fit">
                     <Users className="h-3 w-3 mr-1" />
-                    Public
+                    <span className="hidden sm:inline">Public</span>
                   </Badge>
                 )}
               </div>
             </div>
           </div>
 
-          <AddListToQuoteButton studios={list.studios} />
+          {/* Desktop Add to Quote button */}
+          <div className="hidden md:flex flex-shrink-0">
+            <AddListToQuoteButton studios={list.studios} />
+          </div>
         </div>
       </div>
 
@@ -154,8 +160,22 @@ function ListDetailContent({ listId, list }: { listId: string, list: any }) {
       ) : (
         <>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Studios in this list</h2>
-            <Link href="/browse">
+            {/* Mobile: Both buttons */}
+            <div className="md:hidden flex items-center justify-between w-full gap-3">
+              <div className="flex-1">
+                <AddListToQuoteButton studios={list.studios} />
+              </div>
+              <Link href="/browse">
+                <Button variant="outline" size="sm" className="gap-2 flex-shrink-0">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden xs:inline">Add More</span>
+                  <span className="xs:hidden">+</span>
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Desktop: Add More Studios button */}
+            <Link href="/browse" className="hidden md:block">
               <Button variant="outline" className="gap-2">
                 <Plus className="h-4 w-4" />
                 Add More Studios

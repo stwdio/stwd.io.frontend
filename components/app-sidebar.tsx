@@ -29,6 +29,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -50,6 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const { isMobile, setOpenMobile } = useSidebar()
 
   useEffect(() => {
     const getUser = async () => {
@@ -91,6 +93,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/auth/login')
+  }
+
+  const handleMobileNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
   }
 
   const getDisplayName = () => {
@@ -158,7 +166,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 asChild
                 className="data-[slot=sidebar-menu-button]:!p-1.5"
               >
-                <a href="/">
+                <a href="/browse" onClick={handleMobileNavClick}>
                   <IconBuilding className="!size-5" />
                   <span className="text-base font-semibold">stwd.io</span>
                 </a>
@@ -173,7 +181,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               Sign in to access all features
             </p>
             <Button asChild className="w-full">
-              <a href="/auth/login">Sign In</a>
+              <a href="/auth/login" onClick={handleMobileNavClick}>Sign In</a>
             </Button>
           </div>
         </SidebarContent>
@@ -190,7 +198,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/">
+              <a href="/browse" onClick={handleMobileNavClick}>
                 <IconBuilding className="!size-5" />
                 <span className="text-base font-semibold">stwd.io</span>
               </a>
@@ -227,19 +235,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuItem asChild>
-                <Link href="/profile/dashboard" className="flex items-center">
+                <Link href="/profile/dashboard" className="flex items-center" onClick={handleMobileNavClick}>
                   <IconDashboard className="mr-2 h-4 w-4" />
                   Dashboard
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/profile/messages" className="flex items-center">
+                <Link href="/profile/messages" className="flex items-center" onClick={handleMobileNavClick}>
                   <IconMessage className="mr-2 h-4 w-4" />
                   Messages
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/profile/settings" className="flex items-center">
+                <Link href="/profile/settings" className="flex items-center" onClick={handleMobileNavClick}>
                   <IconSettings className="mr-2 h-4 w-4" />
                   Settings
                 </Link>

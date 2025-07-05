@@ -48,9 +48,10 @@ export function AddListToQuoteButton({ studios }: AddListToQuoteButtonProps) {
   if (studios.length === 0) return null
 
   return (
-    <Button onClick={handleAddToQuote} size="lg" className="gap-2">
+    <Button onClick={handleAddToQuote} size="sm" className="gap-2 md:h-10 md:px-4 md:py-2">
       <Quote className="h-4 w-4" />
-      Add List to Quote ({studios.length} studios)
+      <span className="hidden sm:inline">Add To Quote Basket</span>
+      <span className="sm:hidden">Add To Quote Basket</span>
     </Button>
   )
 } 

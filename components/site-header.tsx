@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { IconBuilding } from "@tabler/icons-react"
+import Link from "next/link"
 
 interface SiteHeaderProps {
   title?: string
@@ -18,10 +19,10 @@ export function SiteHeader({ title, showLogo = true }: SiteHeaderProps) {
         {showLogo && (
           <>
             {/* Logo for mobile when sidebar is hidden */}
-            <div className="flex items-center gap-2 md:hidden">
+            <Link href="/browse" className="flex items-center gap-2 md:hidden hover:opacity-80 transition-opacity">
               <IconBuilding className="h-5 w-5" />
               <span className="font-semibold">stwd.io</span>
-            </div>
+            </Link>
             <Separator
               orientation="vertical"
               className="mx-2 h-4 md:hidden"

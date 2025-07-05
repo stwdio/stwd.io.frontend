@@ -31,8 +31,8 @@ export default function CreateListButton({
       <Button
         variant={variant}
         size={size}
-        onClick={() => setShowDialog(true)}
         className={className}
+        onClick={() => setShowDialog(true)}
       >
         <Plus className="h-4 w-4 mr-2" />
         Create List

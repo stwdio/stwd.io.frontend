@@ -41,6 +41,7 @@ export type ListStudio = {
   average_rating?: number
   review_count?: number
   notes?: string
+  photo_urls?: string[]
 }
 
 export type ListDetails = List & {
@@ -431,7 +432,8 @@ export async function getListDetails(listId: string): Promise<ActionResult<ListD
           name,
           description,
           hourly_rate,
-          location
+          location,
+          photo_urls
         )
       `)
       .eq('list_id', parseInt(listId))
@@ -450,7 +452,8 @@ export async function getListDetails(listId: string): Promise<ActionResult<ListD
       location: item.studios.location,
       average_rating: 0, // TODO: Calculate from reviews when rating system is implemented
       review_count: 0, // TODO: Calculate from reviews when rating system is implemented
-      notes: item.notes
+      notes: item.notes,
+      photo_urls: item.studios.photo_urls
     }))
 
     const listDetails: ListDetails = {

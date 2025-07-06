@@ -145,12 +145,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   if (loading) {
     return (
-      <Sidebar collapsible="offcanvas" {...props}>
+      <Sidebar collapsible="icon" {...props}>
         <SidebarContent>
           <div className="flex items-center justify-center h-20">
             <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
           </div>
         </SidebarContent>
+        <SidebarRail />
       </Sidebar>
     )
   }
@@ -158,7 +159,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (!user) {
     // Show a minimal sidebar for non-authenticated users instead of redirecting
     return (
-      <Sidebar collapsible="offcanvas" {...props}>
+      <Sidebar collapsible="icon" {...props}>
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -185,12 +186,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </Button>
           </div>
         </SidebarContent>
+        <SidebarRail />
       </Sidebar>
     )
   }
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -215,8 +217,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="p-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start p-2">
-                <div className="flex items-center gap-3">
+              <Button variant="ghost" className="w-full justify-start p-2 group-data-[collapsible=icon]:justify-center">
+                <div className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0">
                   <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                     <img 
                       src={getAvatarSrc()} 
@@ -224,7 +226,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       className="h-full w-full object-cover"
                     />
                   </div>
-                  <div className="flex flex-col items-start text-sm">
+                  <div className="flex flex-col items-start text-sm group-data-[collapsible=icon]:hidden">
                     <span className="font-medium">{getDisplayName()}</span>
                     <span className="text-xs text-muted-foreground capitalize">
                       {profile?.role || 'creator'}
@@ -260,6 +262,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </DropdownMenu>
         </div>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   )
 }

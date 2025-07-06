@@ -109,6 +109,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     >
       {shouldShowDesktopSidebar ? (
         <SidebarProvider
+          defaultOpen={true}
           style={
             {
               "--sidebar-width": "calc(var(--spacing) * 72)",

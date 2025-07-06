@@ -13,8 +13,8 @@ export function SiteHeader({ title, showLogo = true }: SiteHeaderProps) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
       <div className="flex w-full items-center gap-2 px-4">
-        {/* Mobile sidebar trigger */}
-        <SidebarTrigger className="md:hidden" />
+        {/* Sidebar trigger for both mobile and desktop */}
+        <SidebarTrigger />
         
         {showLogo && (
           <>

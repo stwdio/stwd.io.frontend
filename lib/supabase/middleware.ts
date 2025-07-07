@@ -27,39 +27,21 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // IMPORTANT: Only refresh session, do not redirect
+  // Client-side RouteGuard will handle authentication redirects
+  // This prevents middleware/client redirect conflicts that cause infinite loading
 
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    return NextResponse.redirect(url)
+  try {
+    // This call refreshes the session and updates cookies
+    // We don't need the user data here - just the session refresh
+    await supabase.auth.getSession()
+  } catch (error) {
+    // If session refresh fails, let the request continue
+    // Client-side auth will handle the authentication state
+    console.error('Session refresh failed in middleware:', error)
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-
+  // IMPORTANT: Always return supabaseResponse to maintain session cookies
+  // No redirects in middleware - eliminates infinite redirect loops
   return supabaseResponse
 }

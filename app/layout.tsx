@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { OnboardingGate } from "@/components/onboarding-gate";
+import { AuthProvider } from "@/lib/auth/auth-context";
+import { RouteGuard } from "@/components/auth/route-guard";
 import { ClientLayout } from "@/components/client-layout";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -20,12 +21,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <ClientLayout>
-          <OnboardingGate>
-            {children}
-          </OnboardingGate>
+        <AuthProvider>
+          <RouteGuard>
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </RouteGuard>
           <Toaster />
-        </ClientLayout>
+        </AuthProvider>
       </body>
     </html>
   );

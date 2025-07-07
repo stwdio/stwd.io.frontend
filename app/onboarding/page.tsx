@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button"
 import { User, Building } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/auth/auth-context"
 
 export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const { user, profile, loading: authLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
@@ -19,53 +20,23 @@ export default function OnboardingPage() {
   useEffect(() => {
     setMounted(true)
     
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
+    if (!authLoading) {
+      if (!user) {
         // Not authenticated, redirect to login
         router.push("/auth/login")
         return
       }
 
-      setUser(session.user)
-      console.log("Onboarding: User authenticated:", session.user.id)
+      console.log("Onboarding: User authenticated:", user.id)
       
       // Check if user already has a role
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .single()
-      
-      console.log("Onboarding: Profile check:", { profile, error })
-
-      if (error && error.code === "PGRST116") {
-        // Profile doesn't exist, create one
-        console.log("Creating profile for user:", session.user.id)
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert({
-            user_id: session.user.id,
-            first_name: session.user.user_metadata?.first_name || null,
-            last_name: session.user.user_metadata?.last_name || null,
-            avatar_url: session.user.user_metadata?.avatar_url || null,
-            username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'user',
-            role: null // Start with NULL to trigger onboarding
-          })
-        
-        if (insertError) {
-          console.error("Error creating profile:", insertError)
-        }
-      } else if (profile?.role) {
+      if (profile?.role) {
         // User already has a role, redirect appropriately
         console.log("User already has role:", profile.role)
         router.push(profile.role === "owner" ? "/profile/dashboard" : "/browse")
       }
     }
-
-    checkAuth()
-  }, [router, supabase])
+  }, [authLoading, user, profile, router])
 
   const handleRoleSelection = async (role: "creator" | "owner") => {
     if (!user) return

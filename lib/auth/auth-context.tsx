@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 
@@ -56,7 +56,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     error: null,
   })
 
+  const currentUserRef = useRef<User | null>(null)
   const supabase = createClient()
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    currentUserRef.current = state.user
+  }, [state.user])
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     try {
@@ -198,7 +204,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('Auth state change:', event, session?.user?.id)
 
         if (event === 'SIGNED_IN' && session?.user) {
-          setState(prev => ({ ...prev, loading: true, error: null }))
+          // Don't show loading if we already have this user and are just refocusing tab
+          const isSameUser = currentUserRef.current?.id === session.user.id
+          
+          if (!isSameUser) {
+            setState(prev => ({ ...prev, loading: true, error: null }))
+          }
+          
           const profile = await fetchProfile(session.user.id)
           setState({
             user: session.user,

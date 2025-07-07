@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth/auth-context'
 import { CreatorDashboard } from '@/components/creator-dashboard'
 import { OwnerDashboard } from '@/components/owner-dashboard'
 import { AdminDashboard } from '@/components/admin-dashboard'
@@ -18,69 +18,26 @@ interface Profile {
 }
 
 export default function ProfileDashboardPage() {
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, profile, loading } = useAuth()
   const [authorized, setAuthorized] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Get current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        if (sessionError || !session?.user) {
-          router.replace('/auth/login')
-          return
-        }
-
-        setUser(session.user)
-
-        // Get user profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-
-        if (profileError || !profile) {
-          console.error('Profile error:', profileError)
-          router.replace('/browse')
-          return
-        }
-
-        // Check if user has a role
-        if (!profile.role) {
-          router.replace('/onboarding')
-          return
-        }
-
-        setProfile(profile)
-        setAuthorized(true)
-      } catch (error) {
-        console.error('Auth check error:', error)
+    if (!loading) {
+      if (!user || !profile) {
         router.replace('/auth/login')
-      } finally {
-        setLoading(false)
+        return
       }
+
+      // Check if user has a role
+      if (!profile.role) {
+        router.replace('/onboarding')
+        return
+      }
+
+      setAuthorized(true)
     }
-
-    checkAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        router.replace('/auth/login')
-      } else if (event === 'SIGNED_IN' && session) {
-        // Re-check authorization
-        checkAuth()
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [router, supabase])
+  }, [loading, user, profile, router])
 
   // Render role-specific dashboard content
   const renderDashboardContent = () => {

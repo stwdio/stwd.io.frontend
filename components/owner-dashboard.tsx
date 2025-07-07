@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth/auth-context'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -98,7 +99,7 @@ type SortField = 'name' | 'location' | 'hourly_rate' | 'published' | 'verificati
 type SortDirection = 'asc' | 'desc'
 
 export function OwnerDashboard() {
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const { user, profile, loading: authLoading } = useAuth()
   const [studios, setStudios] = useState<Studio[]>([])
   const [sortedStudios, setSortedStudios] = useState<Studio[]>([])
   const [sortField, setSortField] = useState<SortField>('name')
@@ -118,8 +119,12 @@ export function OwnerDashboard() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchOwnerData()
-  }, [])
+    if (!authLoading && profile) {
+      fetchOwnerData()
+    } else if (!authLoading && !profile) {
+      setLoading(false)
+    }
+  }, [authLoading, profile])
 
   // Sort studios when studios data or sort criteria changes
   useEffect(() => {
@@ -175,24 +180,16 @@ export function OwnerDashboard() {
 
   const fetchOwnerData = async () => {
     try {
-      // Get current user profile
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single()
-
-      if (!profileData) return
-      setProfile(profileData)
+      if (!profile) {
+        setLoading(false)
+        return
+      }
 
       // Fetch owner's studios
       const { data: studiosData } = await supabase
         .from('studios')
         .select('*')
-        .eq('owner_id', profileData.id)
+        .eq('owner_id', profile.id)
         .order('created_at', { ascending: false })
 
       setStudios(studiosData || [])
@@ -346,7 +343,7 @@ export function OwnerDashboard() {
     return username || 'Unknown'
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center h-32">
         <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />

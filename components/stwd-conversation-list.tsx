@@ -3,11 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { MessageCircle, User } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { generateIdenticon } from '@/lib/identicon'
 
 interface ConversationWithDetails {
   id: number
@@ -244,24 +240,24 @@ export function STWDConversationList({
   }
 
   return (
-    <div className={cn("flex flex-col space-y-1 p-2 overflow-y-auto", className)}>
+    <div className={cn("flex flex-col space-y-4 px-4 py-4 overflow-y-auto", className)}>
       {conversations.map((conversation) => (
-        <Button
+        <div
           key={conversation.id}
-          variant={selectedConversationId === conversation.id ? "secondary" : "ghost"}
           className={cn(
-            "flex items-start space-x-3 p-4 h-auto text-left justify-start w-full shrink-0",
-            selectedConversationId === conversation.id && "bg-muted"
+            "flex items-start space-x-3 p-4 h-auto text-left w-full shrink-0 min-h-[80px] rounded-lg transition-all duration-200 cursor-pointer",
+            "border border-transparent hover:border-border/50 hover:bg-muted/50",
+            selectedConversationId === conversation.id && "bg-muted border-border"
           )}
           onClick={() => onSelectConversation(conversation)}
         >
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 pt-1">
             <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
               <User className="h-5 w-5 text-primary" />
             </div>
           </div>
           
-          <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex-1 min-w-0 space-y-1.5">
             <div className="flex items-center justify-between">
               <p className="font-medium text-sm truncate">
                 {getConversationTitle(conversation)}
@@ -277,7 +273,7 @@ export function STWDConversationList({
               {formatLastMessagePreview(conversation.last_message)}
             </p>
           </div>
-        </Button>
+        </div>
       ))}
     </div>
   )

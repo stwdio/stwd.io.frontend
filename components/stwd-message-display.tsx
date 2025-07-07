@@ -163,9 +163,9 @@ export function STWDChatArea({
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-background text-foreground antialiased">
+    <div className="flex flex-col h-full w-full bg-background text-foreground antialiased min-h-0">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-border">
+      <div className="flex items-center gap-3 p-4 border-b border-border shrink-0">
         {onBack && (
           <Button variant="ghost" size="sm" onClick={onBack}>
             ←
@@ -180,7 +180,7 @@ export function STWDChatArea({
       </div>
 
       {/* Messages */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {messages.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground py-8">
             No messages yet. Start the conversation!
@@ -208,7 +208,7 @@ export function STWDChatArea({
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSendMessage} className="flex w-full gap-2 border-t border-border p-4">
+      <form onSubmit={handleSendMessage} className="flex w-full gap-2 border-t border-border px-4 py-3 shrink-0">
         <Input
           className={cn(
             'rounded-full bg-background text-sm transition-all duration-300',

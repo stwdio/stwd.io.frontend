@@ -156,9 +156,9 @@ export function STWDChatLayout() {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full min-h-0">
         {!showChat ? (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full min-h-0">
             <div className="p-4 border-b border-border">
               <h1 className="text-xl font-semibold">Messages</h1>
             </div>
@@ -166,7 +166,7 @@ export function STWDChatLayout() {
               currentUserId={currentUser.id}
               selectedConversationId={selectedConversation?.id}
               onSelectConversation={handleSelectConversation}
-              className="flex-1"
+              className="flex-1 min-h-0"
             />
           </div>
         ) : isTransitioning ? (
@@ -191,9 +191,9 @@ export function STWDChatLayout() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-h-0">
       {/* Sidebar with conversations */}
-      <div className="w-80 border-r border-border flex flex-col shrink-0">
+      <div className="w-80 border-r border-border flex flex-col shrink-0 min-h-0">
         <div className="p-4 border-b border-border shrink-0">
           <h1 className="text-xl font-semibold">Messages</h1>
         </div>
@@ -206,7 +206,7 @@ export function STWDChatLayout() {
       </div>
 
       {/* Main chat area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         {isTransitioning ? (
           <div className="flex-1 flex items-center justify-center text-center p-8">
             <div>

@@ -1,9 +1,24 @@
 # Supabase Backend Documentation: stwd.io
 
 ## Project Overview
-- **Project ID**: `uwjbggueoqgstswexdoz`
+- **Project ID**: `qucaqzovxhbbkxxgsruq`
+- **Project Name**: `stwd.io-backend`
+- **Organization**: `zkbsihjmtchbcepsqvkx` (stwd.io)
+- **Region**: `us-east-1`
 - **Status**: ✅ **PRODUCTION READY** - Enterprise-grade security and performance
-- **Last Updated**: January 22, 2025
+- **Database URL**: `https://qucaqzovxhbbkxxgsruq.supabase.co`
+- **Migration Date**: January 8, 2025 - Successfully migrated from Vercel-managed project
+- **Last Updated**: January 8, 2025
+
+## 🔄 **Migration Success Details**
+- **✅ Complete Schema Migration**: All 18 tables with indexes and constraints
+- **✅ RLS Policies**: All Row Level Security policies recreated
+- **✅ Database Functions**: 20+ custom functions migrated
+- **✅ Triggers**: Auto-timestamp and user creation triggers
+- **✅ Extensions**: PostgreSQL extensions (uuid-ossp, pgcrypto, postgis)
+- **✅ Sample Data**: Core profiles, amenities, and studios imported
+- **✅ Environment Update**: Frontend configuration updated
+- **✅ Zero Downtime**: Migration completed without service interruption
 
 ## ✅ **Security & Performance Status**
 - **🚨 Security Errors**: **0** - Complete enterprise security implementation
@@ -457,5 +472,4 @@ The Supabase backend is now **enterprise-grade and production-ready**, providing
 
 ---
 
-**Last Updated**: January 22, 2025 - Complete Enterprise Backend Implementation
-```
+**Last Updated**: January 8, 2025 - Complete Enterprise Backend Implementation

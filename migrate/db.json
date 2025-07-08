@@ -1,0 +1,212 @@
+[
+    {
+        "schema_name": "public",
+        "function_name": "add_studio_to_list",
+        "function_arguments": "list_id_param bigint, studio_id_param bigint, notes_param text DEFAULT NULL::text",
+        "return_type": "bool",
+        "function_definition": "\nDECLARE\n  list_owner_user_id UUID;\nBEGIN\n  -- Check if the current user owns the list\n  SELECT p.user_id INTO list_owner_user_id\n  FROM lists l\n  JOIN profiles p ON p.id = l.owner_id\n  WHERE l.id = list_id_param;\n  \n  IF list_owner_user_id != auth.uid() THEN\n    RAISE EXCEPTION 'Unauthorized: You can only add studios to your own lists';\n  END IF;\n  \n  -- Insert or update the list item (upsert)\n  INSERT INTO list_items (list_id, studio_id, notes)\n  VALUES (list_id_param, studio_id_param, notes_param)\n  ON CONFLICT (list_id, studio_id) \n  DO UPDATE SET \n    notes = COALESCE(notes_param, list_items.notes),\n    created_at = NOW();\n  \n  RETURN TRUE;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "claim_studio",
+        "function_arguments": "studio_id_param bigint, verification_docs jsonb",
+        "return_type": "void",
+        "function_definition": "\nDECLARE\n  current_profile_id BIGINT;\nBEGIN\n  -- Get current user's profile ID\n  SELECT id INTO current_profile_id \n  FROM profiles \n  WHERE user_id = auth.uid();\n  \n  IF current_profile_id IS NULL THEN\n    RAISE EXCEPTION 'User profile not found';\n  END IF;\n  \n  -- Verify studio exists and is unclaimed\n  IF NOT EXISTS (\n    SELECT 1 FROM studios \n    WHERE id = studio_id_param \n    AND verification_status = 'unclaimed'\n  ) THEN\n    RAISE EXCEPTION 'Studio not found or already claimed';\n  END IF;\n  \n  -- Update studio with claim information\n  UPDATE studios \n  SET \n    verification_status = 'pending_claim_verification',\n    claimed_by = current_profile_id,\n    verification_documents = verification_docs,\n    updated_at = NOW()\n  WHERE id = studio_id_param;\n  \nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "create_conversation_from_inquiry",
+        "function_arguments": "inquiry_id_param bigint, studio_id_param bigint, initial_message text DEFAULT NULL::text",
+        "return_type": "int8",
+        "function_definition": "\nDECLARE\n  conversation_id BIGINT;\n  customer_profile_id BIGINT;\n  studio_owner_profile_id BIGINT;\n  current_profile_id BIGINT;\nBEGIN\n  -- Get current user's profile ID\n  SELECT id INTO current_profile_id\n  FROM profiles \n  WHERE user_id = auth.uid();\n  \n  IF current_profile_id IS NULL THEN\n    RAISE EXCEPTION 'User profile not found';\n  END IF;\n\n  -- Get customer profile ID from inquiry\n  SELECT creator_id INTO customer_profile_id\n  FROM inquiries\n  WHERE id = inquiry_id_param;\n  \n  IF customer_profile_id IS NULL THEN\n    RAISE EXCEPTION 'Inquiry not found';\n  END IF;\n\n  -- Get studio owner profile ID\n  SELECT owner_id INTO studio_owner_profile_id\n  FROM studios\n  WHERE id = studio_id_param;\n  \n  IF studio_owner_profile_id IS NULL THEN\n    RAISE EXCEPTION 'Studio owner not found';\n  END IF;\n\n  -- Verify the current user is either the customer or studio owner\n  IF current_profile_id != customer_profile_id AND current_profile_id != studio_owner_profile_id THEN\n    RAISE EXCEPTION 'Unauthorized to create conversation for this inquiry';\n  END IF;\n\n  -- Check if conversation already exists\n  SELECT id INTO conversation_id\n  FROM conversations\n  WHERE inquiry_id = inquiry_id_param \n    AND studio_id = studio_id_param;\n\n  -- Create conversation if it doesn't exist\n  IF conversation_id IS NULL THEN\n    INSERT INTO conversations (\n      inquiry_id,\n      customer_id,\n      studio_owner_id,\n      studio_id,\n      status\n    ) VALUES (\n      inquiry_id_param,\n      customer_profile_id,\n      studio_owner_profile_id,\n      studio_id_param,\n      'active'\n    ) RETURNING id INTO conversation_id;\n  END IF;\n\n  -- Add initial message if provided\n  IF initial_message IS NOT NULL AND initial_message != '' THEN\n    INSERT INTO messages (\n      conversation_id,\n      sender_id,\n      content,\n      message_type\n    ) VALUES (\n      conversation_id,\n      current_profile_id,\n      initial_message,\n      'text'\n    );\n  END IF;\n\n  RETURN conversation_id;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "create_default_favorites_list",
+        "function_arguments": "",
+        "return_type": "trigger",
+        "function_definition": "\nBEGIN\n  -- Create a default \"Favorites\" list for new profiles\n  INSERT INTO lists (owner_id, name, icon_emoji, is_public)\n  VALUES (NEW.id, 'Favorites', '❤️', false);\n  \n  RETURN NEW;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "delete_studio_safely",
+        "function_arguments": "studio_id_param bigint",
+        "return_type": "json",
+        "function_definition": "\nDECLARE\n  result JSON;\n  conversation_count INTEGER;\n  booking_count INTEGER;\n  message_count INTEGER;\nBEGIN\n  -- Check if studio exists\n  IF NOT EXISTS (SELECT 1 FROM studios WHERE id = studio_id_param) THEN\n    RETURN json_build_object(\n      'success', false,\n      'error', 'Studio not found'\n    );\n  END IF;\n\n  -- Count related records for reporting\n  SELECT COUNT(*) INTO conversation_count FROM conversations WHERE studio_id = studio_id_param;\n  SELECT COUNT(*) INTO booking_count FROM bookings WHERE studio_id = studio_id_param;\n  SELECT COUNT(*) INTO message_count FROM messages \n    WHERE conversation_id IN (SELECT id FROM conversations WHERE studio_id = studio_id_param);\n\n  -- Start transaction for safe deletion\n  BEGIN\n    -- 1. Delete messages related to studio conversations\n    DELETE FROM messages \n    WHERE conversation_id IN (SELECT id FROM conversations WHERE studio_id = studio_id_param);\n\n    -- 2. Delete conversation participants\n    DELETE FROM conversation_participants \n    WHERE conversation_id IN (SELECT id FROM conversations WHERE studio_id = studio_id_param);\n\n    -- 3. Delete conversations\n    DELETE FROM conversations WHERE studio_id = studio_id_param;\n\n    -- 4. Delete booking add-ons for studio bookings\n    DELETE FROM booking_add_ons \n    WHERE booking_id IN (SELECT id FROM bookings WHERE studio_id = studio_id_param);\n\n    -- 5. Delete reviews for studio bookings  \n    DELETE FROM reviews \n    WHERE booking_id IN (SELECT id FROM bookings WHERE studio_id = studio_id_param);\n\n    -- 6. Delete dispute messages for studio booking disputes\n    DELETE FROM dispute_messages \n    WHERE dispute_id IN (\n      SELECT id FROM disputes \n      WHERE booking_id IN (SELECT id FROM bookings WHERE studio_id = studio_id_param)\n    );\n\n    -- 7. Delete disputes for studio bookings\n    DELETE FROM disputes \n    WHERE booking_id IN (SELECT id FROM bookings WHERE studio_id = studio_id_param);\n\n    -- 8. Delete bookings\n    DELETE FROM bookings WHERE studio_id = studio_id_param;\n\n    -- 9. Delete inquiry recipients\n    DELETE FROM inquiry_recipients WHERE studio_id = studio_id_param;\n\n    -- 10. Delete favorites\n    DELETE FROM favorites WHERE studio_id = studio_id_param;\n\n    -- 11. Delete pricing rules\n    DELETE FROM pricing_rules WHERE studio_id = studio_id_param;\n\n    -- 12. Delete add-on services  \n    DELETE FROM add_on_services WHERE studio_id = studio_id_param;\n\n    -- 13. Delete studio amenities\n    DELETE FROM studio_amenities WHERE studio_id = studio_id_param;\n\n    -- 14. Finally, delete the studio itself\n    DELETE FROM studios WHERE id = studio_id_param;\n\n    -- Return success with cleanup stats\n    RETURN json_build_object(\n      'success', true,\n      'deleted_studio_id', studio_id_param,\n      'cleanup_stats', json_build_object(\n        'conversations_deleted', conversation_count,\n        'bookings_deleted', booking_count,\n        'messages_deleted', message_count\n      )\n    );\n\n  EXCEPTION\n    WHEN OTHERS THEN\n      -- Rollback happens automatically\n      RETURN json_build_object(\n        'success', false,\n        'error', 'Failed to delete studio: ' || SQLERRM\n      );\n  END;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "get_batch_studio_list_memberships_optimized",
+        "function_arguments": "studio_ids bigint[], user_profile_id bigint",
+        "return_type": "record",
+        "function_definition": "\nBEGIN\n  RETURN QUERY\n  SELECT \n    li.studio_id,\n    l.id as list_id,\n    l.name as list_name,\n    l.icon_emoji as list_icon_emoji\n  FROM list_items li\n  INNER JOIN lists l ON li.list_id = l.id\n  WHERE li.studio_id = ANY(studio_ids)\n    AND l.owner_id = user_profile_id\n  ORDER BY li.studio_id, l.name;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "get_conversation_messages",
+        "function_arguments": "conversation_id_param bigint",
+        "return_type": "record",
+        "function_definition": "\nBEGIN\n  RETURN QUERY\n  SELECT \n    m.id,\n    m.content,\n    m.message_type,\n    m.quote_amount,\n    m.created_at,\n    jsonb_build_object(\n      'id', p.id,\n      'first_name', p.first_name,\n      'last_name', p.last_name,\n      'username', p.username\n    ) as sender_profile\n  FROM messages m\n  JOIN profiles p ON p.id = m.sender_id\n  WHERE m.conversation_id = conversation_id_param\n  ORDER BY m.created_at ASC;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "get_list_studios_for_quote",
+        "function_arguments": "list_id_param bigint, user_profile_id bigint",
+        "return_type": "record",
+        "function_definition": "\nBEGIN\n  RETURN QUERY\n  SELECT \n    s.id,\n    s.name,\n    s.description,\n    s.location,\n    s.hourly_rate,\n    s.verification_status,\n    -- Check if user has already sent an inquiry to this studio\n    EXISTS(\n      SELECT 1 FROM inquiry_recipients ir\n      JOIN inquiries i ON i.id = ir.inquiry_id\n      WHERE ir.studio_id = s.id AND i.creator_id = user_profile_id\n    ) AS has_existing_inquiry\n  FROM list_items li\n  JOIN studios s ON s.id = li.studio_id\n  JOIN lists l ON l.id = li.list_id\n  WHERE li.list_id = list_id_param \n    AND l.owner_id = user_profile_id  -- Ensure user owns the list\n    AND s.published = true            -- Only published studios\n  ORDER BY li.created_at DESC;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "get_my_profile_id",
+        "function_arguments": "",
+        "return_type": "int8",
+        "function_definition": "\nBEGIN\n    RETURN (SELECT id FROM public.profiles WHERE user_id = (SELECT auth.uid()));\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY INVOKER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "get_studio_inquiries",
+        "function_arguments": "studio_ids bigint[]",
+        "return_type": "record",
+        "function_definition": "\nBEGIN\n  -- Check if the current user owns any of the requested studios\n  IF NOT EXISTS (\n    SELECT 1\n    FROM studios s\n    INNER JOIN profiles p ON p.id = s.owner_id\n    WHERE s.id = ANY(studio_ids)\n      AND p.user_id = auth.uid()\n  ) AND auth.uid() NOT IN (\n    SELECT profiles.user_id\n    FROM profiles\n    WHERE profiles.role = 'admin'\n  ) THEN\n    RAISE EXCEPTION 'Access denied: You do not own these studios';\n  END IF;\n\n  RETURN QUERY\n  SELECT \n    ir.inquiry_id,\n    ir.studio_id,\n    ir.status,\n    ir.response_message,\n    ir.quote_amount,\n    ir.responded_at,\n    ir.created_at,\n    json_build_object(\n      'id', i.id,\n      'project_type', i.project_type,\n      'genre', i.genre,\n      'budget_range', i.budget_range,\n      'preferred_dates', i.preferred_dates,\n      'location_preference', i.location_preference,\n      'custom_message', i.custom_message,\n      'created_at', i.created_at,\n      'profiles', json_build_object(\n        'first_name', p.first_name,\n        'last_name', p.last_name,\n        'username', p.username\n      )\n    ) as inquiries,\n    json_build_object('name', s.name) as studios\n  FROM inquiry_recipients ir\n  LEFT JOIN inquiries i ON i.id = ir.inquiry_id\n  LEFT JOIN profiles p ON p.id = i.creator_id\n  LEFT JOIN studios s ON s.id = ir.studio_id\n  WHERE ir.studio_id = ANY(studio_ids)\n  ORDER BY ir.created_at DESC;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "get_studio_list_memberships",
+        "function_arguments": "studio_id_param bigint, user_profile_id bigint",
+        "return_type": "record",
+        "function_definition": "\nBEGIN\n  RETURN QUERY\n  SELECT \n    l.id,\n    l.name,\n    l.icon_emoji\n  FROM lists l\n  JOIN list_items li ON li.list_id = l.id\n  WHERE li.studio_id = studio_id_param \n    AND l.owner_id = user_profile_id\n  ORDER BY l.name;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "get_user_lists_with_counts",
+        "function_arguments": "user_profile_id bigint",
+        "return_type": "record",
+        "function_definition": "\nBEGIN\n  RETURN QUERY\n  SELECT \n    l.id,\n    l.name,\n    l.icon_emoji,\n    l.is_public,\n    l.created_at,\n    l.updated_at,\n    COALESCE(COUNT(li.studio_id), 0) AS studio_count\n  FROM lists l\n  LEFT JOIN list_items li ON l.id = li.list_id\n  WHERE l.owner_id = user_profile_id\n  GROUP BY l.id, l.name, l.icon_emoji, l.is_public, l.created_at, l.updated_at\n  ORDER BY l.created_at DESC;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "handle_inquiry_response",
+        "function_arguments": "inquiry_id_param bigint, studio_id_param bigint, response_message_param text, quote_amount_param numeric DEFAULT NULL::numeric",
+        "return_type": "int8",
+        "function_definition": "\nDECLARE\n  conversation_id_result BIGINT;\n  creator_profile_id BIGINT;\n  studio_owner_profile_id BIGINT;\n  message_type_to_use TEXT;\nBEGIN\n  -- Get creator and studio owner profile IDs\n  SELECT i.creator_id, s.owner_id \n  INTO creator_profile_id, studio_owner_profile_id\n  FROM inquiries i\n  JOIN studios s ON s.id = studio_id_param\n  WHERE i.id = inquiry_id_param;\n  \n  -- Find existing conversation or create new one\n  SELECT c.id INTO conversation_id_result\n  FROM conversations c\n  WHERE c.inquiry_id = inquiry_id_param \n  AND c.studio_id = studio_id_param;\n  \n  IF conversation_id_result IS NULL THEN\n    -- Create new conversation\n    INSERT INTO conversations (inquiry_id, studio_id, customer_id, studio_owner_id)\n    VALUES (inquiry_id_param, studio_id_param, creator_profile_id, studio_owner_profile_id)\n    RETURNING id INTO conversation_id_result;\n    \n    -- Add participants\n    INSERT INTO conversation_participants (conversation_id, profile_id)\n    VALUES \n      (conversation_id_result, creator_profile_id),\n      (conversation_id_result, studio_owner_profile_id);\n  END IF;\n  \n  -- Determine message type based on whether quote amount is provided\n  IF quote_amount_param IS NOT NULL AND quote_amount_param > 0 THEN\n    message_type_to_use := 'quote';\n  ELSE\n    message_type_to_use := 'text';\n  END IF;\n  \n  -- Insert message with appropriate type\n  INSERT INTO messages (\n    conversation_id, \n    sender_id, \n    content, \n    message_type, \n    quote_amount\n  ) VALUES (\n    conversation_id_result,\n    studio_owner_profile_id,\n    response_message_param,\n    message_type_to_use,\n    CASE WHEN message_type_to_use = 'quote' THEN quote_amount_param ELSE NULL END\n  );\n  \n  -- Update inquiry_recipients status\n  UPDATE inquiry_recipients \n  SET status = 'responded', \n      response_message = response_message_param,\n      quote_amount = quote_amount_param,\n      responded_at = NOW()\n  WHERE inquiry_id = inquiry_id_param \n  AND studio_id = studio_id_param;\n  \n  -- Update conversation last_message_at\n  UPDATE conversations \n  SET last_message_at = NOW()\n  WHERE id = conversation_id_result;\n  \n  RETURN conversation_id_result;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "handle_new_user",
+        "function_arguments": "",
+        "return_type": "trigger",
+        "function_definition": "\nDECLARE\n  sanitized_username TEXT;\n  base_username TEXT;\n  counter INTEGER := 0;\n  final_username TEXT;\nBEGIN\n  -- Create a sanitized username from email or metadata\n  base_username := COALESCE(\n    NEW.raw_user_meta_data->>'username',\n    NEW.raw_user_meta_data->>'name'\n  );\n  \n  -- If no username in metadata, sanitize the email\n  IF base_username IS NULL AND NEW.email IS NOT NULL THEN\n    -- Extract username part from email (before @)\n    base_username := split_part(NEW.email, '@', 1);\n    \n    -- Remove dots, hyphens, and other invalid characters\n    base_username := regexp_replace(base_username, '[^a-zA-Z0-9_]', '_', 'g');\n    \n    -- Replace multiple underscores with single underscore\n    base_username := regexp_replace(base_username, '_+', '_', 'g');\n    \n    -- Remove leading/trailing underscores\n    base_username := trim(base_username, '_');\n    \n    -- Convert to lowercase\n    base_username := lower(base_username);\n    \n    -- Ensure minimum length of 3 characters\n    IF length(base_username) < 3 THEN\n      base_username := base_username || '_user';\n    END IF;\n  END IF;\n  \n  -- Final fallback if still no valid username\n  IF base_username IS NULL OR length(base_username) < 3 THEN\n    base_username := 'user_' || substr(NEW.id::text, 1, 8);\n  END IF;\n  \n  -- Ensure username is unique by adding numbers if needed\n  sanitized_username := base_username;\n  \n  -- Check if username exists and increment counter if needed\n  WHILE EXISTS (SELECT 1 FROM public.profiles WHERE username = sanitized_username) LOOP\n    counter := counter + 1;\n    sanitized_username := base_username || '_' || counter;\n  END LOOP;\n  \n  final_username := sanitized_username;\n\n  INSERT INTO public.profiles (user_id, role, created_at, updated_at, username)\n  VALUES (\n    NEW.id,\n    NULL, -- Role is NULL initially to trigger onboarding\n    NOW(),\n    NOW(),\n    final_username\n  );\n  RETURN NEW;\nEXCEPTION\n  WHEN unique_violation THEN\n    -- Profile already exists, ignore\n    RETURN NEW;\n  WHEN OTHERS THEN\n    -- Log error but don't break auth flow\n    RAISE LOG 'Error in handle_new_user: %', SQLERRM;\n    RETURN NEW;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "handle_updated_at",
+        "function_arguments": "",
+        "return_type": "trigger",
+        "function_definition": "\nBEGIN\n    NEW.updated_at = now();\n    RETURN NEW;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY INVOKER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "is_admin",
+        "function_arguments": "",
+        "return_type": "bool",
+        "function_definition": "\nBEGIN\n    RETURN EXISTS (\n        SELECT 1 FROM public.profiles \n        WHERE user_id = (SELECT auth.uid()) AND role = 'admin'\n    );\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY INVOKER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "mark_messages_read",
+        "function_arguments": "conversation_id_param bigint",
+        "return_type": "void",
+        "function_definition": "\nDECLARE\n  current_profile_id BIGINT;\nBEGIN\n  -- Get current user's profile ID\n  SELECT id INTO current_profile_id\n  FROM profiles \n  WHERE user_id = auth.uid();\n  \n  IF current_profile_id IS NULL THEN\n    RAISE EXCEPTION 'User profile not found';\n  END IF;\n\n  -- Verify user is part of the conversation\n  IF NOT EXISTS (\n    SELECT 1 FROM conversations\n    WHERE id = conversation_id_param \n      AND (customer_id = current_profile_id OR studio_owner_id = current_profile_id)\n  ) THEN\n    RAISE EXCEPTION 'Unauthorized to mark messages as read in this conversation';\n  END IF;\n\n  -- Mark all unread messages from other participants as read\n  UPDATE messages \n  SET read_at = NOW()\n  WHERE conversation_id = conversation_id_param \n    AND sender_id != current_profile_id \n    AND read_at IS NULL;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "remove_studio_from_list",
+        "function_arguments": "list_id_param bigint, studio_id_param bigint",
+        "return_type": "bool",
+        "function_definition": "\nDECLARE\n  list_owner_user_id UUID;\nBEGIN\n  -- Check if the current user owns the list\n  SELECT p.user_id INTO list_owner_user_id\n  FROM lists l\n  JOIN profiles p ON p.id = l.owner_id\n  WHERE l.id = list_id_param;\n  \n  IF list_owner_user_id != auth.uid() THEN\n    RAISE EXCEPTION 'Unauthorized: You can only remove studios from your own lists';\n  END IF;\n  \n  -- Remove the studio from the list\n  DELETE FROM list_items \n  WHERE list_id = list_id_param AND studio_id = studio_id_param;\n  \n  RETURN TRUE;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "send_message",
+        "function_arguments": "conversation_id_param bigint, content_param text, message_type_param text DEFAULT 'text'::text, quote_amount_param numeric DEFAULT NULL::numeric, file_url_param text DEFAULT NULL::text, file_name_param text DEFAULT NULL::text, file_size_param bigint DEFAULT NULL::bigint",
+        "return_type": "int8",
+        "function_definition": "\nDECLARE\n  message_id BIGINT;\n  current_profile_id BIGINT;\nBEGIN\n  -- Get current user's profile ID\n  SELECT id INTO current_profile_id\n  FROM profiles \n  WHERE user_id = auth.uid();\n  \n  IF current_profile_id IS NULL THEN\n    RAISE EXCEPTION 'User profile not found';\n  END IF;\n\n  -- Verify user is part of the conversation\n  IF NOT EXISTS (\n    SELECT 1 FROM conversations\n    WHERE id = conversation_id_param \n      AND (customer_id = current_profile_id OR studio_owner_id = current_profile_id)\n  ) THEN\n    RAISE EXCEPTION 'Unauthorized to send message in this conversation';\n  END IF;\n\n  -- Insert message\n  INSERT INTO messages (\n    conversation_id,\n    sender_id,\n    content,\n    message_type,\n    quote_amount,\n    file_url,\n    file_name,\n    file_size\n  ) VALUES (\n    conversation_id_param,\n    current_profile_id,\n    content_param,\n    message_type_param,\n    quote_amount_param,\n    file_url_param,\n    file_name_param,\n    file_size_param\n  ) RETURNING id INTO message_id;\n\n  RETURN message_id;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "public",
+        "function_name": "update_conversation_last_message",
+        "function_arguments": "",
+        "return_type": "trigger",
+        "function_definition": "\nBEGIN\n  UPDATE conversations \n  SET \n    last_message_at = NEW.created_at,\n    updated_at = NOW()\n  WHERE id = NEW.conversation_id;\n  RETURN NEW;\nEND;\n",
+        "function_comment": null,
+        "security": "SECURITY DEFINER",
+        "volatility": "VOLATILE"
+    },
+    {
+        "schema_name": "realtime",
+        "function_name": "apply_rls",
+        "function_arguments": "wal jsonb, max_record_bytes integer DEFAULT (1024 * 1024)",
+        "return_type": "wal_rls",
+        "function_definition": "\ndeclare\n-- Regclass of the table e.g. public.notes\nentity_ regclass = (quote_ident(wal ->> 'schema') || '.' || quote_ident(wal ->> 'table'))::regclass;\n\n-- I, U, D, T: insert, update ...\naction realtime.action = (\n    case wal ->> 'action'\n        when 'I' then 'INSERT'\n        when 'U' then 'UPDATE'\n        when 'D' then 'DELETE'\n        else 'ERROR'\n    end\n);\n\n-- Is row level security enabled for the table\nis_rls_enabled bool = relrowsecurity from pg_class where oid = entity_;\n\nsubscriptions realtime.subscription[] = array_agg(subs)\n    from\n        realtime.subscription subs\n    where\n        subs.entity = entity_;\n\n-- Subscription vars\nroles regrole[] = array_agg(distinct us.claims_role::text)\n    from\n        unnest(subscriptions) us;\n\nworking_role regrole;\nclaimed_role regrole;\nclaims jsonb;\n\nsubscription_id uuid;\nsubscription_has_access bool;\nvisible_to_subscription_ids uuid[] = '{}';\n\n-- structured info for wal's columns\ncolumns realtime.wal_column[];\n-- previous identity values for update/delete\nold_columns realtime.wal_column[];\n\nerror_record_exceeds_max_size boolean = octet_length(wal::text) > max_record_bytes;\n\n-- Primary jsonb output for record\noutput jsonb;\n\nbegin\nperform set_config('role', null, true);\n\ncolumns =\n    array_agg(\n        (\n            x->>'name',\n            x->>'type',\n            x->>'typeoid',\n            realtime.cast(\n                (x->'value') #>> '{}',\n                coalesce(\n                    (x->>'typeoid')::regtype, -- null when wal2json version <= 2.4\n                    (x->>'type')::regtype\n                )\n            ),\n            (pks ->> 'name') is not null,\n            true\n        )::realtime.wal_column\n    )\n    from\n        jsonb_array_elements(wal -> 'columns') x\n        left join jsonb_array_elements(wal -> 'pk') pks\n            on (x ->> 'name') = (pks ->> 'name');\n\nold_columns =\n    array_agg(\n        (\n            x->>'name',\n            x->>'type',\n            x->>'typeoid',\n            realtime.cast(\n                (x->'value') #>> '{}',\n                coalesce(\n                    (x->>'typeoid')::regtype, -- null when wal2json version <= 2.4\n                    (x->>'type')::regtype\n                )\n            ),\n            (pks ->> 'name') is not null,\n            true\n        )::realtime.wal_column\n    )\n    from\n        jsonb_array_elements(wal -> 'identity') x\n        left join jsonb_array_elements(wal -> 'pk') pks\n            on (x ->> 'name') = (pks ->> 'name');\n\nfor working_role in select * from unnest(roles) loop\n\n    -- Update `is_selectable` for columns and old_columns\n    columns =\n        array_agg(\n            (\n                c.name,\n                c.type_name,\n                c.type_oid,\n                c.value,\n                c.is_pkey,\n                pg_catalog.has_column_privilege(working_role, entity_, c.name, 'SELECT')\n            )::realtime.wal_column\n        )\n        from\n            unnest(columns) c;\n\n    old_columns =\n            array_agg(\n                (\n                    c.name,\n                    c.type_name,\n                    c.type_oid,\n                    c.value,\n                    c.is_pkey,\n                    pg_catalog.has_column_privilege(working_role, entity_, c.name, 'SELECT')\n                )::realtime.wal_column\n            )\n            from\n                unnest(old_columns) c;\n\n    if action <> 'DELETE' and count(1) = 0 from unnest(columns) c where c.is_pkey then\n        return next (\n            jsonb_build_object(\n                'schema', wal ->> 'schema',\n                'table', wal ->> 'table',\n                'type', action\n            ),\n            is_rls_enabled,\n            -- subscriptions is already filtered by entity\n            (select array_agg(s.subscription_id) from unnest(subscriptions) as s where claims_role = working_role),\n            array['Error 400: Bad Request, no primary key']\n        )::realtime.wal_rls;\n\n    -- The claims role does not have SELECT permission to the primary key of entity\n    elsif action <> 'DELETE' and sum(c.is_selectable::int) <> count(1) from unnest(columns) c where c.is_pkey then\n        return next (\n            jsonb_build_object(\n                'schema', wal ->> 'schema',\n                'table', wal ->> 'table',\n                'type', action\n            ),\n            is_rls_enabled,\n            (select array_agg(s.subscription_id) from unnest(subscriptions) as s where claims_role = working_role),\n            array['Error 401: Unauthorized']\n        )::realtime.wal_rls;\n\n    else\n        output = jsonb_build_object(\n            'schema', wal ->> 'schema',\n            'table', wal ->> 'table',\n            'type', action,\n            'commit_timestamp', to_char(\n                ((wal ->> 'timestamp')::timestamptz at time zone 'utc'),\n                'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"'\n            ),\n            'columns', (\n                select\n                    jsonb_agg(\n                        jsonb_build_object(\n                            'name', pa.attname,\n                            'type', pt.typname\n                        )\n                        order by pa.attnum asc\n                    )\n                from\n                    pg_attribute pa\n                    join pg_type pt\n                        on pa.atttypid = pt.oid\n                where\n                    attrelid = entity_\n                    and attnum > 0\n                    and pg_catalog.has_column_privilege(working_role, entity_, pa.attname, 'SELECT')\n            )\n        )\n        -- Add \"record\" key for insert and update\n        || case\n            when action in ('INSERT', 'UPDATE') then\n                jsonb_build_object(\n                    'record',\n                    (\n                        select\n                            jsonb_object_agg(\n                                -- if unchanged toast, get column name and value from old record\n                                coalesce((c).name, (oc).name),\n                                case\n                                    when (c).name is null then (oc).value\n                                    else (c).value\n                                end\n                            )\n                        from\n                            unnest(columns) c\n                            full outer join unnest(old_columns) oc\n                                on (c).name = (oc).name\n                        where\n                            coalesce((c).is_selectable, (oc).is_selectable)\n                            and ( not error_record_exceeds_max_size or (octet_length((c).value::text) <= 64))\n                    )\n                )\n            else '{}'::jsonb\n        end\n        -- Add \"old_record\" key for update and delete\n        || case\n            when action = 'UPDATE' then\n                jsonb_build_object(\n                        'old_record',\n                        (\n                            select jsonb_object_agg((c).name, (c).value)\n                            from unnest(old_columns) c\n                            where\n                                (c).is_selectable\n                                and ( not error_record_exceeds_max_size or (octet_length((c).value::text) <= 64))\n                        )\n                    )\n            when action = 'DELETE' then\n                jsonb_build_object(\n                    'old_record',\n                    (\n                        select jsonb_object_agg((c).name, (c).value)\n                        from unnest(old_columns) c\n                        where\n                            (c).is_selectable\n                            and ( not error_record_exceeds_max_size or (octet_length((c).value::text) <= 64))\n                            and ( not is_rls_enabled or (c).is_pkey ) -- if RLS enabled, we can't secure deletes so filter to pkey\n                    )\n                )\n            else '{}'::jsonb\n        end;\n\n        -- Create the prepared statement\n        if is_rls_enabled and action <> 'DELETE' then\n            if (select 1 from pg_prepared_statements where name = 'walrus_rls_stmt' limit 1) > 0 then\n                deallocate walrus_rls_stmt;\n            end if;\n            execute realtime.build_prepared_statement_sql('walrus_rls_stmt', entity_, columns);\n        end if;\n\n        visible_to_subscription_ids = '{}';\n\n        for subscription_id, claims in (\n                select\n                    subs.subscription_id,\n                    subs.claims\n                from\n                    unnest(subscriptions) subs\n                where\n                    subs.entity = entity_\n                    and subs.claims_role = working_role\n                    and (\n                        realtime.is_visible_through_filters(columns, subs.filters)\n                        or (\n                          action = 'DELETE'\n                          and realtime.is_visible_through_filters(old_columns, subs.filters)\n                        )\n                    )\n        ) loop\n\n            if not is_rls_enabled or action = 'DELETE' then\n                visible_to_subscription_ids = visible_to_subscription_ids || subscription_id;\n            else\n                -- Check if RLS allows the role to see the record\n                perform\n                    -- Trim leading and trailing quotes from working_role because set_config\n                    -- doesn't recognize the role as valid if they are included\n                    set_config('role', trim(both '\"' from working_role::text), true),\n                    set_config('request.jwt.claims', claims::text, true);\n\n                execute 'execute walrus_rls_stmt' into subscription_has_access;\n\n                if subscription_has_access then\n                    visible_to_subscription_ids = visible_to_subscription_ids || subscription_id;\n                end if;\n            end if;\n        end loop;\n\n        perform set_config('role', null, true);\n\n        return next (\n            output,\n            is_rls_enabled,\n            visible_to_subscription_ids,\n            case\n                when error_record_exceeds_max_size then array['Error 413: Payload Too Large']\n                else '{}'\n            end\n        )::realtime.wal_rls;\n\n    end if;\nend loop;\n\nperform set_config('role', null, true);\nend;\n",
+        "function_comment": null,
+        "security": "SECURITY INVOKER",
+        "volatility": "VOLATILE"
+    }
+]

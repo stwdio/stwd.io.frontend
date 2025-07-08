@@ -17,7 +17,7 @@ Implement a complete image management system for studio photos within the stwd.i
 
 ### Current Architecture Analysis
 - **Frontend**: Next.js 15.3.4 with App Router, TypeScript 5, Tailwind CSS, shadcn/ui components
-- **Backend**: Supabase (Project ID: `qucaqzovxhbbkxxgsruq`) with PostgreSQL, enterprise RLS policies
+- **Backend**: Supabase (Project ID: `uwjbggueoqgstswexdoz`) with PostgreSQL, enterprise RLS policies
 - **Dependencies**: Most required packages already installed, need to add `react-image-crop`
 - **Security**: All 19 tables have RLS enabled with comprehensive policies
 - **Performance**: Recently optimized with batch queries and shared state patterns

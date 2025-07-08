@@ -999,7 +999,7 @@
     - Database updates to profiles table with chosen role
     - Post-onboarding routing to appropriate dashboards
   - **✅ Database Integration**:
-    - **Correct Supabase Project**: Connected to production project `uwjbggueoqgstswexdoz`
+    - **Correct Supabase Project**: Connected to production project `qucaqzovxhbbkxxgsruq`
     - **Working Triggers**: `handle_new_user` trigger creating profiles with NULL roles
     - **Schema Alignment**: Fixed TypeScript types to match production database
     - **Profile Structure**: `id` (bigint), `user_id` (uuid), `role` (text|null), names (nullable)

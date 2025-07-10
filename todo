@@ -1,0 +1,57 @@
+Studio Price
+- We need to change hourly rate to daily rate, studios do not work in hourly rate
+- Studios also can choose not to display the exact rate but in absense of that, we put one $ for a cheap studio, $$ for mid tier , $$$ for exspensive. Please do some research on what rate is a cheap studio
+- Currently we do everything in dollars but when a studio should set their currency. Quotes and rates would be made in this currency maiking the platform worldwide.
+
+More Roles
+- Currently we only have Creators and Owners as public roles (Admin is a special role that only a few hold)
+- We need to add the following roles to the site:
+    - A&R
+    - Engineer
+    - Manager
+- We need to change the view of a the Creator to not only Musicians but also Podcasters, Voice Actors etc.
+- The aim of this refactor is that we shouldnt exclude any people who need a studio to do their work.
+
+Dont Force Log In
+ - The site should be able to be used without an account
+ - The anon user to should see the view of a creator, if they try to perform any actions which require to be logged in like sending a quotes from a quote baket they should be taken to login. We should hook people on the site before forcing them to log in which may cause friction in the research stage.
+
+Profiles
+- We want the primary pull to stwd.io to be that its a platform which connects all the dots which go into creation of music, podcasts, audiobooks, voice acting etc
+- We need to introduce the ability to view users profiles
+- The user should be able to have a dedicated profile section like LinkedIn/Facebook/Instagram for studios
+    - They can set their profile picture
+    - Their about section, like a blurb with a char limit
+    - They can link their social medias
+        - Instagram
+        - X
+    - They can link their creations
+        - Eg:
+            - Musicians could link their Spotify / SoundCloud and list upcoming gigs
+            - Engineers could link their Discogs to show their work
+            - etc - these are just examples for the above roles and for other roles work it out with logic and research
+    - Users can follow other users
+    - Would show their follower accounts on their profile
+    - In the future we could use APIs/Widgets to connect to Spotify, Soundcloud etc to make the data rich but we need to be cautious on cost as this a POC startup
+- Think about how powerful and cool this could be, there is no platform out there that connect every single person of a creation who is needed to create audio based art.
+- Now that there isnt just studios on the profiles users can find:
+    - Studios
+    - Artists
+    - Engineers
+    - A&Rs
+    - Managers
+    - etc
+        - So instead of there just being a Browse section with studios, that would be one section called "Studios" in the sidebar
+        - There would then be sections in the sidebar like Artists, Engineers etc. Artists could find their next Manager, Studio owners could find a new engineer etc
+
+User Settings
+- The user should be able to set settings like (partially done already)
+    - First/Second Name
+    - Username
+    - Email
+    - Reset Password
+
+Please think about these feature/refactors and fill in the blanks where you need or you think I missed opportunities. Use other popular platforms as inspiration.
+We have taken inspiration from mybuilder which we still can but we are making the platform rich and should look to other platforms to make out platform unique.
+
+Understand these feature/refactors and return them as individual tasks. Order them by size of effort.

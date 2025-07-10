@@ -137,6 +137,7 @@ interface STWDChatAreaProps {
   isConnected: boolean
   conversationTitle: string
   onBack?: () => void
+  connectionError?: string | null
 }
 
 export function STWDChatArea({
@@ -145,7 +146,8 @@ export function STWDChatArea({
   onSendMessage,
   isConnected,
   conversationTitle,
-  onBack
+  onBack,
+  connectionError
 }: STWDChatAreaProps) {
   const { containerRef, scrollToBottom } = useChatScroll()
   const [newMessage, setNewMessage] = useState('')
@@ -174,7 +176,13 @@ export function STWDChatArea({
         <div className="flex-1">
           <h2 className="font-semibold text-lg">{conversationTitle}</h2>
           <p className="text-sm text-muted-foreground">
-            {isConnected ? 'Connected' : 'Connecting...'}
+            {connectionError ? (
+              <span className="text-orange-500">{connectionError}</span>
+            ) : isConnected ? (
+              'Connected'
+            ) : (
+              'Connecting...'
+            )}
           </p>
         </div>
       </div>

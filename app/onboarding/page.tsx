@@ -1,71 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { User, Building } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth, getDefaultDashboard } from "@/lib/auth/auth-context"
+import { useRouter } from "next/navigation"
 
 export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [mounted, setMounted] = useState(false)
+  const { user, refreshProfile } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClient()
-
-  useEffect(() => {
-    setMounted(true)
-    
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
-        // Not authenticated, redirect to login
-        router.push("/auth/login")
-        return
-      }
-
-      setUser(session.user)
-      console.log("Onboarding: User authenticated:", session.user.id)
-      
-      // Check if user already has a role
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .single()
-      
-      console.log("Onboarding: Profile check:", { profile, error })
-
-      if (error && error.code === "PGRST116") {
-        // Profile doesn't exist, create one
-        console.log("Creating profile for user:", session.user.id)
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert({
-            user_id: session.user.id,
-            first_name: session.user.user_metadata?.first_name || null,
-            last_name: session.user.user_metadata?.last_name || null,
-            avatar_url: session.user.user_metadata?.avatar_url || null,
-            username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'user',
-            role: null // Start with NULL to trigger onboarding
-          })
-        
-        if (insertError) {
-          console.error("Error creating profile:", insertError)
-        }
-      } else if (profile?.role) {
-        // User already has a role, redirect appropriately
-        console.log("User already has role:", profile.role)
-        router.push(profile.role === "owner" ? "/profile/dashboard" : "/browse")
-      }
-    }
-
-    checkAuth()
-  }, [router, supabase])
 
   const handleRoleSelection = async (role: "creator" | "owner") => {
     if (!user) return
@@ -89,13 +38,16 @@ export default function OnboardingPage() {
         return
       }
 
+      // Refresh the profile to get the updated role
+      await refreshProfile()
+
       toast({
         title: "Welcome to stwd.io!",
         description: `Your account has been set up as a ${role}.`,
       })
 
-      // Redirect based on role
-      router.push(role === "owner" ? "/profile/dashboard" : "/browse")
+      // Use replace for smoother redirect
+      router.replace(getDefaultDashboard(role))
     } catch (err) {
       console.error("Unexpected error:", err)
       toast({
@@ -106,14 +58,6 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (!mounted) {
-    return (
-      <div className="h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
   }
 
   return (
@@ -136,7 +80,7 @@ export default function OnboardingPage() {
                 <User className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-white text-2xl font-bold">
-                I'm a Creator
+                I&apos;m a Creator
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center">
@@ -160,7 +104,7 @@ export default function OnboardingPage() {
                 <Building className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-white text-2xl font-bold">
-                I'm a Studio Owner
+                I&apos;m a Studio Owner
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center">
@@ -180,4 +124,4 @@ export default function OnboardingPage() {
       </div>
     </div>
   )
-} 
+}

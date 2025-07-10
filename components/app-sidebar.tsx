@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/lib/auth/auth-context"
 import {
   IconBuilding,
   IconSearch,
@@ -35,63 +34,13 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
-interface Profile {
-  id: number
-  user_id: string
-  role: "creator" | "owner" | "admin" | null
-  first_name: string | null
-  last_name: string | null
-  username: string
-  avatar_url: string | null
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, profile, loading, signOut } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
   const { isMobile, setOpenMobile } = useSidebar()
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        await fetchProfile(session.user.id)
-      }
-      setLoading(false)
-    }
-
-    getUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await fetchProfile(session.user.id)
-      } else {
-        setProfile(null)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
-
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single()
-
-    if (data) {
-      setProfile(data)
-    }
-  }
-
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     router.push('/auth/login')
   }
 
@@ -124,8 +73,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ]
 
-    // Add My Lists for creators and admins
-    if (profile?.role === 'creator' || profile?.role === 'admin') {
+    // Add My Lists for creators only
+    if (profile?.role === 'creator') {
       baseItems.push({
         title: "My Lists",
         url: "/lists",

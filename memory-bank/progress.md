@@ -50,7 +50,7 @@
   - Database updates to profiles table with selected role
   - Post-onboarding routing to appropriate dashboards
 - **✅ Production Database Integration**: Verified connection and schema alignment
-  - Connected to correct Supabase project: `uwjbggueoqgstswexdoz`
+  - Connected to correct Supabase project: `qucaqzovxhbbkxxgsruq`
   - Database triggers (`handle_new_user`) creating profiles with NULL roles for onboarding
   - TypeScript types aligned with production database schema
   - All table relationships and foreign keys verified

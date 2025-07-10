@@ -21,6 +21,8 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
 import { getBatchStudioListMemberships, getUserLists, ListWithCount } from "@/lib/actions/lists"
+import { useAuth } from "@/lib/auth/auth-context"
+import { getStudiosWithReviewsClient } from "@/lib/studio-reviews-client"
 
 interface Studio {
   id: number
@@ -471,6 +473,7 @@ function FiltersContent({
 export function BrowseStudiosContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user, profile: sharedProfile, loading: profileLoading } = useAuth()
   const [studios, setStudios] = useState<Studio[]>([])
   const [amenities, setAmenities] = useState<Amenity[]>([])
   const [availableGear, setAvailableGear] = useState<GearItem[]>([])
@@ -483,10 +486,6 @@ export function BrowseStudiosContent() {
   // OPTIMIZED: Batch list memberships state
   const [batchMemberships, setBatchMemberships] = useState<Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]>>({})
   const [membershipsLoading, setMembershipsLoading] = useState(false)
-  
-  // OPTIMIZED: Shared profile state to eliminate individual auth calls per studio card
-  const [sharedProfile, setSharedProfile] = useState<Profile | null>(null)
-  const [profileLoading, setProfileLoading] = useState(true)
   
   // OPTIMIZED: Shared lists state to eliminate individual list fetches per dropdown
   const [sharedLists, setSharedLists] = useState<ListWithCount[]>([])
@@ -672,12 +671,21 @@ export function BrowseStudiosContent() {
       }
 
       if (data) {
-        let studiosWithStats = data.map((studio: any) => ({
-          ...studio,
-          average_rating: 0,
-          review_count: 0,
-          amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
-        }))
+        // Get studio IDs for review fetching
+        const studioIds = data.map((studio: any) => studio.id)
+        
+        // Fetch review data for all studios
+        const reviewsData = await getStudiosWithReviewsClient(studioIds)
+        
+        let studiosWithStats = data.map((studio: any) => {
+          const studioReviews = reviewsData[studio.id] || { averageRating: 0, totalReviews: 0 }
+          return {
+            ...studio,
+            average_rating: studioReviews.averageRating,
+            review_count: studioReviews.totalReviews,
+            amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
+          }
+        })
 
         // Apply gear filter on client side (since gear structure is complex)
         if (filters.selectedGear.length > 0) {
@@ -771,35 +779,7 @@ export function BrowseStudiosContent() {
     }
   }, [hasMore, loadingMore, loading, fetchStudios])
 
-  // OPTIMIZED: Fetch shared profile once on mount
-  useEffect(() => {
-    const fetchSharedProfile = async () => {
-      try {
-        const { data: { user } } = await createClient().auth.getUser()
-        
-        if (!user) {
-          setSharedProfile(null)
-          setProfileLoading(false)
-          return
-        }
-
-        const { data: profileData } = await createClient()
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .single()
-
-        setSharedProfile(profileData)
-      } catch (error) {
-        console.error('Error fetching shared profile:', error)
-        setSharedProfile(null)
-      } finally {
-        setProfileLoading(false)
-      }
-    }
-
-    fetchSharedProfile()
-  }, [])
+  // Profile now comes from AuthProvider - no need to fetch separately
 
   // OPTIMIZED: Fetch shared lists once on mount for authenticated users
   const fetchSharedLists = useCallback(async () => {

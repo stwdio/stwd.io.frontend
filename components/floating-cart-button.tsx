@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth/auth-context'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ShoppingCart } from 'lucide-react'
@@ -16,35 +16,9 @@ interface Profile {
 }
 
 export function FloatingCartButton() {
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, profile, loading } = useAuth()
   const { studios: basketStudios, toggleBasket } = useQuoteBasket()
   const pathname = usePathname()
-  const supabase = createClient()
-
-  useEffect(() => {
-    const getProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        setLoading(false)
-        return
-      }
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-
-      if (profileData) {
-        setProfile(profileData)
-      }
-      setLoading(false)
-    }
-
-    getProfile()
-  }, [supabase])
 
   // Hide on profile pages or if not a creator
   if (loading || !profile || profile.role !== 'creator' || pathname.startsWith('/profile')) {

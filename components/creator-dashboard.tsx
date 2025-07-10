@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth/auth-context'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -75,7 +76,7 @@ interface Profile {
 }
 
 export function CreatorDashboard() {
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const { user, profile, loading: authLoading } = useAuth()
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [inquiryResponses, setInquiryResponses] = useState<InquiryRecipient[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -85,35 +86,25 @@ export function CreatorDashboard() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchCreatorData()
-  }, [])
+    if (!authLoading && profile) {
+      fetchCreatorData()
+    } else if (!authLoading && !profile) {
+      setLoading(false)
+    }
+  }, [authLoading, profile])
 
   const fetchCreatorData = async () => {
     try {
-      // Get current user profile
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
+      if (!profile) {
         setLoading(false)
         return
       }
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single()
-
-      if (!profileData) {
-        setLoading(false)
-        return
-      }
-      setProfile(profileData)
 
       // Fetch creator's inquiries
       const { data: inquiriesData } = await supabase
         .from('inquiries')
         .select('*')
-        .eq('creator_id', profileData.id)
+        .eq('creator_id', profile.id)
         .order('created_at', { ascending: false })
 
       setInquiries(inquiriesData || [])
@@ -155,7 +146,7 @@ export function CreatorDashboard() {
             location
           )
         `)
-        .eq('creator_id', profileData.id)
+        .eq('creator_id', profile.id)
         .order('created_at', { ascending: false })
 
       setBookings(bookingsData || [])
@@ -251,7 +242,7 @@ export function CreatorDashboard() {
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center h-32">
         <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />

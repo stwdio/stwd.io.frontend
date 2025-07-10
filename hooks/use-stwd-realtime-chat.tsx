@@ -47,6 +47,8 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
   const [conversation, setConversation] = useState<STWDConversation | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
 
   // Fetch initial messages and conversation data
   const fetchInitialData = useCallback(async () => {
@@ -96,99 +98,122 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
     }
   }, [conversationId, createClient])
 
-  // Set up realtime subscription
+  // Set up realtime subscription with retry logic
   useEffect(() => {
     if (!conversationId || !currentUserId) return
     
     fetchInitialData()
 
-    const channel = createClient()
-      .channel(`conversation_${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        async (payload: any) => {
-          console.log('New message received:', payload)
-          
-          // Fetch the complete message with sender profile
-          const { data: newMessage, error } = await createClient()
-            .from('messages')
-            .select(`
-              *,
-              sender_profile:profiles(
-                id,
-                username,
-                first_name,
-                last_name,
-                avatar_url
-              )
-            `)
-            .eq('id', payload.new.id)
-            .single()
+    const setupRealtimeConnection = () => {
+      const channel = createClient()
+        .channel(`conversation_${conversationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          async (payload: any) => {
+            console.log('New message received:', payload)
+            
+            // Fetch the complete message with sender profile
+            const { data: newMessage, error } = await createClient()
+              .from('messages')
+              .select(`
+                *,
+                sender_profile:profiles(
+                  id,
+                  username,
+                  first_name,
+                  last_name,
+                  avatar_url
+                )
+              `)
+              .eq('id', payload.new.id)
+              .single()
 
-          if (!error && newMessage) {
-            setMessages(current => {
-              // Avoid duplicates
-              const exists = current.some(msg => msg.id === newMessage.id)
-              if (exists) return current
-              
-              return [...current, newMessage]
-            })
+            if (!error && newMessage) {
+              setMessages(current => {
+                // Avoid duplicates
+                const exists = current.some(msg => msg.id === newMessage.id)
+                if (exists) return current
+                
+                return [...current, newMessage]
+              })
+            }
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        async (payload: any) => {
-          console.log('Message updated:', payload)
-          
-          // Fetch updated message with sender profile
-          const { data: updatedMessage, error } = await createClient()
-            .from('messages')
-            .select(`
-              *,
-              sender_profile:profiles(
-                id,
-                username,
-                first_name,
-                last_name,
-                avatar_url
-              )
-            `)
-            .eq('id', payload.new.id)
-            .single()
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          async (payload: any) => {
+            console.log('Message updated:', payload)
+            
+            // Fetch updated message with sender profile
+            const { data: updatedMessage, error } = await createClient()
+              .from('messages')
+              .select(`
+                *,
+                sender_profile:profiles(
+                  id,
+                  username,
+                  first_name,
+                  last_name,
+                  avatar_url
+                )
+              `)
+              .eq('id', payload.new.id)
+              .single()
 
-          if (!error && updatedMessage) {
-            setMessages(current =>
-              current.map(msg =>
-                msg.id === updatedMessage.id ? updatedMessage : msg
+            if (!error && updatedMessage) {
+              setMessages(current =>
+                current.map(msg =>
+                  msg.id === updatedMessage.id ? updatedMessage : msg
+                )
               )
-            )
+            }
           }
-        }
-      )
-      .subscribe(async (status: any) => {
-        console.log('Realtime subscription status:', status)
-        if (status === 'SUBSCRIBED') {
-          setIsConnected(true)
-        }
-      })
+        )
+        .subscribe(async (status: any) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('Realtime subscription status: SUBSCRIBED')
+            setIsConnected(true)
+            setConnectionError(null)
+            setRetryCount(0)
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setIsConnected(false)
+            
+            // Retry connection with exponential backoff
+            if (retryCount < 3) {
+              const retryDelay = Math.pow(2, retryCount) * 1000
+              setTimeout(() => {
+                setRetryCount(prev => prev + 1)
+                setupRealtimeConnection()
+              }, retryDelay)
+            } else {
+              // Only log errors and show user message after all retries exhausted
+              console.error('Realtime connection failed after 3 attempts:', status)
+              setConnectionError('Connection failed. Messages will still work but may not be real-time.')
+            }
+          }
+        })
+
+      return channel
+    }
+
+    const channel = setupRealtimeConnection()
 
     return () => {
       createClient().removeChannel(channel)
     }
-  }, [conversationId, createClient, fetchInitialData])
+  }, [conversationId, currentUserId, retryCount, fetchInitialData])
 
   // Send a new message
   const sendMessage = useCallback(
@@ -252,6 +277,7 @@ export function useSTWDRealtimeChat({ conversationId, currentUserId }: UseSTWDRe
     sendMessage,
     isConnected,
     isLoading,
+    connectionError,
     refetch: fetchInitialData,
   }
 } 

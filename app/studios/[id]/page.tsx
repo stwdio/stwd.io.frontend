@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { StudioDetailContent } from "@/components/studio-detail-content"
 import { createClient } from "@/lib/supabase/server"
+import { getStudioReviews } from "@/lib/studio-reviews"
 
 interface Studio {
   id: number
@@ -62,8 +63,10 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
       ?.filter((amenity: any) => amenity && amenity.name)
       ?.map((amenity: any) => ({ name: amenity.name })) || []
 
-  const reviews: Review[] = [] // For now, empty reviews
-  const averageRating = 0
+  // Fetch reviews server-side
+  const reviewsData = await getStudioReviews(parseInt(studioId))
+  const reviews = reviewsData.reviews
+  const averageRating = reviewsData.averageRating
 
   return (
     <div className="p-4 md:p-6">

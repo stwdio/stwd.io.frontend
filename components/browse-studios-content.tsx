@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
 import { getBatchStudioListMemberships, getUserLists, ListWithCount } from "@/lib/actions/lists"
 import { useAuth } from "@/lib/auth/auth-context"
+import { getStudiosWithReviewsClient } from "@/lib/studio-reviews-client"
 
 interface Studio {
   id: number
@@ -670,12 +671,21 @@ export function BrowseStudiosContent() {
       }
 
       if (data) {
-        let studiosWithStats = data.map((studio: any) => ({
-          ...studio,
-          average_rating: 0,
-          review_count: 0,
-          amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
-        }))
+        // Get studio IDs for review fetching
+        const studioIds = data.map((studio: any) => studio.id)
+        
+        // Fetch review data for all studios
+        const reviewsData = await getStudiosWithReviewsClient(studioIds)
+        
+        let studiosWithStats = data.map((studio: any) => {
+          const studioReviews = reviewsData[studio.id] || { averageRating: 0, totalReviews: 0 }
+          return {
+            ...studio,
+            average_rating: studioReviews.averageRating,
+            review_count: studioReviews.totalReviews,
+            amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
+          }
+        })
 
         // Apply gear filter on client side (since gear structure is complex)
         if (filters.selectedGear.length > 0) {

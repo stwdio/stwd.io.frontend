@@ -73,8 +73,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ]
 
-    // Add My Lists for creators and admins
-    if (profile?.role === 'creator' || profile?.role === 'admin') {
+    // Add My Lists for creators only
+    if (profile?.role === 'creator') {
       baseItems.push({
         title: "My Lists",
         url: "/lists",

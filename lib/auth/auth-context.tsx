@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 
@@ -22,7 +22,6 @@ interface AuthState {
   session: Session | null
   profile: Profile | null
   loading: boolean
-  initialized: boolean
   error: string | null
 }
 
@@ -52,19 +51,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session: null,
     profile: null,
     loading: true,
-    initialized: false,
     error: null,
   })
 
-  const currentUserRef = useRef<User | null>(null)
+  const stateRef = useRef(state)
+  stateRef.current = state
+
   const supabase = createClient()
 
-  // Keep ref in sync with state
-  useEffect(() => {
-    currentUserRef.current = state.user
-  }, [state.user])
-
-  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -82,9 +77,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Error in fetchProfile:', error)
       return null
     }
-  }, [supabase])
+  }
 
-  const refreshProfile = useCallback(async () => {
+  const refreshProfile = async () => {
     if (!state.user) return
 
     setState(prev => ({ ...prev, loading: true, error: null }))
@@ -103,9 +98,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         loading: false 
       }))
     }
-  }, [state.user, fetchProfile])
+  }
 
-  const signOut = useCallback(async () => {
+  const signOut = async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       
@@ -123,7 +118,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           session: null,
           profile: null,
           loading: false,
-          initialized: true,
           error: null,
         })
       }
@@ -134,11 +128,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         loading: false 
       }))
     }
-  }, [supabase])
+  }
 
-  const clearError = useCallback(() => {
+  const clearError = () => {
     setState(prev => ({ ...prev, error: null }))
-  }, [])
+  }
 
   useEffect(() => {
     let mounted = true
@@ -151,12 +145,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (error) {
           console.error('Error getting session:', error)
           if (mounted) {
-            setState(prev => ({ 
-              ...prev, 
-              error: 'Failed to get session',
+            setState({
+              user: null,
+              session: null,
+              profile: null,
               loading: false,
-              initialized: true 
-            }))
+              error: 'Failed to get session'
+            })
           }
           return
         }
@@ -168,7 +163,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             session,
             profile,
             loading: false,
-            initialized: true,
             error: null,
           })
         } else if (mounted) {
@@ -177,19 +171,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
             session: null,
             profile: null,
             loading: false,
-            initialized: true,
             error: null,
           })
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error)
         if (mounted) {
-          setState(prev => ({ 
-            ...prev, 
-            error: 'Failed to initialize auth',
+          setState({
+            user: null,
+            session: null,
+            profile: null,
             loading: false,
-            initialized: true 
-          }))
+            error: 'Failed to initialize auth'
+          })
         }
       }
     }
@@ -204,29 +198,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('Auth state change:', event, session?.user?.id)
 
         if (event === 'SIGNED_IN' && session?.user) {
-          // Don't show loading if we already have this user and are just refocusing tab
-          const isSameUser = currentUserRef.current?.id === session.user.id
+          // Don't show loading if we already have this user's data
+          const currentState = stateRef.current
+          const isSameUser = currentState.user?.id === session.user.id
+          const hasProfile = currentState.profile?.user_id === session.user.id
           
-          if (!isSameUser) {
+          if (isSameUser && hasProfile) {
+            // Just update the session, don't reload everything
+            setState(prev => ({
+              ...prev,
+              session,
+              error: null,
+            }))
+          } else {
+            // New user or missing profile, load everything
             setState(prev => ({ ...prev, loading: true, error: null }))
+            
+            const profile = await fetchProfile(session.user.id)
+            setState({
+              user: session.user,
+              session,
+              profile,
+              loading: false,
+              error: null,
+            })
           }
-          
-          const profile = await fetchProfile(session.user.id)
-          setState({
-            user: session.user,
-            session,
-            profile,
-            loading: false,
-            initialized: true,
-            error: null,
-          })
         } else if (event === 'SIGNED_OUT') {
           setState({
             user: null,
             session: null,
             profile: null,
             loading: false,
-            initialized: true,
             error: null,
           })
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
@@ -235,6 +237,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
             user: session.user,
             session,
           }))
+        } else if (event === 'INITIAL_SESSION' && session?.user) {
+          // Handle tab refocus - don't reload if we already have the user's data
+          const currentState = stateRef.current
+          const isSameUser = currentState.user?.id === session.user.id
+          const hasProfile = currentState.profile?.user_id === session.user.id
+          
+          if (!isSameUser || !hasProfile) {
+            // Only load if we don't have the data
+            const profile = await fetchProfile(session.user.id)
+            setState({
+              user: session.user,
+              session,
+              profile,
+              loading: false,
+              error: null,
+            })
+          }
         }
       }
     )
@@ -243,7 +262,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [supabase, fetchProfile])
+  }, [])
 
   const contextValue: AuthContextType = {
     ...state,
@@ -265,7 +284,7 @@ export const isPublicRoute = (pathname: string): boolean => {
     '/',
     '/auth/login',
     '/auth/callback',
-    '/auth/signup',
+    '/auth/signup', 
     '/browse',
     '/studios',
   ]
@@ -280,12 +299,12 @@ export const isPublicRoute = (pathname: string): boolean => {
 export const getDefaultDashboard = (role: string): string => {
   switch (role) {
     case 'creator':
-      return '/dashboard'
+      return '/browse'
     case 'owner':
-      return '/dashboard/owner'
+      return '/profile/dashboard'
     case 'admin':
-      return '/dashboard/admin'
+      return '/profile/dashboard'
     default:
-      return '/dashboard'
+      return '/browse'
   }
 }

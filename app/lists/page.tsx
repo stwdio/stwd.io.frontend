@@ -27,6 +27,11 @@ async function getUserProfile() {
     redirect('/onboarding')
   }
 
+  // Only creators can access lists
+  if (profile.role !== 'creator') {
+    redirect('/dashboard')
+  }
+
   return profile
 }
 

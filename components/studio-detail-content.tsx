@@ -9,6 +9,7 @@ import { Star, MapPin, Wifi, ChevronDown, ChevronUp } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioDetailActions } from "@/components/studio-detail-client"
+import { StudioReviews } from "@/components/studio-reviews"
 import { getStudioPrimaryImageUrl, getTransformedImageUrl } from "@/lib/utils"
 
 interface Studio {
@@ -26,11 +27,16 @@ interface Studio {
 }
 
 interface Review {
-  id: string
+  id: number
   rating: number
   comment: string | null
   created_at: string
-  user_email?: string
+  reviewer?: {
+    first_name: string | null
+    last_name: string | null
+    username: string
+    avatar_url?: string | null
+  }
 }
 
 interface Amenity {
@@ -218,36 +224,18 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating 
           )}
         </div>
 
-        {/* Reviews - Collapsible */}
-        <CollapsibleSection title={`Reviews (${reviews.length})`}>
-          <div className="space-y-6">
-            {reviews.map((review) => (
-              <Card key={review.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder.svg" />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="font-medium">{review.user_email || "Anonymous"}</p>
-                          <div className="flex items-center space-x-1">{renderStars(review.rating)}</div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{new Date(review.created_at).toLocaleDateString()}</p>
-                      </div>
-                      {review.comment && <p className="text-muted-foreground">{review.comment}</p>}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {reviews.length === 0 && (
-              <p className="text-muted-foreground text-center py-8">No reviews yet. Be the first to book and review!</p>
-            )}
-          </div>
-        </CollapsibleSection>
+        {/* Reviews */}
+        <div className="space-y-4">
+          <StudioReviews 
+            reviews={reviews}
+            averageRating={averageRating}
+            totalReviews={reviews.length}
+            studioName={studio.name}
+            showTitle={true}
+            variant="full"
+            maxVisible={5}
+          />
+        </div>
       </div>
 
       {/* Desktop Booking/Contact Section */}

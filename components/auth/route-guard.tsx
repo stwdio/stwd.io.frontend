@@ -9,16 +9,13 @@ interface RouteGuardProps {
 }
 
 export function RouteGuard({ children }: RouteGuardProps) {
-  const { user, profile, loading, initialized, error } = useAuth()
+  const { user, profile, loading, error } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
-    // Don't do anything until auth is initialized
-    if (!initialized) return
-
-    // Don't redirect while loading profile data for authenticated users
-    if (loading && user) return
+    // Don't do anything while auth is loading
+    if (loading) return
 
     // Clear, single decision tree - prevents infinite loops
     
@@ -54,13 +51,13 @@ export function RouteGuard({ children }: RouteGuardProps) {
       return
     }
 
-  }, [user, profile?.role, initialized, loading, pathname, router])
+  }, [user, profile?.role, loading, pathname, router])
 
-  // Show loading during initialization or while redirecting
-  if (!initialized) {
+  // Show loading during auth loading
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
       </div>
     )
   }
@@ -68,9 +65,9 @@ export function RouteGuard({ children }: RouteGuardProps) {
   // Show error state if there's an auth error
   if (error && !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Authentication error: {error}</p>
+          <p className="text-red-500 mb-4">Authentication error: {error}</p>
           <button 
             onClick={() => router.push('/auth/login')}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -82,15 +79,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
     )
   }
 
-  // Show loading for authenticated users while profile loads
-  if (user && loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    )
-  }
-
   // Render children once auth state is resolved
   return <>{children}</>
 }
@@ -98,8 +86,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
 // Loading component for consistent loading states
 export function AuthLoadingSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
     </div>
   )
 }
@@ -112,9 +100,9 @@ interface AuthErrorProps {
 
 export function AuthError({ error, onRetry }: AuthErrorProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="text-center">
-        <p className="text-red-600 mb-4">Authentication error: {error}</p>
+        <p className="text-red-500 mb-4">Authentication error: {error}</p>
         {onRetry && (
           <button 
             onClick={onRetry}

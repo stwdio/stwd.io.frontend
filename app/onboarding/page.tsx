@@ -1,42 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { User, Building } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/auth/auth-context"
+import { useAuth, getDefaultDashboard } from "@/lib/auth/auth-context"
+import { useRouter } from "next/navigation"
 
 export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
-  const { user, profile, loading: authLoading } = useAuth()
-  const [mounted, setMounted] = useState(false)
+  const { user, refreshProfile } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClient()
-
-  useEffect(() => {
-    setMounted(true)
-    
-    if (!authLoading) {
-      if (!user) {
-        // Not authenticated, redirect to login
-        router.push("/auth/login")
-        return
-      }
-
-      console.log("Onboarding: User authenticated:", user.id)
-      
-      // Check if user already has a role
-      if (profile?.role) {
-        // User already has a role, redirect appropriately
-        console.log("User already has role:", profile.role)
-        router.push(profile.role === "owner" ? "/profile/dashboard" : "/browse")
-      }
-    }
-  }, [authLoading, user, profile, router])
 
   const handleRoleSelection = async (role: "creator" | "owner") => {
     if (!user) return
@@ -60,13 +38,16 @@ export default function OnboardingPage() {
         return
       }
 
+      // Refresh the profile to get the updated role
+      await refreshProfile()
+
       toast({
         title: "Welcome to stwd.io!",
         description: `Your account has been set up as a ${role}.`,
       })
 
-      // Redirect based on role
-      router.push(role === "owner" ? "/profile/dashboard" : "/browse")
+      // Use replace for smoother redirect
+      router.replace(getDefaultDashboard(role))
     } catch (err) {
       console.error("Unexpected error:", err)
       toast({
@@ -77,14 +58,6 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (!mounted) {
-    return (
-      <div className="h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
   }
 
   return (
@@ -107,7 +80,7 @@ export default function OnboardingPage() {
                 <User className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-white text-2xl font-bold">
-                I'm a Creator
+                I&apos;m a Creator
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center">
@@ -131,7 +104,7 @@ export default function OnboardingPage() {
                 <Building className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-white text-2xl font-bold">
-                I'm a Studio Owner
+                I&apos;m a Studio Owner
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center">
@@ -151,4 +124,4 @@ export default function OnboardingPage() {
       </div>
     </div>
   )
-} 
+}

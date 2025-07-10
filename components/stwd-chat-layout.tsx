@@ -58,6 +58,7 @@ export function STWDChatLayout() {
     sendMessage,
     isConnected,
     isLoading: chatLoading,
+    connectionError,
   } = useSTWDRealtimeChat({
     conversationId: selectedConversation?.id || 0,
     currentUserId: currentUser?.id || 0,
@@ -184,6 +185,7 @@ export function STWDChatLayout() {
             isConnected={isConnected}
             conversationTitle={getConversationTitle(selectedConversation)}
             onBack={handleBackToList}
+            connectionError={connectionError}
           />
         ) : null}
       </div>
@@ -221,6 +223,7 @@ export function STWDChatLayout() {
             onSendMessage={sendMessage}
             isConnected={isConnected}
             conversationTitle={getConversationTitle(selectedConversation)}
+            connectionError={connectionError}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-center p-8">

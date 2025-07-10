@@ -2,7 +2,7 @@
 
 import { useAuth, isPublicRoute, getDefaultDashboard } from '@/lib/auth/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 interface RouteGuardProps {
   children: React.ReactNode
@@ -12,10 +12,43 @@ export function RouteGuard({ children }: RouteGuardProps) {
   const { user, profile, loading, error } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const [forceNotLoading, setForceNotLoading] = useState(false)
+  const loadingTimeoutRef = useRef<NodeJS.Timeout>()
+  
+  // Safety mechanism to prevent infinite loading in RouteGuard
+  useEffect(() => {
+    if (loading && !forceNotLoading) {
+      // Clear any existing timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+      }
+      
+      // Set a timeout to force loading to false after 5 seconds
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.warn('RouteGuard: Forcing loading to false after timeout')
+        setForceNotLoading(true)
+      }, 5000)
+    } else if (!loading) {
+      // Reset the force flag when auth genuinely stops loading
+      setForceNotLoading(false)
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+      }
+    }
+    
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+      }
+    }
+  }, [loading, forceNotLoading])
+  
+  // Use the forced loading state if needed
+  const isLoading = loading && !forceNotLoading
 
   useEffect(() => {
     // Don't do anything while auth is loading
-    if (loading) return
+    if (isLoading) return
 
     // Clear, single decision tree - prevents infinite loops
     
@@ -51,10 +84,10 @@ export function RouteGuard({ children }: RouteGuardProps) {
       return
     }
 
-  }, [user, profile?.role, loading, pathname, router])
+  }, [user, profile?.role, isLoading, pathname, router])
 
   // Show loading during auth loading
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>

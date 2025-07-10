@@ -61,11 +61,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+      })
+
+      const fetchPromise = supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .single()
+
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise])
 
       if (error) {
         console.error('Error fetching profile:', error)
@@ -137,6 +144,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true
 
+    // Safety timeout to ensure loading never stays true indefinitely
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && stateRef.current.loading) {
+        console.warn('Auth loading timeout - forcing loading to false')
+        setState(prev => ({ ...prev, loading: false }))
+      }
+    }, 15000) // 15 second safety net
+
     // Get initial session
     const getInitialSession = async () => {
       try {
@@ -157,14 +172,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         if (session?.user && mounted) {
-          const profile = await fetchProfile(session.user.id)
-          setState({
-            user: session.user,
-            session,
-            profile,
-            loading: false,
-            error: null,
-          })
+          try {
+            const profile = await fetchProfile(session.user.id)
+            setState({
+              user: session.user,
+              session,
+              profile,
+              loading: false,
+              error: null,
+            })
+          } catch (error) {
+            console.error('Error loading profile during initialization:', error)
+            setState({
+              user: session.user,
+              session,
+              profile: null,
+              loading: false,
+              error: null,
+            })
+          }
         } else if (mounted) {
           setState({
             user: null,
@@ -214,14 +240,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // New user or missing profile, load everything
             setState(prev => ({ ...prev, loading: true, error: null }))
             
-            const profile = await fetchProfile(session.user.id)
-            setState({
-              user: session.user,
-              session,
-              profile,
-              loading: false,
-              error: null,
-            })
+            try {
+              const profile = await fetchProfile(session.user.id)
+              setState({
+                user: session.user,
+                session,
+                profile,
+                loading: false,
+                error: null,
+              })
+            } catch (error) {
+              console.error('Error loading profile during sign in:', error)
+              setState({
+                user: session.user,
+                session,
+                profile: null,
+                loading: false,
+                error: null,
+              })
+            }
           }
         } else if (event === 'SIGNED_OUT') {
           setState({
@@ -245,14 +282,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           if (!isSameUser || !hasProfile) {
             // Only load if we don't have the data
-            const profile = await fetchProfile(session.user.id)
-            setState({
+            setState(prev => ({ ...prev, loading: true, error: null }))
+            
+            try {
+              const profile = await fetchProfile(session.user.id)
+              setState({
+                user: session.user,
+                session,
+                profile,
+                loading: false,
+                error: null,
+              })
+            } catch (error) {
+              console.error('Error loading profile during initial session:', error)
+              setState({
+                user: session.user,
+                session,
+                profile: null,
+                loading: false,
+                error: null,
+              })
+            }
+          } else {
+            // We already have the data, just ensure loading is false
+            setState(prev => ({
+              ...prev,
               user: session.user,
               session,
-              profile,
               loading: false,
-              error: null,
-            })
+            }))
           }
         }
       }
@@ -260,6 +318,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       mounted = false
+      clearTimeout(safetyTimeout)
       subscription.unsubscribe()
     }
   }, [])

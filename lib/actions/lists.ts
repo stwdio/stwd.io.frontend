@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createServerActionClient } from '@/lib/supabase/server'
 
 // Types for our list operations
 export type List = {
@@ -54,7 +54,7 @@ export type ListDetails = List & {
  */
 export async function createList(data: CreateListData): Promise<ActionResult<List>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser()
@@ -105,7 +105,7 @@ export async function getBatchStudioListMemberships(
   studioIds: string[]
 ): Promise<ActionResult<Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]>>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user - RLS will handle authorization automatically
     const { data: { user } } = await supabase.auth.getUser()
@@ -174,7 +174,7 @@ export async function addStudioToList(
   notes?: string
 ): Promise<ActionResult> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Call the database function directly - RLS policies handle authorization
     const { data, error } = await supabase.rpc('add_studio_to_list', {
@@ -211,7 +211,7 @@ export async function removeStudioFromList(
   studioId: string
 ): Promise<ActionResult> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Call the database function directly - RLS policies handle authorization  
     const { data, error } = await supabase.rpc('remove_studio_from_list', {
@@ -245,7 +245,7 @@ export async function removeStudioFromList(
  */
 export async function getStudioListMemberships(studioId: string): Promise<ActionResult<{list_id: number, list_name: string, list_icon_emoji: string}[]>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser()
@@ -289,7 +289,7 @@ export async function updateList(
   data: Partial<CreateListData>
 ): Promise<ActionResult<List>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser()
@@ -347,7 +347,7 @@ export async function updateList(
  */
 export async function getUserLists(): Promise<ActionResult<ListWithCount[]>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser()
@@ -387,7 +387,7 @@ export async function getUserLists(): Promise<ActionResult<ListWithCount[]>> {
  */
 export async function getListDetails(listId: string): Promise<ActionResult<ListDetails>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser()
@@ -474,7 +474,7 @@ export async function getListDetails(listId: string): Promise<ActionResult<ListD
  */
 export async function addListToQuoteBasket(listId: string): Promise<ActionResult<{ added_count: number }>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser()
@@ -519,7 +519,7 @@ export async function addListToQuoteBasket(listId: string): Promise<ActionResult
  */
 export async function deleteList(listId: string): Promise<ActionResult> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser()

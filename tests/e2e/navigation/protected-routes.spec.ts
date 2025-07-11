@@ -117,14 +117,13 @@ test.describe('Protected Routes and Route Guards', () => {
         await expect(page.url()).toMatch(/\/(browse|onboarding|auth\/login|profile\/dashboard)$/);
       }
       
-      // Check for our timeout mechanism working
-      const timeoutLogs = consoleLogs.filter(log => 
-        log.includes('Profile fetch timeout') || 
-        log.includes('Error in fetchProfile')
+      // Check that there are no timeout errors with the new implementation
+      const errorLogs = consoleLogs.filter(log => 
+        log.includes('Error') && log.includes('profile')
       );
       
-      // Our timeout fix should handle profile fetch issues gracefully
-      console.log('Auth timeout logs (expected with our fix):', timeoutLogs);
+      // Should have no profile-related errors with the new SSR implementation
+      expect(errorLogs.length).toBe(0);
     });
 
     test('should handle rapid route changes without breaking', async ({ page }) => {

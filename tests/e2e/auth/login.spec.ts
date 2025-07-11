@@ -120,31 +120,28 @@ test.describe('Login Flow', () => {
     await authHelpers.expectToBeLoggedIn();
   });
 
-  test('should login and handle infinite loading fix', async ({ page }) => {
-    // This test specifically validates our infinite loading screen fix
+  test('should login without loading issues', async ({ page }) => {
+    // This test validates that the SSR implementation prevents loading issues
     const consoleLogs = await TestSetup.captureConsoleLogs(page);
     
     await authHelpers.login('CREATOR');
     
-    // Navigate to root path (problematic area we fixed)
+    // Navigate to root path
     await page.goto('/');
     await authHelpers.waitForAuthStateResolution();
     
     // Should not be stuck in loading state
-    await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 5000 });
     
     // Should be on a valid page
     await expect(page.url()).toMatch(/\/(browse|onboarding)/);
     
-    // Check that auth flow completed without infinite loops
+    // Check that there are no profile-related errors
     const authErrors = consoleLogs.filter(log => 
-      log.includes('Error in fetchProfile') || 
-      log.includes('Profile fetch timeout')
+      log.includes('Error') && log.includes('profile')
     );
     
-    // Our timeout mechanism should have handled any profile fetch issues
-    if (authErrors.length > 0) {
-      console.log('Auth errors detected (expected with our timeout fix):', authErrors);
-    }
+    // With SSR implementation, there should be no profile fetch errors
+    expect(authErrors.length).toBe(0);
   });
 });

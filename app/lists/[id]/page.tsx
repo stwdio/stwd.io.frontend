@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Calendar, Users, Star, MapPin, Quote, Trash2, Plus } from 'lucide-react'
 import { getListDetails, removeStudioFromList } from '@/lib/actions/lists'
-import { createClient } from '@/lib/supabase/server'
+import { createServerComponentClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { StudioImage } from '@/components/studio-image-placeholder'
 import { StudioCardActions } from '@/components/studio-card-actions'
@@ -21,7 +21,7 @@ interface Props {
 }
 
 async function getUserProfile() {
-  const supabase = await createClient()
+  const supabase = await createServerComponentClient()
   
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

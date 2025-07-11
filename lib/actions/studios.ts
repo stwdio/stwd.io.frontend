@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createServerActionClient } from '@/lib/supabase/server'
 
 // Types for studio operations
 export type Studio = {
@@ -38,7 +38,7 @@ export type ActionResult<T = any> = {
  */
 export async function createDraftStudio(data: CreateDraftStudioData): Promise<ActionResult<Studio>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user profile
     const { data: { user } } = await supabase.auth.getUser()
@@ -98,7 +98,7 @@ export async function uploadStudioImage(
   file: File
 ): Promise<ActionResult<string>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user and verify ownership
     const { data: { user } } = await supabase.auth.getUser()
@@ -201,7 +201,7 @@ export async function deleteStudioImage(
   imageUrl: string
 ): Promise<ActionResult> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user and verify ownership
     const { data: { user } } = await supabase.auth.getUser()
@@ -288,7 +288,7 @@ export async function deleteStudioImage(
  */
 export async function getStudioForEdit(studioId: number): Promise<ActionResult<Studio>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     
     // Get current user
     const { data: { user } } = await supabase.auth.getUser()

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { StudioDetailContent } from "@/components/studio-detail-content"
-import { createClient } from "@/lib/supabase/server"
+import { createServerComponentClient } from "@/lib/supabase/server"
 import { getStudioReviews } from "@/lib/studio-reviews"
 
 interface Studio {
@@ -36,7 +36,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
   const { id: studioId } = await params
 
   // Fetch studio details server-side
-  const supabase = await createClient()
+  const supabase = await createServerComponentClient()
   const { data: studioData, error: studioError } = await supabase
     .from("studios")
     .select("*")

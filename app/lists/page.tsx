@@ -5,12 +5,12 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Calendar, Users, ChevronRight } from 'lucide-react'
 import { getUserLists } from '@/lib/actions/lists'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createServerComponentClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import CreateListButton from '@/components/create-list-button'
 
 async function getUserProfile() {
-  const supabase = await createClient()
+  const supabase = await createServerComponentClient()
   
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

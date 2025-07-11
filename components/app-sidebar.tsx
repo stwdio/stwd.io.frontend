@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth/auth-context"
 import {
@@ -50,6 +51,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }
 
+  // State for avatar to avoid hydration mismatch
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Generate avatar on client side only
+    if (profile?.user_id) {
+      setAvatarSrc(generateIdenticon(profile.user_id))
+    }
+  }, [profile?.user_id])
+
   const getDisplayName = () => {
     if (!profile) return "User"
     if (profile.username) return profile.username
@@ -57,10 +68,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       return `${profile.first_name} ${profile.last_name}`
     }
     return profile.first_name || "User"
-  }
-
-  const getAvatarSrc = () => {
-    return generateIdenticon(profile?.user_id || "")
   }
 
   // Navigation items based on role
@@ -88,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const getUserData = () => ({
     name: getDisplayName(),
     email: user?.email || "",
-    avatar: getAvatarSrc(),
+    avatar: avatarSrc || "",
     role: profile?.role || "creator",
   })
 
@@ -169,11 +176,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Button variant="ghost" className="w-full justify-start p-2 group-data-[collapsible=icon]:justify-center">
                 <div className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0">
                   <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                    <img 
-                      src={getAvatarSrc()} 
-                      alt="Avatar" 
-                      className="h-full w-full object-cover"
-                    />
+                    {avatarSrc ? (
+                      <img 
+                        src={avatarSrc} 
+                        alt="Avatar" 
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <IconUser className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </div>
                   <div className="flex flex-col items-start text-sm group-data-[collapsible=icon]:hidden">
                     <span className="font-medium">{getDisplayName()}</span>

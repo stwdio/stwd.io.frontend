@@ -1,6 +1,6 @@
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { type NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerActionClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
 
   if (token_hash && type) {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    const supabase = await createClient()
+    const supabase = await createServerActionClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       // redirect user to browse page - OnboardingGate will handle routing

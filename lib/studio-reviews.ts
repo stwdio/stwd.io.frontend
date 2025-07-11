@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerComponentClient } from '@/lib/supabase/server'
 
 export interface Review {
   id: number
@@ -20,7 +20,7 @@ export interface StudioReviewsData {
 }
 
 export async function getStudioReviews(studioId: number): Promise<StudioReviewsData> {
-  const supabase = await createClient()
+  const supabase = await createServerComponentClient()
 
   try {
     // Get reviews with reviewer information
@@ -73,7 +73,7 @@ export async function getStudioReviews(studioId: number): Promise<StudioReviewsD
 }
 
 export async function getStudiosWithReviews(studioIds?: number[]): Promise<Record<number, StudioReviewsData>> {
-  const supabase = await createClient()
+  const supabase = await createServerComponentClient()
 
   try {
     let query = supabase

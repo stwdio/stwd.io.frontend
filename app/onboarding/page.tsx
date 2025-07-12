@@ -61,13 +61,13 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="h-screen bg-black flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="h-screen bg-background flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Welcome to stwd.io! What are you here to do?
           </h1>
-          <p className="text-gray-400 text-lg">
+          <p className="text-muted-foreground text-lg">
             Choose your role to get started with the platform
           </p>
         </div>

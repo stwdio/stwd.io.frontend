@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { MinimalAuthLoading } from '@/components/skeletons'
 
 export default function DashboardRedirect() {
   const router = useRouter()
@@ -11,9 +12,5 @@ export default function DashboardRedirect() {
     router.replace('/browse')
   }, [router])
 
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
+  return <MinimalAuthLoading />
 }

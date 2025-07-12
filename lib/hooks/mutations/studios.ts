@@ -9,7 +9,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import type { Database, TablesInsert, TablesUpdate } from '@/lib/types/database'
 
-const getSupabaseClient = () => createClient<Database>()
+const getSupabaseClient = () => createClient()
 
 /**
  * Hook for creating a new studio
@@ -64,11 +64,12 @@ export function useDeleteStudio() {
   return useDeleteMutation(
     getSupabaseClient().from('studios'),
     ['id'],
+    '*',
     {
-      onSuccess: (data) => {
+      onSuccess: (data: any) => {
         console.log('Studio deleted successfully:', data)
       },
-      onError: (error) => {
+      onError: (error: any) => {
         console.error('Failed to delete studio:', error)
       },
       // Revalidate related tables after deletion
@@ -114,8 +115,9 @@ export function useRemoveStudioFromList() {
   return useDeleteMutation(
     getSupabaseClient().from('list_items'),
     ['list_id', 'studio_id'],
+    '*',
     {
-      onSuccess: (data) => {
+      onSuccess: (data: any) => {
         console.log('Studio removed from list:', data)
       },
       revalidateTables: [

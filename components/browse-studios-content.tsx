@@ -17,6 +17,7 @@ import { StudioCardActions } from "@/components/studio-card-actions"
 import { StudioListMembershipIndicators } from "@/components/studio-list-membership-indicators"
 import { StudioCard } from "@/components/studio-card"
 import { MobileFilterSheet } from "@/components/mobile-filter-sheet"
+import { BrowsePageSkeleton, StudioCardSkeleton } from "@/components/skeletons"
 import Link from "next/link"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
 import { useAuth } from "@/lib/auth/auth-context"
@@ -74,56 +75,6 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue
 }
 
-// Skeleton component for loading studio cards
-function StudioCardSkeleton() {
-  return (
-    <Card className="overflow-hidden p-0 gap-0 h-full flex flex-col">
-      <Skeleton className="aspect-video rounded-t-lg rounded-b-none" />
-      
-      <CardContent className="p-4 flex flex-col flex-1">
-        <div className="flex justify-between items-start mb-2">
-          <Skeleton className="h-6 w-32" />
-          <div className="text-right">
-            <Skeleton className="h-6 w-16 mb-1" />
-            <Skeleton className="h-4 w-12" />
-          </div>
-        </div>
-        
-        <div className="flex items-center mb-2">
-          <Skeleton className="h-4 w-4 mr-1" />
-          <Skeleton className="h-4 w-24" />
-        </div>
-
-        <div className="flex items-center mb-3">
-          <div className="flex gap-1 mr-2">
-            {Array.from({ length: 5 }, (_, i) => (
-              <Skeleton key={i} className="h-4 w-4" />
-            ))}
-          </div>
-          <Skeleton className="h-4 w-16" />
-        </div>
-
-        <div className="mb-3 flex-1">
-          <Skeleton className="h-4 w-full mb-2" />
-          <Skeleton className="h-4 w-3/4" />
-        </div>
-
-        <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
-          <Skeleton className="h-5 w-16" />
-          <Skeleton className="h-5 w-20" />
-          <Skeleton className="h-5 w-14" />
-        </div>
-
-        <div className="mt-auto">
-          <div className="flex gap-2 h-8">
-            <Skeleton className="h-8 flex-1" />
-            <Skeleton className="h-8 flex-1" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 // Modern infinite scroll loading component
 function InfiniteScrollLoader() {
@@ -471,7 +422,7 @@ export function BrowseStudiosContent() {
     if (!batchMemberships) return {}
     
     const result: Record<string, any[]> = {}
-    batchMemberships.forEach(membership => {
+    batchMemberships.forEach((membership: any) => {
       const studioId = membership.studio_id.toString()
       if (!result[studioId]) {
         result[studioId] = []
@@ -537,46 +488,7 @@ export function BrowseStudiosContent() {
 
   // Loading state
   if (studiosLoading) {
-    return (
-      <div className="p-4 md:p-6 min-h-screen">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Mobile Filters Skeleton */}
-          <div className="lg:hidden">
-            <Skeleton className="h-10 w-24 mb-4" />
-          </div>
-
-          {/* Desktop Filters Sidebar Skeleton */}
-          <div className="hidden lg:block lg:w-80">
-            <div className="sticky top-6 h-[calc(100vh-3rem)]">
-              <Card className="h-full">
-                <CardContent className="p-6 h-full overflow-y-auto">
-                  <Skeleton className="h-6 w-16 mb-4" />
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-10 w-full" />
-                    </div>
-                    <div className="space-y-4">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-full" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Studios Grid Skeleton */}
-          <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
-              {Array.from({ length: 12 }, (_, i) => (
-                <StudioCardSkeleton key={i} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return <BrowsePageSkeleton />
   }
 
   return (
@@ -679,6 +591,7 @@ export function BrowseStudiosContent() {
                     key={studio.id}
                     studio={{
                       ...studio,
+                      owner_id: studio.owner_id || '',
                       verification_status: studio.verification_status || 'unverified'
                     }}
                     memberships={membershipsByStudio[studio.id.toString()] || []}

@@ -4,7 +4,7 @@ import { useInsertMutation, useUpdateMutation } from '@supabase-cache-helpers/po
 import { createClient } from '@/lib/supabase/client'
 import type { Database, TablesInsert } from '@/lib/types/database'
 
-const getSupabaseClient = () => createClient<Database>()
+const getSupabaseClient = () => createClient()
 
 /**
  * Hook for sending messages

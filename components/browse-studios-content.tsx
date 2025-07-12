@@ -72,7 +72,7 @@ function InfiniteScrollLoader() {
       <p className="text-sm text-muted-foreground animate-pulse">
         Loading more studios...
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full max-w-6xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="opacity-50">
             <StudioCardSkeleton />
@@ -153,9 +153,10 @@ function FiltersContent({
   , [filters])
 
   return (
-    <form onSubmit={handleFormSubmit} className="space-y-6">
-      {/* Location Search */}
-      <div className="space-y-4">
+    <div className="flex flex-col h-full">
+      <form onSubmit={handleFormSubmit} className="flex-1 space-y-6 overflow-y-auto">
+        {/* Location Search */}
+        <div className="space-y-4">
         <Label className="text-sm font-medium">Location</Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -347,11 +348,13 @@ function FiltersContent({
           )}
         </div>
       </div>
+      </form>
 
-      {/* Action Buttons */}
-      <div className="space-y-2 pt-4 border-t">
+      {/* Action Buttons - Sticky at bottom */}
+      <div className="flex-shrink-0 space-y-2 pt-4 mt-4 border-t bg-background">
         <Button 
           type="submit"
+          onClick={handleFormSubmit}
           className="w-full"
           disabled={isLoading}
         >
@@ -380,7 +383,7 @@ function FiltersContent({
           Clear All Filters
         </Button>
       </div>
-    </form>
+    </div>
   )
 }
 
@@ -389,6 +392,18 @@ export function BrowseStudiosContent() {
   const searchParams = useSearchParams()
   const { profile: sharedProfile, loading: profileLoading } = useAuth()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
+  const [isFullHDOrLarger, setIsFullHDOrLarger] = useState(false)
+
+  // Check if screen is 1080p (1920px) or larger
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsFullHDOrLarger(window.innerWidth >= 1920)
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   // Initialize filter state from URL parameters
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -581,10 +596,11 @@ export function BrowseStudiosContent() {
   }
 
   return (
-    <div className="p-4 md:p-6 min-h-screen max-h-screen overflow-hidden">
-      <div className="flex flex-col lg:flex-row gap-6 h-full">
-        {/* Mobile Filter Button - Top Right */}
-        <div className="lg:hidden fixed top-14 right-4 z-40">
+    <div className="p-3 sm:p-4 md:p-6 min-h-screen">
+      <div className={`flex gap-4 max-w-full mx-auto ${isFullHDOrLarger ? 'flex-row' : 'flex-col'}`}>
+        {/* Filter Button for screens below 1080p */}
+        {!isFullHDOrLarger && (
+        <div className="fixed top-14 right-4 z-40">
           <div className="relative">
             <Button 
               variant="outline" 
@@ -604,6 +620,7 @@ export function BrowseStudiosContent() {
             )}
           </div>
         </div>
+        )}
 
         {/* Mobile Filter Sheet */}
         <MobileFilterSheet
@@ -620,11 +637,12 @@ export function BrowseStudiosContent() {
           onOpenChange={setMobileFilterOpen}
         />
 
-        {/* Desktop Filters Sidebar */}
-        <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
+        {/* Desktop Filters Sidebar - Only show on 1080p+ screens */}
+        {isFullHDOrLarger && (
+        <div className="w-96 flex-shrink-0">
           <div className="sticky top-6 h-[calc(100vh-3rem)]">
             <Card className="shadow-sm h-full">
-              <CardContent className="p-6 h-full overflow-y-auto">
+              <CardContent className="p-4 lg:p-6 h-full overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">Filters</h2>
                   <Badge 
@@ -652,9 +670,10 @@ export function BrowseStudiosContent() {
             </Card>
           </div>
         </div>
+        )}
 
         {/* Studios Grid */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-w-0">
           {studiosError ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground mb-4">
@@ -678,7 +697,11 @@ export function BrowseStudiosContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
+              <div className={`grid gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border ${
+                isFullHDOrLarger 
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+                  : 'grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
+              }`}>
                 {studios.map((studio, index) => (
                   <StudioCard
                     key={studio.id}

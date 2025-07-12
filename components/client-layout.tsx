@@ -2,6 +2,7 @@
 
 import { ThemeProvider } from "next-themes"
 import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { FloatingCartButton } from "@/components/floating-cart-button"
@@ -11,6 +12,18 @@ import { useAuth } from "@/lib/auth/auth-context"
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { user, profile } = useAuth()
+  const [isLargeScreen, setIsLargeScreen] = useState(false)
+  
+  // Check if screen is 1080p (1920px) or larger for sidebar
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1920)
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
   
   // Pages that should NOT have ANY navigation (including mobile)
   const noNavigationRoutes = [
@@ -42,7 +55,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     >
       {shouldShowDesktopSidebar ? (
         <SidebarProvider
-          defaultOpen={true}
+          defaultOpen={isLargeScreen}
           style={
             {
               "--sidebar-width": "calc(var(--spacing) * 72)",

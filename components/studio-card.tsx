@@ -147,8 +147,8 @@ export function StudioCard({
         {showAmenities && (
           <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
             {studio.amenities?.slice(0, 3).map((amenity) => (
-              <Badge key={amenity} variant="secondary" className="text-xs">
-                {amenity}
+              <Badge key={amenity.id} variant="secondary" className="text-xs">
+                {amenity.name}
               </Badge>
             ))}
             {studio.amenities && studio.amenities.length > 3 && (

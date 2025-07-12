@@ -18,28 +18,13 @@ import { StudioListMembershipIndicators } from "@/components/studio-list-members
 import { StudioCard } from "@/components/studio-card"
 import { MobileFilterSheet } from "@/components/mobile-filter-sheet"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
 import { useQuoteBasket } from "@/lib/store/quote-basket"
-import { getBatchStudioListMemberships, getUserLists, ListWithCount } from "@/lib/actions/lists"
 import { useAuth } from "@/lib/auth/auth-context"
-import { getStudiosWithReviewsClient } from "@/lib/studio-reviews-client"
 
-interface Studio {
-  id: number
-  name: string
-  description: string
-  hourly_rate: number
-  location: string
-  owner_id: string
-  published: boolean
-  verification_status: string
-  created_at: string
-  average_rating?: number
-  review_count?: number
-  amenities?: string[]
-  gear?: any
-  photo_urls?: string[]
-}
+// React Query hooks
+import { useStudiosInfinite, useAmenities, useStudioListMemberships } from "@/lib/hooks/queries/studios"
+import { useUserLists } from "@/lib/hooks/queries/auth"
+import type { Studio } from "@/lib/types/database"
 
 interface Amenity {
   id: string
@@ -70,14 +55,7 @@ interface FiltersContentProps {
   isLoading?: boolean
 }
 
-// OPTIMIZED: Shared profile type
-interface Profile {
-  id: number
-  user_id: string
-  role: 'creator' | 'owner' | 'admin' | null
-}
-
-const STUDIOS_PER_PAGE = 12
+const STUDIOS_PER_PAGE = 20
 
 // Custom hook for debounced values
 function useDebounce<T>(value: T, delay: number): T {
@@ -100,11 +78,9 @@ function useDebounce<T>(value: T, delay: number): T {
 function StudioCardSkeleton() {
   return (
     <Card className="overflow-hidden p-0 gap-0 h-full flex flex-col">
-      {/* Image skeleton */}
       <Skeleton className="aspect-video rounded-t-lg rounded-b-none" />
       
       <CardContent className="p-4 flex flex-col flex-1">
-        {/* Title and price row */}
         <div className="flex justify-between items-start mb-2">
           <Skeleton className="h-6 w-32" />
           <div className="text-right">
@@ -113,13 +89,11 @@ function StudioCardSkeleton() {
           </div>
         </div>
         
-        {/* Location */}
         <div className="flex items-center mb-2">
           <Skeleton className="h-4 w-4 mr-1" />
           <Skeleton className="h-4 w-24" />
         </div>
 
-        {/* Rating */}
         <div className="flex items-center mb-3">
           <div className="flex gap-1 mr-2">
             {Array.from({ length: 5 }, (_, i) => (
@@ -129,20 +103,17 @@ function StudioCardSkeleton() {
           <Skeleton className="h-4 w-16" />
         </div>
 
-        {/* Description - 2 lines */}
         <div className="mb-3 flex-1">
           <Skeleton className="h-4 w-full mb-2" />
           <Skeleton className="h-4 w-3/4" />
         </div>
 
-        {/* Amenities */}
         <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
           <Skeleton className="h-5 w-16" />
           <Skeleton className="h-5 w-20" />
           <Skeleton className="h-5 w-14" />
         </div>
 
-        {/* Action buttons */}
         <div className="mt-auto">
           <div className="flex gap-2 h-8">
             <Skeleton className="h-8 flex-1" />
@@ -158,7 +129,6 @@ function StudioCardSkeleton() {
 function InfiniteScrollLoader() {
   return (
     <div className="flex flex-col items-center justify-center py-8 space-y-4">
-      {/* Animated dots */}
       <div className="flex space-x-1">
         {[0, 1, 2].map((i) => (
           <div
@@ -171,11 +141,9 @@ function InfiniteScrollLoader() {
           />
         ))}
       </div>
-      {/* Loading text */}
       <p className="text-sm text-muted-foreground animate-pulse">
         Loading more studios...
       </p>
-      {/* Skeleton cards preview */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full max-w-6xl">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="opacity-50">
@@ -187,7 +155,7 @@ function InfiniteScrollLoader() {
   )
 }
 
-// Moved FiltersContent outside of the main component to prevent recreation on each render
+// Filters Content Component
 function FiltersContent({ 
   filters, 
   amenities, 
@@ -197,7 +165,6 @@ function FiltersContent({
   onClearFilters,
   isLoading = false
 }: FiltersContentProps) {
-  // Memoize filtered lists to prevent unnecessary recalculations
   const filteredAmenities = useMemo(() => {
     if (!filters.amenitySearch.trim()) return amenities
     return amenities.filter(amenity => 
@@ -212,7 +179,6 @@ function FiltersContent({
     )
   }, [availableGear, filters.gearSearch])
 
-  // Memoize event handlers to prevent recreation
   const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange({ location: e.target.value })
   }, [onFilterChange])
@@ -248,7 +214,6 @@ function FiltersContent({
     onSearchFilters()
   }, [onSearchFilters])
 
-  // Memoize derived values
   const hasActiveFilters = useMemo(() => 
     filters.location.trim() !== "" ||
     filters.selectedAmenities.length > 0 ||
@@ -370,70 +335,6 @@ function FiltersContent({
         </div>
       </div>
 
-      {/* Equipment & Gear Filter */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Equipment & Gear</Label>
-          <Badge 
-            variant="secondary" 
-            className={`text-xs transition-opacity ${
-              filters.selectedGear.length > 0 ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            {filters.selectedGear.length} selected
-          </Badge>
-        </div>
-        
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search gear..."
-            value={filters.gearSearch}
-            onChange={handleGearSearchChange}
-            className="pl-10"
-            disabled={isLoading}
-          />
-          {filters.gearSearch && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-              onClick={() => onFilterChange({ gearSearch: "" })}
-            >
-              <X className="h-3 w-3" />
-              <span className="sr-only">Clear search</span>
-            </Button>
-          )}
-        </div>
-
-        <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-input p-3">
-          {filteredGear.length > 0 ? (
-            filteredGear.map((gear, index) => (
-              <div key={`${gear.category}-${gear.item}-${index}`} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`gear-${index}`}
-                  checked={filters.selectedGear.includes(gear.item)}
-                  onCheckedChange={(checked) => handleGearToggle(gear.item, checked as boolean)}
-                  disabled={isLoading}
-                />
-                <Label 
-                  htmlFor={`gear-${index}`} 
-                  className="text-sm font-normal cursor-pointer flex-1"
-                >
-                  {gear.item}
-                </Label>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              {filters.gearSearch ? `No gear found matching "${filters.gearSearch}"` : "Loading gear..."}
-            </p>
-          )}
-        </div>
-      </div>
-
       {/* Action Buttons */}
       <div className="space-y-2 pt-4 border-t">
         <Button 
@@ -474,29 +375,6 @@ export function BrowseStudiosContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, profile: sharedProfile, loading: profileLoading } = useAuth()
-  const [studios, setStudios] = useState<Studio[]>([])
-  const [amenities, setAmenities] = useState<Amenity[]>([])
-  const [availableGear, setAvailableGear] = useState<GearItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [totalCount, setTotalCount] = useState(0)
-  const { addStudio, studios: basketStudios } = useQuoteBasket()
-  
-  // OPTIMIZED: Batch list memberships state
-  const [batchMemberships, setBatchMemberships] = useState<Record<string, {list_id: number, list_name: string, list_icon_emoji: string}[]>>({})
-  const [membershipsLoading, setMembershipsLoading] = useState(false)
-  
-  // OPTIMIZED: Shared lists state to eliminate individual list fetches per dropdown
-  const [sharedLists, setSharedLists] = useState<ListWithCount[]>([])
-  const [listsLoading, setListsLoading] = useState(false)
-  
-  // Use refs to avoid stale closure issues
-  const currentPageRef = useRef(0)
-  const loadMoreRef = useRef<HTMLDivElement>(null)
-  const isLoadingRef = useRef(false) // Prevent duplicate requests
-  
-  // Mobile filter sheet state
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
 
   // Initialize filter state from URL parameters
@@ -515,7 +393,98 @@ export function BrowseStudiosContent() {
     }
   })
 
-  // Memoized filter change handler to prevent recreation
+  // Debounce filters to reduce API calls
+  const debouncedFilters = useDebounce(filters, 500)
+
+  // React Query hooks - automatic caching and background updates!
+  const {
+    data: studiosData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: studiosLoading,
+    isError: studiosError,
+    refetch: refetchStudios
+  } = useStudiosInfinite({
+    location: debouncedFilters.location,
+    minRate: debouncedFilters.priceRange[0],
+    maxRate: debouncedFilters.priceRange[1],
+    // Note: amenityIds filtering will need to be implemented in the hook
+  })
+
+  // Get amenities with automatic caching
+  const { data: amenitiesData, isLoading: amenitiesLoading } = useAmenities()
+
+  // Get user lists with automatic caching
+  const { data: userListsData, isLoading: listsLoading } = useUserLists(sharedProfile?.id || null)
+
+  // Flatten studios from all pages
+  const studios = useMemo(() => {
+    return studiosData?.pages.flatMap(page => page.data || []) || []
+  }, [studiosData])
+
+  // Get studio IDs for batch memberships
+  const studioIds = useMemo(() => {
+    return studios.map(studio => studio.id)
+  }, [studios])
+
+  // Get batch memberships with automatic caching
+  const { data: batchMemberships } = useStudioListMemberships(studioIds, sharedProfile?.id || null)
+
+  // Intersection observer for infinite scroll
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const currentRef = loadMoreRef.current
+    if (!currentRef) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage()
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '100px'
+      }
+    )
+
+    observer.observe(currentRef)
+
+    return () => {
+      observer.unobserve(currentRef)
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  // Convert amenities data to expected format
+  const amenities = useMemo(() => {
+    return (amenitiesData || []).map(amenity => ({
+      id: amenity.id.toString(),
+      name: amenity.name
+    }))
+  }, [amenitiesData])
+
+  // Transform batch memberships to expected format
+  const membershipsByStudio = useMemo(() => {
+    if (!batchMemberships) return {}
+    
+    const result: Record<string, any[]> = {}
+    batchMemberships.forEach(membership => {
+      const studioId = membership.studio_id.toString()
+      if (!result[studioId]) {
+        result[studioId] = []
+      }
+      result[studioId].push({
+        list_id: membership.list_id,
+        list_name: membership.list_name,
+        list_icon_emoji: membership.list_icon_emoji
+      })
+    })
+    return result
+  }, [batchMemberships])
+
   const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
   }, [])
@@ -548,345 +517,10 @@ export function BrowseStudiosContent() {
     router.replace(newURL, { scroll: false })
   }, [router])
 
-  // OPTIMIZED: Batch fetch list memberships for all visible studios
-  const fetchBatchMemberships = useCallback(async (studioList: Studio[]) => {
-    if (studioList.length === 0) return
-    
-    setMembershipsLoading(true)
-    try {
-      const studioIds = studioList.map(studio => studio.id.toString())
-      const result = await getBatchStudioListMemberships(studioIds)
-      
-      if (result.success) {
-        setBatchMemberships(result.data || {})
-      } else {
-        console.error('Failed to fetch batch memberships:', result.error)
-        // Set empty memberships instead of error to not break the UI
-        setBatchMemberships({})
-      }
-    } catch (error) {
-      console.error('Error fetching batch memberships:', error)
-      setBatchMemberships({})
-    } finally {
-      setMembershipsLoading(false)
-    }
-  }, [])
-
-  const fetchStudios = useCallback(async (reset = false) => {
-    // Prevent duplicate requests
-    if (isLoadingRef.current) return
-    isLoadingRef.current = true
-
-    const pageToFetch = reset ? 0 : currentPageRef.current
-    const isFirstLoad = reset || pageToFetch === 0
-
-    if (isFirstLoad) {
-      setLoading(true)
-      currentPageRef.current = 0
-    } else {
-      setLoadingMore(true)
-    }
-
-    try {
-      // OPTIMIZED: Build the base query with specific columns only
-      let query = createClient()
-        .from("studios")
-        .select(`
-          id,
-          name,
-          description,
-          hourly_rate,
-          location,
-          owner_id,
-          published,
-          verification_status,
-          created_at,
-          gear,
-          photo_urls,
-          studio_amenities (
-            amenities (name)
-          )
-        `, { count: 'exact' })
-        .eq("published", true)
-        .eq("verification_status", "verified")
-
-      // Apply server-side filters
-      if (filters.location.trim()) {
-        query = query.ilike("location", `%${filters.location.trim()}%`)
-      }
-
-      query = query.gte("hourly_rate", filters.priceRange[0]).lte("hourly_rate", filters.priceRange[1])
-
-      // If we have amenity filters, we need to get studios that have ALL selected amenities
-      if (filters.selectedAmenities.length > 0) {
-        // First get all studios that have at least one of the selected amenities
-        const { data: studioIds } = await createClient()
-          .from("studio_amenities")
-          .select("studio_id")
-          .in("amenity_id", 
-            await createClient()
-              .from("amenities")
-                              .select("id")
-                .in("name", filters.selectedAmenities)
-                .then(({ data }: any) => data?.map((a: any) => a.id) || [])
-          )
-
-        if (studioIds && studioIds.length > 0) {
-          // Group by studio_id and count amenities to find studios with ALL selected amenities
-          const studioIdCounts = studioIds.reduce((acc: any, { studio_id }: any) => {
-            acc[studio_id] = (acc[studio_id] || 0) + 1
-            return acc
-          }, {} as Record<number, number>)
-
-          // Filter to studios that have all selected amenities
-          const validStudioIds = Object.entries(studioIdCounts)
-            .filter(([_, count]) => count === filters.selectedAmenities.length)
-            .map(([id, _]) => parseInt(id))
-
-          if (validStudioIds.length === 0) {
-            // No studios match all selected amenities
-            setStudios([])
-            setTotalCount(0)
-            setHasMore(false)
-            return
-          }
-
-          query = query.in("id", validStudioIds)
-        } else {
-          // No studios have any of the selected amenities
-          setStudios([])
-          setTotalCount(0)
-          setHasMore(false)
-          return
-        }
-      }
-
-      const { data, error, count } = await query
-        .range(pageToFetch * STUDIOS_PER_PAGE, (pageToFetch + 1) * STUDIOS_PER_PAGE - 1)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error("Error fetching studios:", error)
-        return
-      }
-
-      if (data) {
-        // Get studio IDs for review fetching
-        const studioIds = data.map((studio: any) => studio.id)
-        
-        // Fetch review data for all studios
-        const reviewsData = await getStudiosWithReviewsClient(studioIds)
-        
-        let studiosWithStats = data.map((studio: any) => {
-          const studioReviews = reviewsData[studio.id] || { averageRating: 0, totalReviews: 0 }
-          return {
-            ...studio,
-            average_rating: studioReviews.averageRating,
-            review_count: studioReviews.totalReviews,
-            amenities: studio.studio_amenities?.map((sa: any) => sa.amenities?.name).filter(Boolean) || [],
-          }
-        })
-
-        // Apply gear filter on client side (since gear structure is complex)
-        if (filters.selectedGear.length > 0) {
-          studiosWithStats = studiosWithStats.filter((studio: any) => {
-            if (!studio.gear) return false
-            
-            // Extract all gear items from the studio's gear object
-            const studioGearItems: string[] = []
-            
-            if (typeof studio.gear === 'object') {
-              Object.values(studio.gear).forEach((value) => {
-                if (Array.isArray(value)) {
-                  studioGearItems.push(...value.map(item => item.toLowerCase()))
-                } else if (typeof value === 'string') {
-                  studioGearItems.push(value.toLowerCase())
-                }
-              })
-            } else if (typeof studio.gear === 'string') {
-              studioGearItems.push(studio.gear.toLowerCase())
-            }
-            
-            // Check if any selected gear is in the studio's gear
-            return filters.selectedGear.some((selectedItem) =>
-              studioGearItems.some(studioItem => 
-                studioItem.includes(selectedItem.toLowerCase()) || 
-                selectedItem.toLowerCase().includes(studioItem)
-              )
-            )
-          })
-        }
-
-        if (reset) {
-          setStudios(studiosWithStats)
-          currentPageRef.current = 1
-          // OPTIMIZED: Fetch memberships for initial load
-          fetchBatchMemberships(studiosWithStats)
-        } else {
-          // Prevent duplicates by filtering out studios that already exist
-          let updatedStudiosList: Studio[] = []
-          
-          setStudios(prev => {
-            const existingIds = new Set(prev.map(s => s.id))
-            const newStudios = studiosWithStats.filter((studio: any) => !existingIds.has(studio.id))
-            updatedStudiosList = [...prev, ...newStudios]
-            return updatedStudiosList
-          })
-          
-          currentPageRef.current = currentPageRef.current + 1
-          
-          // OPTIMIZED: Fetch memberships for all visible studios (after state update)
-          // Use setTimeout to ensure this runs after the state update is complete
-          setTimeout(() => {
-            fetchBatchMemberships(updatedStudiosList)
-          }, 0)
-        }
-
-        setTotalCount(count || 0)
-        setHasMore(data.length === STUDIOS_PER_PAGE)
-      }
-    } catch (error) {
-      console.error("Error fetching studios:", error)
-    } finally {
-      setLoading(false)
-      setLoadingMore(false)
-      isLoadingRef.current = false
-    }
-  }, [filters.location, filters.priceRange, filters.selectedAmenities, filters.selectedGear])
-
-  // Simple intersection observer for infinite scroll
-  useEffect(() => {
-    const currentRef = loadMoreRef.current
-    if (!currentRef) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries
-        if (entry.isIntersecting && hasMore && !loadingMore && !loading) {
-          fetchStudios(false)
-        }
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '100px'
-      }
-    )
-
-    observer.observe(currentRef)
-
-    return () => {
-      observer.unobserve(currentRef)
-    }
-  }, [hasMore, loadingMore, loading, fetchStudios])
-
-  // Profile now comes from AuthProvider - no need to fetch separately
-
-  // OPTIMIZED: Fetch shared lists once on mount for authenticated users
-  const fetchSharedLists = useCallback(async () => {
-    // Only fetch lists if user is authenticated
-    if (sharedProfile && !profileLoading) {
-      setListsLoading(true)
-      try {
-        const result = await getUserLists()
-        if (result.success) {
-          setSharedLists(result.data || [])
-        } else {
-          console.error('Failed to fetch shared lists:', result.error)
-          setSharedLists([])
-        }
-      } catch (error) {
-        console.error('Error fetching shared lists:', error)
-        setSharedLists([])
-      } finally {
-        setListsLoading(false)
-      }
-    } else if (!profileLoading && !sharedProfile) {
-      // User is not authenticated, clear lists
-      setSharedLists([])
-      setListsLoading(false)
-    }
-  }, [sharedProfile, profileLoading])
-
-  useEffect(() => {
-    fetchSharedLists()
-  }, [fetchSharedLists])
-
-  // Initialize data on mount
-  useEffect(() => {
-    fetchStudios(true) // Reset to first page
-    fetchAmenities()
-    fetchAvailableGear()
-  }, [])
-
-  const fetchAmenities = async () => {
-    const { data } = await createClient().from("amenities").select("*").order("name")
-    if (data) {
-      setAmenities(data)
-    }
-  }
-
-  const fetchAvailableGear = async () => {
-    try {
-      const { data, error } = await createClient()
-        .from("studios")
-        .select("gear")
-        .eq("published", true)
-        .eq("verification_status", "verified")
-        .not("gear", "is", null)
-
-      if (error) {
-        console.error("Error fetching gear:", error)
-        return
-      }
-
-      if (data) {
-        const allGearItems = new Set<string>()
-        
-        data.forEach((studio: any) => {
-          if (studio.gear && typeof studio.gear === 'object') {
-            Object.entries(studio.gear).forEach(([category, items]) => {
-              if (Array.isArray(items)) {
-                items.forEach((item: string) => {
-                  if (typeof item === 'string' && item.trim()) {
-                    allGearItems.add(item.trim())
-                  }
-                })
-              } else if (typeof items === 'string' && items.trim()) {
-                allGearItems.add(items.trim())
-              }
-            })
-          } else if (typeof studio.gear === 'string' && studio.gear.trim()) {
-            // Handle plain text gear descriptions
-            const gearWords = studio.gear.toLowerCase().split(/[,\s]+/)
-            gearWords.forEach((word: any) => {
-              if (word.length > 2) { // Only include meaningful words
-                allGearItems.add(word)
-              }
-            })
-          }
-        })
-
-        // Convert to array and sort
-        const gearArray = Array.from(allGearItems)
-          .sort((a, b) => a.localeCompare(b))
-          .slice(0, 100) // Limit to most common 100 items for performance
-
-        const gearItems: GearItem[] = gearArray.map(item => ({
-          category: 'equipment',
-          item: item
-        }))
-
-        setAvailableGear(gearItems)
-      }
-    } catch (error) {
-      console.error("Error processing gear data:", error)
-    }
-  }
-
   const handleSearchFilters = useCallback(() => {
     updateURL(filters)
-    fetchStudios(true) // Reset and apply filters
-  }, [filters, updateURL, fetchStudios])
+    refetchStudios()
+  }, [filters, updateURL, refetchStudios])
 
   const handleClearFilters = useCallback(() => {
     const clearedFilters = {
@@ -899,22 +533,10 @@ export function BrowseStudiosContent() {
     }
     setFilters(clearedFilters)
     updateURL(clearedFilters)
-    // Fetch all studios after clearing filters
-    setTimeout(() => {
-      fetchStudios(true)
-    }, 0)
-  }, [updateURL, fetchStudios])
+  }, [updateURL])
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`h-4 w-4 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-      />
-    ))
-  }
-
-  if (loading) {
+  // Loading state
+  if (studiosLoading) {
     return (
       <div className="p-4 md:p-6 min-h-screen">
         <div className="flex flex-col lg:flex-row gap-6">
@@ -938,32 +560,6 @@ export function BrowseStudiosContent() {
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-4 w-full" />
                     </div>
-                                         <div className="space-y-4">
-                       <Skeleton className="h-4 w-16" />
-                       <div className="space-y-3">
-                         {Array.from({ length: 6 }, (_, i) => (
-                           <div key={i} className="flex items-center space-x-2">
-                             <Skeleton className="h-4 w-4" />
-                             <Skeleton className="h-4 w-20" />
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                     <div className="space-y-4">
-                       <Skeleton className="h-4 w-24" />
-                       <div className="space-y-3">
-                         {Array.from({ length: 8 }, (_, i) => (
-                           <div key={i} className="flex items-center space-x-2">
-                             <Skeleton className="h-4 w-4" />
-                             <Skeleton className="h-4 w-24" />
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                     <div className="pt-4 border-t space-y-3">
-                       <Skeleton className="h-10 w-full" />
-                       <Skeleton className="h-8 w-full" />
-                     </div>
                   </div>
                 </CardContent>
               </Card>
@@ -972,13 +568,8 @@ export function BrowseStudiosContent() {
 
           {/* Studios Grid Skeleton */}
           <div className="flex-1">
-            <div className="mb-6">
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-5 w-32" />
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
-              {Array.from({ length: STUDIOS_PER_PAGE }, (_, i) => (
+              {Array.from({ length: 12 }, (_, i) => (
                 <StudioCardSkeleton key={i} />
               ))}
             </div>
@@ -1017,11 +608,11 @@ export function BrowseStudiosContent() {
         <MobileFilterSheet
           filters={filters}
           amenities={amenities}
-          availableGear={availableGear}
+          availableGear={[]} // TODO: Implement gear fetching in React Query
           onFilterChange={handleFilterChange}
           onSearchFilters={handleSearchFilters}
           onClearFilters={handleClearFilters}
-          isLoading={loading}
+          isLoading={studiosLoading}
           open={mobileFilterOpen}
           onOpenChange={setMobileFilterOpen}
         />
@@ -1046,11 +637,11 @@ export function BrowseStudiosContent() {
                 <FiltersContent
                   filters={filters}
                   amenities={amenities}
-                  availableGear={availableGear}
+                  availableGear={[]} // TODO: Implement gear fetching
                   onFilterChange={handleFilterChange}
                   onSearchFilters={handleSearchFilters}
                   onClearFilters={handleClearFilters}
-                  isLoading={loading}
+                  isLoading={studiosLoading}
                 />
               </CardContent>
             </Card>
@@ -1059,28 +650,17 @@ export function BrowseStudiosContent() {
 
         {/* Studios Grid */}
         <div className="flex-1 overflow-y-auto">
-          {/* <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Browse Recording Studios</h1>
-            <p className="text-muted-foreground">
-              {loading ? "Loading studios..." : `${totalCount} studios found`}
-            </p>
-          </div> */}
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <Skeleton className="h-48 w-full" />
-                  <CardContent className="p-4">
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2 mb-2" />
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </CardContent>
-                </Card>
-              ))}
+          {studiosError ? (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground mb-4">
+                <h3 className="text-lg font-medium mb-2">Error loading studios</h3>
+                <p>Please try again or contact support if the problem persists.</p>
+              </div>
+              <Button onClick={() => refetchStudios()} variant="outline">
+                Try again
+              </Button>
             </div>
-          ) : studios.length === 0 ? (
+          ) : studios.length === 0 && !studiosLoading ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground mb-4">
                 <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -1094,42 +674,40 @@ export function BrowseStudiosContent() {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 bg-muted/20 p-4 sm:p-6 rounded-lg border">
-            {studios.map((studio, index) => (
-              <StudioCard
-                key={studio.id}
-                studio={{
-                  ...studio,
-                  verification_status: studio.verification_status || 'unverified'
-                }}
-                memberships={batchMemberships[studio.id.toString()] || []}
-                sharedProfile={sharedProfile}
-                profileLoading={profileLoading}
-                sharedLists={sharedLists}
-                listsLoading={listsLoading}
-                onListsChange={fetchSharedLists}
-                showAmenities={true}
-                linkToStudio={true}
-                priority={index < 6}
-              />
-            ))}
-          </div>
-
+                {studios.map((studio, index) => (
+                  <StudioCard
+                    key={studio.id}
+                    studio={{
+                      ...studio,
+                      verification_status: studio.verification_status || 'unverified'
+                    }}
+                    memberships={membershipsByStudio[studio.id.toString()] || []}
+                    sharedProfile={sharedProfile}
+                    profileLoading={profileLoading}
+                    sharedLists={userListsData || []}
+                    listsLoading={listsLoading}
+                    onListsChange={() => {}} // React Query automatically updates
+                    showAmenities={true}
+                    linkToStudio={true}
+                    priority={index < 6}
+                  />
+                ))}
+              </div>
 
               {/* Infinite Scroll Trigger & Loading Indicator */}
-              {hasMore && (
+              {hasNextPage && (
                 <div ref={loadMoreRef} className="mt-8 min-h-[20px] flex items-center justify-center">
-                  {loadingMore ? (
+                  {isFetchingNextPage ? (
                     <InfiniteScrollLoader />
                   ) : (
                     <div className="h-4 w-full" />
                   )}
                 </div>
               )}
-      
             </>
           )}
         </div>
       </div>
     </div>
   )
-} 
+}

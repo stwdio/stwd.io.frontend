@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth/auth-context";
 import { RouteGuard } from "@/components/auth/route-guard";
 import { ClientLayout } from "@/components/client-layout";
 import { Toaster } from "@/components/ui/sonner";
+import { ReactQueryProvider } from "@/lib/react-query/provider";
 import { createServerComponentClient } from "@/lib/supabase/server";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -44,17 +45,20 @@ export default async function RootLayout({
   }
 
   // 4. Pass the resolved data to the client-side AuthProvider
+  // 5. Wrap with ReactQueryProvider for optimal caching
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <AuthProvider initialUser={user} initialProfile={profile}>
-          <RouteGuard>
-            <ClientLayout>
-              {children}
-            </ClientLayout>
-          </RouteGuard>
-          <Toaster />
-        </AuthProvider>
+        <ReactQueryProvider>
+          <AuthProvider initialUser={user} initialProfile={profile}>
+            <RouteGuard>
+              <ClientLayout>
+                {children}
+              </ClientLayout>
+            </RouteGuard>
+            <Toaster />
+          </AuthProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

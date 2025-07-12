@@ -2,80 +2,52 @@
 
 import { useAuth, isPublicRoute, getDefaultDashboard } from '@/lib/auth/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect } from 'react'
 
 interface RouteGuardProps {
   children: React.ReactNode
 }
 
 export function RouteGuard({ children }: RouteGuardProps) {
-  const { user, profile, loading, error } = useAuth()
+  const { user, profile, loading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const [forceNotLoading, setForceNotLoading] = useState(false)
-  const loadingTimeoutRef = useRef<NodeJS.Timeout>()
-  
-  // Safety mechanism to prevent infinite loading in RouteGuard
-  useEffect(() => {
-    if (loading && !forceNotLoading) {
-      // Clear any existing timeout
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current)
-      }
-      
-      // Set a timeout to force loading to false after 5 seconds
-      loadingTimeoutRef.current = setTimeout(() => {
-        console.warn('RouteGuard: Forcing loading to false after timeout')
-        setForceNotLoading(true)
-      }, 5000)
-    } else if (!loading) {
-      // Reset the force flag when auth genuinely stops loading
-      setForceNotLoading(false)
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current)
-      }
-    }
-    
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current)
-      }
-    }
-  }, [loading, forceNotLoading])
-  
-  // Use the forced loading state if needed
-  const isLoading = loading && !forceNotLoading
 
   useEffect(() => {
-    // Don't do anything while auth is loading
-    if (isLoading) return
+    // 1. CRITICAL: Do nothing while auth operations are in progress.
+    // This prevents any redirects during client-side state transitions.
+    if (loading) {
+      console.log('RouteGuard: Skipping evaluation, auth is loading')
+      return
+    }
 
-    // Clear, single decision tree - prevents infinite loops
-    
-    // Case 1: No user and trying to access protected route
+    // 2. Logic can now run safely. On initial load, 'loading' is false
+    // and 'user'/'profile' are already populated from the server.
+
+    // User is not logged in and trying to access a protected route
     if (!user && !isPublicRoute(pathname)) {
-      console.log('Redirecting to login: no user, protected route')
+      console.log('RouteGuard: No user, redirecting to login')
       router.replace('/auth/login')
       return
     }
-    
-    // Case 2: User exists but no role and not on onboarding
+
+    // User is logged in but has no role, redirect to onboarding
     if (user && !profile?.role && pathname !== '/onboarding') {
-      console.log('Redirecting to onboarding: user without role')
+      console.log('RouteGuard: User without role, redirecting to onboarding')
       router.replace('/onboarding')
       return
     }
-    
-    // Case 3: User with role trying to access onboarding
+
+    // User is logged in with a role and tries to access onboarding
     if (user && profile?.role && pathname === '/onboarding') {
-      console.log('Redirecting to dashboard: user with role on onboarding')
+      console.log('RouteGuard: User with role on onboarding, redirecting to dashboard')
       router.replace(getDefaultDashboard(profile.role))
       return
     }
 
-    // Case 4: User trying to access auth pages when already logged in
+    // User trying to access auth pages when already logged in
     if (user && pathname.startsWith('/auth/') && pathname !== '/auth/callback') {
-      console.log('Redirecting authenticated user away from auth pages')
+      console.log('RouteGuard: Authenticated user on auth page, redirecting')
       if (profile?.role) {
         router.replace(getDefaultDashboard(profile.role))
       } else {
@@ -83,11 +55,11 @@ export function RouteGuard({ children }: RouteGuardProps) {
       }
       return
     }
+  }, [user, profile?.role, loading, pathname, router])
 
-  }, [user, profile?.role, isLoading, pathname, router])
-
-  // Show loading during auth loading
-  if (isLoading) {
+  // 3. Display a full-screen loader ONLY during client-side state changes.
+  // This will not show on the initial page load because data is pre-fetched.
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -95,24 +67,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     )
   }
 
-  // Show error state if there's an auth error
-  if (error && !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">Authentication error: {error}</p>
-          <button 
-            onClick={() => router.push('/auth/login')}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // Render children once auth state is resolved
+  // 4. Render the children once the auth state is stable and confirmed.
   return <>{children}</>
 }
 

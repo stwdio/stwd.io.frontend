@@ -16,37 +16,34 @@ export const metadata: Metadata = {
 
 /**
  * Root layout now fetches auth data SERVER-SIDE.
- * This is THE KEY to fixing the refresh bug.
- * 
- * WHAT HAPPENS ON REFRESH:
- * 1. Middleware validates/refreshes auth cookies
- * 2. This layout runs server-side with valid auth
- * 3. Fetches user and profile with no race condition
- * 4. Passes data to AuthProvider as props
- * 5. Client hydrates with complete data - no hanging queries!
+ * This is THE KEY to fixing the race condition. It ensures data
+ * is available before ANY client-side rendering or logic occurs.
  */
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // 1. Create a server-side Supabase client
   const supabase = await createServerComponentClient();
-  
-  // Get user from already-validated cookies
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  // Fetch profile if user exists - this runs server-side!
+
+  // 2. Fetch the user from cookies already validated by middleware
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // 3. If a user exists, fetch their profile
   let profile = null;
   if (user) {
-    const { data } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
       .single();
-    
-    profile = data;
+    profile = profileData;
   }
 
+  // 4. Pass the resolved data to the client-side AuthProvider
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>

@@ -38,51 +38,68 @@ interface AuthProviderProps {
 }
 
 /**
- * CRITICAL CHANGES:
- * 1. Accepts initialUser and initialProfile from server
- * 2. NO async operations in useEffect on mount
- * 3. Only listens for auth state CHANGES, not initial state
- * 4. Eliminates the race condition entirely
+ * AuthProvider that accepts server-side data as props
+ * This eliminates the race condition by starting with complete data
  */
-export function AuthProvider({ 
-  children, 
-  initialUser, 
-  initialProfile 
+export function AuthProvider({
+  children,
+  initialUser,
+  initialProfile,
 }: AuthProviderProps) {
+  // 1. Initialize state directly from server-provided props. NO FETCHING.
   const [user, setUser] = useState<User | null>(initialUser)
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(initialProfile)
+
+  // 2. Loading is FALSE initially because we already have the data.
+  // It only becomes true during client-side auth operations (login/logout).
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
   const router = useRouter()
   const supabase = createClient()
 
-  // Only listen for auth state CHANGES, not initial load
+  // 3. This useEffect only listens for auth STATE CHANGES (e.g., SIGNED_IN, SIGNED_OUT)
+  // that happen on the client. It does NOT run on initial page load to fetch data.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // Only update if there's an actual change
-        if (event === 'SIGNED_IN' && session?.user && session.user.id !== user?.id) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user && session.user.id !== user?.id) {
+        setLoading(true)
+        setUser(session.user)
+        setSession(session)
+        // Fetch a fresh profile on sign-in
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single()
+
+          if (!profileError && profileData) {
+            setProfile(profileData)
+          } else {
+            console.error('Profile fetch error after sign in:', profileError)
+          }
+        } finally {
+          setLoading(false)
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setSession(null)
+        setProfile(null)
+        router.push('/auth/login')
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        setSession(session)
+        if (session.user) {
           setUser(session.user)
-          setSession(session)
-          // Fetch profile only on actual sign in, not on refresh
-          await refreshProfile()
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setSession(null)
-          setProfile(null)
-          router.push('/auth/login')
-        } else if (event === 'USER_UPDATED' && session) {
-          setUser(session.user)
-          setSession(session)
-        } else if (event === 'TOKEN_REFRESHED' && session) {
-          setSession(session)
         }
       }
-    )
+    })
 
     return () => subscription.unsubscribe()
-  }, [user?.id]) // Only re-subscribe if user ID changes
+  }, [user?.id, router, supabase])
 
   const refreshProfile = async () => {
     if (!user?.id) return
@@ -96,16 +113,13 @@ export function AuthProvider({
         .single()
 
       if (error) {
-        console.error('Error fetching profile:', error)
+        console.error('Error refreshing profile:', error)
         setError('Failed to refresh profile')
         return
       }
 
       setProfile(data)
       setError(null)
-    } catch (error) {
-      console.error('Unexpected error:', error)
-      setError('Failed to refresh profile')
     } finally {
       setLoading(false)
     }
@@ -120,10 +134,7 @@ export function AuthProvider({
         setError('Failed to sign out')
         console.error('Error signing out:', error)
       }
-      // State updates handled by onAuthStateChange
-    } catch (error) {
-      console.error('Error signing out:', error)
-      setError('Failed to sign out')
+      // State cleanup handled by onAuthStateChange
     } finally {
       setLoading(false)
     }

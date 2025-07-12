@@ -67,7 +67,12 @@ export async function updateSession(request: NextRequest) {
   )
 
   // This will refresh the session if expired - fixing the core issue
-  await supabase.auth.getUser()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  // Only log unexpected errors, not missing sessions (which are normal for logged-out users)
+  if (error && error.message !== 'Auth session missing!') {
+    console.error('Middleware auth error:', error)
+  }
 
   return response
 }

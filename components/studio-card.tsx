@@ -50,6 +50,8 @@ interface StudioCardProps {
   // Link behavior
   linkToStudio?: boolean
   className?: string
+  // Performance optimization
+  priority?: boolean
 }
 
 export function StudioCard({
@@ -64,7 +66,8 @@ export function StudioCard({
   showNotes = false,
   customActions,
   linkToStudio = true,
-  className = ''
+  className = '',
+  priority = false
 }: StudioCardProps) {
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -90,6 +93,7 @@ export function StudioCard({
           width={300}
           height={200}
           className="object-cover"
+          priority={priority}
         />
       </div>
       

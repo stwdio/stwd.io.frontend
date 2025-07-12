@@ -64,7 +64,10 @@ export async function getStudiosWithReviewsClient(studioIds?: number[]): Promise
           totalReviews: 0
         }
       }
-      studioReviewsMap[studioId].reviews.push(review)
+      studioReviewsMap[studioId].reviews.push({
+        ...review,
+        reviewer: Array.isArray(review.reviewer) ? review.reviewer[0] : review.reviewer
+      })
     })
 
     // Calculate averages for each studio

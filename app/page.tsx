@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { IconBuilding, IconSearch, IconStar } from "@tabler/icons-react"
+import { MinimalAuthLoading } from '@/components/skeletons'
 
 export default function LandingPage() {
   const [user, setUser] = useState<any>(null)
@@ -43,11 +44,7 @@ export default function LandingPage() {
   }, [router, supabase])
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+    return <MinimalAuthLoading />
   }
 
   return (

@@ -146,9 +146,9 @@ export function StudioCard({
         {/* Amenities */}
         {showAmenities && (
           <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
-            {studio.amenities?.slice(0, 3).map((amenity) => (
-              <Badge key={amenity.id} variant="secondary" className="text-xs">
-                {amenity.name}
+            {studio.amenities?.slice(0, 3).map((amenity, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {typeof amenity === 'string' ? amenity : amenity.name}
               </Badge>
             ))}
             {studio.amenities && studio.amenities.length > 3 && (

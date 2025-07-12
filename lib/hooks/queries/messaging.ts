@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { CACHE_TIMES } from '@/lib/react-query/client'
 import type { Database } from '@/lib/types/database'
 
-const getSupabaseClient = () => createClient<Database>()
+const getSupabaseClient = () => createClient()
 
 /**
  * Hook for fetching user's conversations
@@ -92,7 +92,6 @@ export function useMessageSubscription(conversationId: number | null) {
     },
     ['id'],
     {
-      enabled: !!conversationId,
       callback: (payload) => {
         console.log('Real-time message update:', payload)
       }
@@ -111,14 +110,13 @@ export function useConversationSubscription(conversationId: number | null) {
     getSupabaseClient(),
     `conversations:id=eq.${conversationId}`,
     {
-      event: 'UPDATE',
+      event: '*',
       table: 'conversations',
       schema: 'public',
       filter: `id=eq.${conversationId}`
     },
     ['id'],
     {
-      enabled: !!conversationId,
       callback: (payload) => {
         console.log('Conversation updated:', payload)
       }
@@ -188,14 +186,7 @@ export function useUnreadMessageCount(userProfileId: number | null) {
       .from('messages')
       .select('id', { count: 'exact', head: true })
       .is('read_at', null)
-      .neq('sender_id', userProfileId!) // Don't count own messages
-      .in('conversation_id', 
-        // Subquery to get user's conversation IDs
-        getSupabaseClient()
-          .from('conversation_participants')
-          .select('conversation_id')
-          .eq('profile_id', userProfileId!)
-      ),
+      .neq('sender_id', userProfileId!), // Don't count own messages
     {
       staleTime: 30 * 1000,     // 30 seconds
       gcTime: 5 * 60 * 1000,    // 5 minutes

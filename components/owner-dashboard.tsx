@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { DashboardSkeleton } from '@/components/skeletons'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -344,11 +345,7 @@ export function OwnerDashboard() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+    return <DashboardSkeleton variant="owner" />
   }
 
   return (

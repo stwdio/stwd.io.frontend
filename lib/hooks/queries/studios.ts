@@ -7,7 +7,7 @@ import { CACHE_TIMES } from '@/lib/react-query/client'
 import type { Database, StudioWithDetails } from '@/lib/types/database'
 
 // Re-export createClient with proper typing for consistency
-const getSupabaseClient = () => createClient<Database>()
+const getSupabaseClient = () => createClient()
 
 /**
  * Hook for fetching all published studios with full details

@@ -4,6 +4,7 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth/auth-context"
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   IconBuilding,
   IconSearch,
@@ -103,8 +104,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
       <Sidebar collapsible="icon" {...props}>
         <SidebarContent>
-          <div className="flex items-center justify-center h-20">
-            <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+          <div className="p-4 space-y-4">
+            <div className="flex items-center space-x-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="space-y-2">
+              {Array.from({ length: 5 }, (_, i) => (
+                <div key={i} className="flex items-center space-x-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
           </div>
         </SidebarContent>
         <SidebarRail />

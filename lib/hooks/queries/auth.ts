@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { CACHE_TIMES } from '@/lib/react-query/client'
 import type { Database } from '@/lib/types/database'
 
-const getSupabaseClient = () => createClient<Database>()
+const getSupabaseClient = () => createClient()
 
 /**
  * Hook for fetching current user's profile

@@ -5,6 +5,8 @@ import Link from "next/link"
 import { StudioDetailContent } from "@/components/studio-detail-content"
 import { createServerComponentClient } from "@/lib/supabase/server"
 import { getStudioReviews } from "@/lib/studio-reviews"
+import { Suspense } from "react"
+import { StudioDetailPageSkeleton } from "@/components/skeletons"
 
 interface Studio {
   id: number
@@ -69,23 +71,25 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
   const averageRating = reviewsData.averageRating
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Back Button */}
-      <div className="mb-4 md:mb-6">
-        <Button variant="ghost" asChild className="mb-4">
-          <Link href="/browse">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Browse
-          </Link>
-        </Button>
-      </div>
+    <Suspense fallback={<StudioDetailPageSkeleton />}>
+      <div className="p-4 md:p-6">
+        {/* Back Button */}
+        <div className="mb-4 md:mb-6">
+          <Button variant="ghost" asChild className="mb-4">
+            <Link href="/browse">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Browse
+            </Link>
+          </Button>
+        </div>
 
-      <StudioDetailContent 
-        studio={studio}
-        amenities={amenities}
-        reviews={reviews}
-        averageRating={averageRating}
-      />
-    </div>
+        <StudioDetailContent 
+          studio={studio}
+          amenities={amenities}
+          reviews={reviews}
+          averageRating={averageRating}
+        />
+      </div>
+    </Suspense>
   )
 } 

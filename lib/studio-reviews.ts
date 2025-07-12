@@ -57,7 +57,10 @@ export async function getStudioReviews(studioId: number): Promise<StudioReviewsD
       : 0
 
     return {
-      reviews: reviews || [],
+      reviews: (reviews || []).map(review => ({
+        ...review,
+        reviewer: Array.isArray(review.reviewer) ? review.reviewer[0] : review.reviewer
+      })),
       averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
       totalReviews
     }
@@ -117,7 +120,10 @@ export async function getStudiosWithReviews(studioIds?: number[]): Promise<Recor
           totalReviews: 0
         }
       }
-      studioReviewsMap[studioId].reviews.push(review)
+      studioReviewsMap[studioId].reviews.push({
+        ...review,
+        reviewer: Array.isArray(review.reviewer) ? review.reviewer[0] : review.reviewer
+      })
     })
 
     // Calculate averages for each studio

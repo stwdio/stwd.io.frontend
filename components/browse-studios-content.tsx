@@ -9,23 +9,15 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Star, MapPin, Plus, Filter, Loader2, Search, RotateCcw, X } from "lucide-react"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { StudioImage } from "@/components/studio-image-placeholder"
-import { StudioCardActions } from "@/components/studio-card-actions"
-import { StudioListMembershipIndicators } from "@/components/studio-list-membership-indicators"
+import { Filter, Loader2, Search, RotateCcw, X } from "lucide-react"
 import { StudioCard } from "@/components/studio-card"
 import { MobileFilterSheet } from "@/components/mobile-filter-sheet"
 import { BrowsePageSkeleton, StudioCardSkeleton } from "@/components/skeletons"
-import Link from "next/link"
-import { useQuoteBasket } from "@/lib/store/quote-basket"
 import { useAuth } from "@/lib/auth/auth-context"
 
 // React Query hooks
-import { useStudiosInfinite, useAmenities, useStudioListMemberships } from "@/lib/hooks/queries/studios"
+import { useStudiosInfinite, useAmenities, useStudioListMemberships, useAvailableGear } from "@/lib/hooks/queries/studios"
 import { useUserLists } from "@/lib/hooks/queries/auth"
-import type { Studio } from "@/lib/types/database"
 
 interface Amenity {
   id: string
@@ -54,26 +46,11 @@ interface FiltersContentProps {
   onSearchFilters: () => void
   onClearFilters: () => void
   isLoading?: boolean
+  gearLoading?: boolean
+  gearError?: any
 }
 
-const STUDIOS_PER_PAGE = 20
 
-// Custom hook for debounced values
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value)
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value)
-    }, delay)
-
-    return () => {
-      clearTimeout(handler)
-    }
-  }, [value, delay])
-
-  return debouncedValue
-}
 
 
 // Modern infinite scroll loading component
@@ -114,7 +91,9 @@ function FiltersContent({
   onFilterChange, 
   onSearchFilters, 
   onClearFilters,
-  isLoading = false
+  isLoading = false,
+  gearLoading = false,
+  gearError = null
 }: FiltersContentProps) {
   const filteredAmenities = useMemo(() => {
     if (!filters.amenitySearch.trim()) return amenities
@@ -286,6 +265,89 @@ function FiltersContent({
         </div>
       </div>
 
+      {/* Gear Filter */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Equipment & Gear</Label>
+          <Badge 
+            variant="secondary" 
+            className={`text-xs transition-opacity ${
+              filters.selectedGear.length > 0 ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {filters.selectedGear.length} selected
+          </Badge>
+        </div>
+        
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search gear..."
+            value={filters.gearSearch}
+            onChange={handleGearSearchChange}
+            className="pl-10"
+            disabled={isLoading}
+          />
+          {filters.gearSearch && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+              onClick={() => onFilterChange({ gearSearch: "" })}
+            >
+              <X className="h-3 w-3" />
+              <span className="sr-only">Clear search</span>
+            </Button>
+          )}
+        </div>
+
+        <div className="max-h-48 overflow-y-auto space-y-3 rounded-md border border-input p-3">
+          {filteredGear.length > 0 ? (
+            // Group gear by category
+            Object.entries(
+              filteredGear.reduce((acc, gear) => {
+                if (!acc[gear.category]) acc[gear.category] = []
+                acc[gear.category].push(gear.item)
+                return acc
+              }, {} as Record<string, string[]>)
+            ).map(([category, items]) => (
+              <div key={category} className="space-y-2">
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  {category}
+                </Label>
+                <div className="space-y-2 ml-2">
+                  {items.map((item) => (
+                    <div key={`${category}-${item}`} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`gear-${category}-${item}`}
+                        checked={filters.selectedGear.includes(item)}
+                        onCheckedChange={(checked) => handleGearToggle(item, checked as boolean)}
+                        disabled={isLoading}
+                      />
+                      <Label 
+                        htmlFor={`gear-${category}-${item}`} 
+                        className="text-sm font-normal cursor-pointer flex-1"
+                      >
+                        {item}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              {gearLoading ? "Loading gear..." : 
+               gearError ? "Error loading gear" :
+               filters.gearSearch ? `No gear found matching "${filters.gearSearch}"` : 
+               "No gear available"}
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Action Buttons */}
       <div className="space-y-2 pt-4 border-t">
         <Button 
@@ -325,7 +387,7 @@ function FiltersContent({
 export function BrowseStudiosContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, profile: sharedProfile, loading: profileLoading } = useAuth()
+  const { profile: sharedProfile, loading: profileLoading } = useAuth()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
 
   // Initialize filter state from URL parameters
@@ -344,8 +406,46 @@ export function BrowseStudiosContent() {
     }
   })
 
-  // Debounce filters to reduce API calls
-  const debouncedFilters = useDebounce(filters, 500)
+  // State for active filters that are applied to the query
+  const [activeFilters, setActiveFilters] = useState<FilterState>(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    return {
+      location: params.get('location') || "",
+      priceRange: [
+        parseInt(params.get('minPrice') || '0'),
+        parseInt(params.get('maxPrice') || '500')
+      ] as [number, number],
+      selectedAmenities: params.get('amenities') ? params.get('amenities')!.split(',') : [],
+      selectedGear: params.get('gear') ? params.get('gear')!.split(',') : [],
+      amenitySearch: "",
+      gearSearch: ""
+    }
+  })
+
+  // Get amenities with automatic caching
+  const { data: amenitiesData } = useAmenities()
+
+  // Get available gear with automatic caching
+  const { data: availableGearData, isLoading: gearLoading, error: gearError } = useAvailableGear()
+
+  // Get user lists with automatic caching
+  const { data: userListsData, isLoading: listsLoading } = useUserLists(sharedProfile?.id || null)
+
+  // Convert amenities data to expected format
+  const amenities = useMemo(() => {
+    return (amenitiesData || []).map(amenity => ({
+      id: amenity.id.toString(),
+      name: amenity.name
+    }))
+  }, [amenitiesData])
+
+  // Convert amenity names to IDs for the API call (using active filters)
+  const selectedAmenityIds = useMemo(() => {
+    return activeFilters.selectedAmenities.map(amenityName => {
+      const amenity = amenities.find(a => a.name === amenityName)
+      return amenity ? parseInt(amenity.id) : null
+    }).filter(id => id !== null)
+  }, [activeFilters.selectedAmenities, amenities])
 
   // React Query hooks - automatic caching and background updates!
   const {
@@ -357,17 +457,12 @@ export function BrowseStudiosContent() {
     isError: studiosError,
     refetch: refetchStudios
   } = useStudiosInfinite({
-    location: debouncedFilters.location,
-    minRate: debouncedFilters.priceRange[0],
-    maxRate: debouncedFilters.priceRange[1],
-    // Note: amenityIds filtering will need to be implemented in the hook
+    location: activeFilters.location,
+    minRate: activeFilters.priceRange[0],
+    maxRate: activeFilters.priceRange[1],
+    amenityIds: selectedAmenityIds,
+    gearItems: activeFilters.selectedGear,
   })
-
-  // Get amenities with automatic caching
-  const { data: amenitiesData, isLoading: amenitiesLoading } = useAmenities()
-
-  // Get user lists with automatic caching
-  const { data: userListsData, isLoading: listsLoading } = useUserLists(sharedProfile?.id || null)
 
   // Flatten studios from all pages
   const studios = useMemo(() => {
@@ -408,14 +503,6 @@ export function BrowseStudiosContent() {
       observer.unobserve(currentRef)
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
-
-  // Convert amenities data to expected format
-  const amenities = useMemo(() => {
-    return (amenitiesData || []).map(amenity => ({
-      id: amenity.id.toString(),
-      name: amenity.name
-    }))
-  }, [amenitiesData])
 
   // Transform batch memberships to expected format
   const membershipsByStudio = useMemo(() => {
@@ -469,9 +556,10 @@ export function BrowseStudiosContent() {
   }, [router])
 
   const handleSearchFilters = useCallback(() => {
+    // Apply the current filters as active filters
+    setActiveFilters(filters)
     updateURL(filters)
-    refetchStudios()
-  }, [filters, updateURL, refetchStudios])
+  }, [filters, updateURL])
 
   const handleClearFilters = useCallback(() => {
     const clearedFilters = {
@@ -483,6 +571,7 @@ export function BrowseStudiosContent() {
       gearSearch: ""
     }
     setFilters(clearedFilters)
+    setActiveFilters(clearedFilters)
     updateURL(clearedFilters)
   }, [updateURL])
 
@@ -520,11 +609,13 @@ export function BrowseStudiosContent() {
         <MobileFilterSheet
           filters={filters}
           amenities={amenities}
-          availableGear={[]} // TODO: Implement gear fetching in React Query
+          availableGear={availableGearData || []}
           onFilterChange={handleFilterChange}
           onSearchFilters={handleSearchFilters}
           onClearFilters={handleClearFilters}
           isLoading={studiosLoading}
+          gearLoading={gearLoading}
+          gearError={gearError}
           open={mobileFilterOpen}
           onOpenChange={setMobileFilterOpen}
         />
@@ -549,11 +640,13 @@ export function BrowseStudiosContent() {
                 <FiltersContent
                   filters={filters}
                   amenities={amenities}
-                  availableGear={[]} // TODO: Implement gear fetching
+                  availableGear={availableGearData || []}
                   onFilterChange={handleFilterChange}
                   onSearchFilters={handleSearchFilters}
                   onClearFilters={handleClearFilters}
                   isLoading={studiosLoading}
+                  gearLoading={gearLoading}
+                  gearError={gearError}
                 />
               </CardContent>
             </Card>
@@ -592,7 +685,8 @@ export function BrowseStudiosContent() {
                     studio={{
                       ...studio,
                       owner_id: studio.owner_id || '',
-                      verification_status: studio.verification_status || 'unverified'
+                      verification_status: studio.verification_status || 'unverified',
+                      amenities: studio.amenities?.map(a => a.name) || []
                     }}
                     memberships={membershipsByStudio[studio.id.toString()] || []}
                     sharedProfile={sharedProfile}

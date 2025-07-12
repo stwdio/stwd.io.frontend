@@ -45,6 +45,8 @@ interface MobileFilterSheetProps {
   onSearchFilters: () => void
   onClearFilters: () => void
   isLoading?: boolean
+  gearLoading?: boolean
+  gearError?: any
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -57,6 +59,8 @@ export function MobileFilterSheet({
   onSearchFilters,
   onClearFilters,
   isLoading = false,
+  gearLoading = false,
+  gearError = null,
   open,
   onOpenChange
 }: MobileFilterSheetProps) {
@@ -187,15 +191,15 @@ export function MobileFilterSheet({
                     <div key={amenity.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={`amenity-${amenity.id}-mobile`}
-                        checked={filters.selectedAmenities.includes(amenity.id)}
+                        checked={filters.selectedAmenities.includes(amenity.name)}
                         onCheckedChange={(checked) => {
                           if (checked) {
                             onFilterChange({
-                              selectedAmenities: [...filters.selectedAmenities, amenity.id]
+                              selectedAmenities: [...filters.selectedAmenities, amenity.name]
                             })
                           } else {
                             onFilterChange({
-                              selectedAmenities: filters.selectedAmenities.filter(id => id !== amenity.id)
+                              selectedAmenities: filters.selectedAmenities.filter(name => name !== amenity.name)
                             })
                           }
                         }}
@@ -271,7 +275,10 @@ export function MobileFilterSheet({
                   ))}
                   {Object.keys(groupedGear).length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      No gear found
+                      {gearLoading ? "Loading gear..." : 
+                       gearError ? "Error loading gear" :
+                       filters.gearSearch ? `No gear found matching "${filters.gearSearch}"` : 
+                       "No gear available"}
                     </p>
                   )}
                 </div>

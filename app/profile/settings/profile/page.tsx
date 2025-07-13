@@ -7,13 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { User, CheckCircle, AlertCircle, Music, Mic, Radio, Briefcase, Wrench, Users, Building } from "lucide-react"
+import { User, CheckCircle, AlertCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { ProfileFormSkeleton } from '@/components/skeletons'
 import { toast as sonnerToast } from "sonner"
-import { useRoles, useUserRoles } from "@/lib/hooks/queries/roles"
-import { Checkbox } from "@/components/ui/checkbox"
 
 interface Profile {
   id: number
@@ -25,15 +23,6 @@ interface Profile {
   system_role: "user" | "admin" | null
 }
 
-const roleIcons = {
-  'musician': Music,
-  'podcaster': Mic,
-  'voice-actor': Radio,
-  'a-and-r': Briefcase,
-  'engineer': Wrench,
-  'manager': Users,
-  'studio-owner': Building,
-} as const
 
 export default function ProfileSettingsPage() {
   const router = useRouter()
@@ -65,15 +54,6 @@ export default function ProfileSettingsPage() {
     fetchProfile()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   
-  // Set initial roles when userRoles are fetched
-  useEffect(() => {
-    if (userRoles.length > 0 && !rolesInitialized) {
-      const roleIds = userRoles.map(ur => ur.role_id)
-      setSelectedRoles(roleIds)
-      setInitialRoles(roleIds)
-      setRolesInitialized(true)
-    }
-  }, [userRoles, rolesInitialized])
 
   // Username validation with debouncing
   useEffect(() => {
@@ -309,35 +289,6 @@ export default function ProfileSettingsPage() {
         },
       })
 
-      // Update professional roles if changed
-      const rolesChanged = JSON.stringify(selectedRoles.sort()) !== JSON.stringify(initialRoles.sort())
-      if (rolesChanged) {
-        // Delete existing roles
-        await supabase
-          .from("profile_roles")
-          .delete()
-          .eq("profile_id", profile.id)
-        
-        // Insert new roles if any selected
-        if (selectedRoles.length > 0) {
-          const roleInserts = selectedRoles.map(roleId => ({
-            profile_id: profile.id,
-            role_id: roleId,
-          }))
-          
-          const { error: rolesError } = await supabase
-            .from("profile_roles")
-            .insert(roleInserts)
-          
-          if (rolesError) {
-            throw rolesError
-          }
-        }
-        
-        // Update initial roles state
-        setInitialRoles(selectedRoles)
-        await refetchUserRoles()
-      }
 
       // Update local state
       setProfile(prev => prev ? {
@@ -567,64 +518,6 @@ export default function ProfileSettingsPage() {
                   )}
                 </div>
 
-                <Separator />
-                
-                {/* Professional Roles Section */}
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-base font-medium">Professional Roles</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Select all roles that describe your professional identity
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {availableRoles.map((role) => {
-                      const Icon = roleIcons[role.slug as keyof typeof roleIcons] || Users
-                      const isSelected = selectedRoles.includes(role.id)
-                      
-                      return (
-                        <div
-                          key={role.id}
-                          className={`flex items-start space-x-3 p-3 rounded-lg border transition-all ${
-                            isSelected 
-                              ? 'bg-primary/10 border-primary' 
-                              : 'hover:bg-muted/50 border-border'
-                          }`}
-                        >
-                          <Checkbox
-                            id={`role-${role.id}`}
-                            checked={isSelected}
-                            onCheckedChange={() => {
-                              setSelectedRoles(prev => 
-                                prev.includes(role.id)
-                                  ? prev.filter(id => id !== role.id)
-                                  : [...prev, role.id]
-                              )
-                            }}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1">
-                            <Label 
-                              htmlFor={`role-${role.id}`}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <Icon className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{role.name}</span>
-                            </Label>
-                            {role.description && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {role.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <Separator />
 
                 <div className="flex justify-end gap-4">
                   <Button

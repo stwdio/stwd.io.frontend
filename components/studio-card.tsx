@@ -105,15 +105,18 @@ export function StudioCard({
       <CardContent className="p-4 flex flex-col flex-1">
         {/* Header with title and price */}
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg truncate">{studio.name}</h3>
-          <div className="text-right">
-            {studio.daily_rate ? (
-              <>
+          <h3 className="font-semibold text-lg truncate flex-1">{studio.name}</h3>
+          <div className="flex items-start gap-3">
+            {studio.price_tier && (
+              <div className="text-center">
+                <p className="text-lg text-muted-foreground">{getPriceTierSymbol(studio.price_tier)}</p>
+              </div>
+            )}
+            {studio.daily_rate && (
+              <div className="text-right">
                 <p className="font-bold text-lg">{formatPrice(studio.daily_rate, studio.currency || 'USD')}</p>
                 <p className="text-sm text-muted-foreground">per day</p>
-              </>
-            ) : (
-              <p className="font-bold text-lg">{getPriceTierSymbol(studio.price_tier || 2)}</p>
+              </div>
             )}
           </div>
         </div>

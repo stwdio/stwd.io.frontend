@@ -154,9 +154,9 @@ function FiltersContent({
 
   return (
     <div className="flex flex-col h-full">
-      <form onSubmit={handleFormSubmit} className="flex-1 space-y-6 overflow-y-auto">
+      <form onSubmit={handleFormSubmit} className="flex-1 flex flex-col gap-3 min-h-0">
         {/* Location Search */}
-        <div className="space-y-4">
+        <div className="space-y-2 flex-shrink-0">
         <Label className="text-sm font-medium">Location</Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -184,14 +184,14 @@ function FiltersContent({
       </div>
 
       {/* Price Tier Filter */}
-      <div className="space-y-4">
+      <div className="space-y-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Price Tier</Label>
           <Badge variant="secondary" className="text-xs">
             {filters.selectedPriceTiers.length} selected
           </Badge>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1">
           {Object.entries(PRICE_TIERS).map(([tier, info]) => (
             <div key={tier} className="flex items-center space-x-2">
               <Checkbox
@@ -210,8 +210,10 @@ function FiltersContent({
                 htmlFor={`tier-${tier}`}
                 className="text-sm font-normal cursor-pointer"
               >
-                {info.symbol} - {info.label}
-                <span className="text-xs text-muted-foreground ml-1">({info.description})</span>
+                <span className="flex-1">
+                  {info.symbol} - {info.label}
+                  <span className="text-xs text-muted-foreground ml-1">({info.description})</span>
+                </span>
               </Label>
             </div>
           ))}
@@ -219,7 +221,7 @@ function FiltersContent({
       </div>
 
       {/* Amenities Filter */}
-      <div className="space-y-4">
+      <div className="flex flex-col space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Amenities</Label>
           <Badge 
@@ -256,7 +258,7 @@ function FiltersContent({
           )}
         </div>
 
-        <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-input p-3">
+        <div className="max-h-32 overflow-y-auto space-y-2 rounded-md border border-input p-3">
           {filteredAmenities.length > 0 ? (
             filteredAmenities.map((amenity) => (
               <div key={amenity.id} className="flex items-center space-x-2">
@@ -283,7 +285,7 @@ function FiltersContent({
       </div>
 
       {/* Gear Filter */}
-      <div className="space-y-4">
+      <div className="flex flex-col space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Equipment & Gear</Label>
           <Badge 
@@ -320,7 +322,7 @@ function FiltersContent({
           )}
         </div>
 
-        <div className="max-h-48 overflow-y-auto space-y-3 rounded-md border border-input p-3">
+        <div className="max-h-32 overflow-y-auto space-y-3 rounded-md border border-input p-3">
           {filteredGear.length > 0 ? (
             // Group gear by category
             Object.entries(
@@ -367,7 +369,7 @@ function FiltersContent({
       </form>
 
       {/* Action Buttons - Sticky at bottom */}
-      <div className="flex-shrink-0 space-y-2 pt-4 mt-4 border-t bg-background">
+      <div className="flex-shrink-0 space-y-2 pt-3 mt-auto border-t bg-background">
         <Button 
           type="submit"
           onClick={handleFormSubmit}
@@ -620,8 +622,8 @@ export function BrowseStudiosContent() {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6">
-      <div className={`flex gap-4 max-w-full mx-auto ${isFullHDOrLarger ? 'flex-row' : 'flex-col'}`}>
+    <div className="h-full p-3 sm:p-4 md:p-6">
+      <div className={`flex gap-4 h-full max-w-full mx-auto ${isFullHDOrLarger ? 'flex-row items-start' : 'flex-col'}`}>
         {/* Filter Button for screens below 1080p */}
         {!isFullHDOrLarger && (
         <div className="fixed top-14 right-4 z-40">
@@ -664,10 +666,10 @@ export function BrowseStudiosContent() {
         {/* Desktop Filters Sidebar - Only show on 1080p+ screens */}
         {isFullHDOrLarger && (
         <div className="w-96 flex-shrink-0">
-          <div className="sticky top-6 h-[calc(100vh-6rem)]">
+          <div className="sticky top-20 h-[calc(100vh-8rem)]">
             <Card className="shadow-sm h-full flex flex-col">
-              <CardContent className="p-4 lg:p-6 flex-1 overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
+              <CardContent className="p-4 lg:p-6 flex-1 flex flex-col">
+                <div className="flex items-center justify-between mb-4 flex-shrink-0">
                   <h2 className="text-lg font-semibold">Filters</h2>
                   <Badge 
                     variant="secondary" 
@@ -697,7 +699,7 @@ export function BrowseStudiosContent() {
         )}
 
         {/* Studios Grid */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 h-fit">
           {studiosError ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground mb-4">
@@ -750,12 +752,8 @@ export function BrowseStudiosContent() {
 
               {/* Infinite Scroll Trigger & Loading Indicator */}
               {hasNextPage && (
-                <div ref={loadMoreRef} className="mt-8 min-h-[20px] flex items-center justify-center">
-                  {isFetchingNextPage ? (
-                    <InfiniteScrollLoader />
-                  ) : (
-                    <div className="h-4 w-full" />
-                  )}
+                <div ref={loadMoreRef} className="mt-8 flex items-center justify-center">
+                  {isFetchingNextPage && <InfiniteScrollLoader />}
                 </div>
               )}
             </>

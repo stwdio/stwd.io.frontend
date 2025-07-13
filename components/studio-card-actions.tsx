@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { Plus, Eye, MessageSquare, BookmarkPlus } from 'lucide-react'
+import { Plus, MessageSquare, BookmarkPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import AddToListDropdown from './add-to-list-dropdown'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
@@ -125,29 +125,20 @@ export function StudioCardActions({
     return unsubscribe
   }, [studio.id, profile])
 
-  // Consistent loading state - always three button slots
+  // Consistent loading state - two button slots
   if (loading) {
     return (
       <div className="flex gap-1 h-8">
-        <div className="h-8 bg-muted animate-pulse rounded-md flex-1"></div>
         <div className="h-8 bg-muted animate-pulse rounded-md flex-1"></div>
         <div className="h-8 bg-muted animate-pulse rounded-md flex-1"></div>
       </div>
     )
   }
 
-  // If user is not logged in - show creator actions (three buttons)
+  // If user is not logged in - show creator actions (two buttons)
   if (!profile) {
     return (
       <div className="flex gap-1 h-8">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex-1 pointer-events-none text-xs px-2"
-        >
-          <Eye className="h-4 w-4 mr-1" />
-          View
-        </Button>
         <Button 
           variant="outline" 
           size="sm" 
@@ -178,33 +169,14 @@ export function StudioCardActions({
     )
   }
 
-  // If user owns this studio OR is an admin - show only view button but maintain consistent height
+  // If user owns this studio OR is an admin - return null (no actions needed)
   if (profile.role === 'admin' || parseInt(studio.owner_id) === profile.id) {
-    return (
-      <div className="flex gap-1 h-8">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full pointer-events-none text-xs px-2"
-        >
-          <Eye className="h-4 w-4 mr-1" />
-          View Details
-        </Button>
-      </div>
-    )
+    return null
   }
 
-  // For creators - show view details, list, and either "View Conversation" or "Add to Quote" (three buttons)
+  // For creators - show list, and either "View Conversation" or "Add to Quote" (two buttons)
   return (
     <div className="flex gap-1 h-8">
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="flex-1 pointer-events-none text-xs px-2"
-      >
-        <Eye className="h-4 w-4 mr-1" />
-        View
-      </Button>
       <AddToListDropdown
         studioId={studio.id.toString()}
         studioName={studio.name}

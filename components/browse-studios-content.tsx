@@ -622,8 +622,8 @@ export function BrowseStudiosContent() {
   }
 
   return (
-    <div className="h-full p-3 sm:p-4 md:p-6">
-      <div className={`flex gap-4 h-full max-w-full mx-auto ${isFullHDOrLarger ? 'flex-row items-start' : 'flex-col'}`}>
+    <div className="p-3 sm:p-4 md:p-6 min-h-screen">
+      <div className={`flex gap-4 max-w-full mx-auto ${isFullHDOrLarger ? 'flex-row' : 'flex-col'}`}>
         {/* Filter Button for screens below 1080p */}
         {!isFullHDOrLarger && (
         <div className="fixed top-14 right-4 z-40">
@@ -666,7 +666,7 @@ export function BrowseStudiosContent() {
         {/* Desktop Filters Sidebar - Only show on 1080p+ screens */}
         {isFullHDOrLarger && (
         <div className="w-96 flex-shrink-0">
-          <div className="sticky top-20 h-[calc(100vh-8rem)]">
+          <div className="sticky top-6 h-[calc(100vh-3rem)]">
             <Card className="shadow-sm h-full flex flex-col">
               <CardContent className="p-4 lg:p-6 flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
@@ -699,7 +699,7 @@ export function BrowseStudiosContent() {
         )}
 
         {/* Studios Grid */}
-        <div className="flex-1 min-w-0 h-fit">
+        <div className="flex-1 min-w-0">
           {studiosError ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground mb-4">
@@ -752,8 +752,12 @@ export function BrowseStudiosContent() {
 
               {/* Infinite Scroll Trigger & Loading Indicator */}
               {hasNextPage && (
-                <div ref={loadMoreRef} className="mt-8 flex items-center justify-center">
-                  {isFetchingNextPage && <InfiniteScrollLoader />}
+                <div ref={loadMoreRef} className="mt-8 min-h-[20px] flex items-center justify-center">
+                  {isFetchingNextPage ? (
+                    <InfiniteScrollLoader />
+                  ) : (
+                    <div className="h-4 w-full" />
+                  )}
                 </div>
               )}
             </>

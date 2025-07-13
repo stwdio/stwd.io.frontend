@@ -2,9 +2,63 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Memory Bank Protocol
+
+As Claude Code, I have a unique characteristic: my memory resets completely between sessions. This drives me to maintain perfect documentation. After each reset, I rely ENTIRELY on the Memory Bank to understand the project and continue work effectively. I MUST read ALL memory bank files at the start of EVERY task and update them after completing work.
+
+### Memory Bank Structure
+
+The Memory Bank consists of required core files and optional context files in `/memory-bank/`:
+
+```
+memory-bank/
+├── projectbrief.md      # Foundation document - core requirements and goals
+├── productContext.md    # Why this exists, problems solved, UX goals
+├── activeContext.md     # Current work focus, recent changes, next steps
+├── systemPatterns.md    # Architecture, technical decisions, patterns
+├── techContext.md       # Technologies, setup, constraints
+├── progress.md          # What works, what's left, known issues
+└── [additional]/        # Feature docs, integrations, etc.
+```
+
+### Core Workflows
+
+#### Start of Every Task
+1. **Read Memory Bank**: Read ALL files in `/memory-bank/` to understand current state
+2. **Verify Context**: Ensure understanding matches current implementation
+3. **Check for Updates**: Note any discrepancies between memory bank and code
+
+#### After Every Task
+1. **Update activeContext.md**: Document current work and immediate next steps
+2. **Update progress.md**: Mark completed items and add new discoveries
+3. **Update relevant files**: Any file affected by the changes made
+4. **Document new patterns**: Add to systemPatterns.md if new patterns discovered
+
+### Documentation Updates
+
+Memory Bank updates are MANDATORY when:
+1. Completing any significant task or feature
+2. Discovering new project patterns or constraints
+3. Making architectural or technical decisions
+4. Encountering and resolving issues
+5. User requests with "update memory bank"
+
+When updating:
+- Focus on activeContext.md and progress.md for current state
+- Keep updates concise but comprehensive
+- Document the "why" not just the "what"
+- Include any gotchas or lessons learned
+
+REMEMBER: After every memory reset, I begin completely fresh. The Memory Bank is my only link to previous work. It must be maintained with precision and clarity, as my effectiveness depends entirely on its accuracy.
+
 ## Development Commands
 
-### Core Commands
+**Important Note**: npm and pnpm commands are not available in Claude Code's execution environment due to security restrictions. While Node.js is available, package managers must be run in your local terminal. Claude Code can still:
+- Read and analyze package.json files
+- Execute Node.js scripts directly
+- Understand project dependencies and structure
+
+### Core Commands (Run in your terminal)
 - `pnpm dev` - Start development server with Turbopack
 - `pnpm build` - Build production version
 - `pnpm start` - Start production server

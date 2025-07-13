@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { Plus, Edit, MessageCircle, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 
 interface Profile {
   id: number
@@ -33,6 +34,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
   const supabase = createClient()
+  const authModal = useAuthModal()
 
   const isInBasket = isStudioInBasket(studio.id)
 
@@ -136,7 +138,11 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   if (!profile) {
     return (
       <>
-        <Button className="w-full" size="lg">
+        <Button 
+          className="w-full" 
+          size="lg"
+          onClick={() => authModal.open("Sign in to contact studios", "Create an account to message studio owners directly.")}
+        >
           <MessageCircle className="h-4 w-4 mr-2" />
           Contact Studio
         </Button>
@@ -144,11 +150,10 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         <Button 
           variant="outline" 
           className="w-full"
-          onClick={() => addStudio(studio)}
-          disabled={isInBasket}
+          onClick={() => authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")}
         >
           <Plus className="h-4 w-4 mr-2" />
-          {isInBasket ? 'In Quote Basket' : 'Add to Quote'}
+          Add to Quote
         </Button>
       </>
     )

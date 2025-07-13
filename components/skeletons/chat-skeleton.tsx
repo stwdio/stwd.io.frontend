@@ -23,7 +23,7 @@ export function ChatLayoutSkeleton() {
         </div>
         <div className="flex-1 p-4 space-y-4">
           {Array.from({ length: 6 }, (_, i) => (
-            <MessageBubbleSkeleton key={i} isOwn={i % 3 === 0} />
+            <MessageBubbleSkeleton key={i} isOwn={i % 3 === 0} showSecondLine={i % 2 === 0} />
           ))}
         </div>
         <div className="p-4 border-t">
@@ -62,14 +62,14 @@ function ConversationItemSkeleton() {
   )
 }
 
-function MessageBubbleSkeleton({ isOwn }: { isOwn: boolean }) {
+function MessageBubbleSkeleton({ isOwn, showSecondLine = false }: { isOwn: boolean; showSecondLine?: boolean }) {
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-xs space-y-2 ${isOwn ? 'order-2' : 'order-1'}`}>
         {!isOwn && <Skeleton className="h-6 w-20" />}
         <Card className={`p-3 ${isOwn ? 'bg-primary/10' : ''}`}>
           <Skeleton className="h-4 w-full mb-2" />
-          {Math.random() > 0.5 && <Skeleton className="h-4 w-3/4" />}
+          {showSecondLine && <Skeleton className="h-4 w-3/4" />}
         </Card>
         <Skeleton className="h-3 w-12" />
       </div>

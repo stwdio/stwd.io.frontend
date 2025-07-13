@@ -8,9 +8,10 @@ import { useRouter } from 'next/navigation'
 interface Profile {
   id: number
   user_id: string
-  role: 'creator' | 'owner' | 'admin' | null
+  system_role: 'user' | 'admin' | null
   first_name: string | null
   last_name: string | null
+  middle_name: string | null
   username: string
   avatar_url: string | null
   stripe_customer_id: string | null
@@ -18,10 +19,21 @@ interface Profile {
   updated_at: string
 }
 
+interface ProfessionalRole {
+  role_id: number
+  role: {
+    id: number
+    name: string
+    slug: string
+    description: string | null
+  }
+}
+
 interface AuthContextType {
   user: User | null
   session: Session | null
   profile: Profile | null
+  professionalRoles: ProfessionalRole[]
   loading: boolean
   error: string | null
   signOut: () => Promise<void>
@@ -35,6 +47,7 @@ interface AuthProviderProps {
   children: React.ReactNode
   initialUser: User | null
   initialProfile: Profile | null
+  initialRoles?: ProfessionalRole[]
 }
 
 /**
@@ -45,11 +58,13 @@ export function AuthProvider({
   children,
   initialUser,
   initialProfile,
+  initialRoles = [],
 }: AuthProviderProps) {
   // 1. Initialize state directly from server-provided props. NO FETCHING.
   const [user, setUser] = useState<User | null>(initialUser)
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(initialProfile)
+  const [professionalRoles, setProfessionalRoles] = useState<ProfessionalRole[]>(initialRoles)
 
   // 2. Loading is FALSE initially because we already have the data.
   // It only becomes true during client-side auth operations (login/logout).
@@ -79,6 +94,19 @@ export function AuthProvider({
 
           if (!profileError && profileData) {
             setProfile(profileData)
+            
+            // Fetch professional roles
+            const { data: rolesData } = await supabase
+              .from('profile_roles')
+              .select(`
+                role_id,
+                role:roles(*)
+              `)
+              .eq('profile_id', profileData.id)
+            
+            if (rolesData) {
+              setProfessionalRoles(rolesData as unknown as ProfessionalRole[])
+            }
           } else {
             console.error('Profile fetch error after sign in:', profileError)
           }
@@ -89,6 +117,7 @@ export function AuthProvider({
         setUser(null)
         setSession(null)
         setProfile(null)
+        setProfessionalRoles([])
         router.push('/auth/login')
       } else if (event === 'TOKEN_REFRESHED' && session) {
         setSession(session)
@@ -111,6 +140,23 @@ export function AuthProvider({
         .select('*')
         .eq('user_id', user.id)
         .single()
+      
+      if (!error && data) {
+        setProfile(data)
+        
+        // Fetch professional roles
+        const { data: rolesData } = await supabase
+          .from('profile_roles')
+          .select(`
+            role_id,
+            role:roles(*)
+          `)
+          .eq('profile_id', data.id)
+        
+        if (rolesData) {
+          setProfessionalRoles(rolesData as unknown as ProfessionalRole[])
+        }
+      }
 
       if (error) {
         console.error('Error refreshing profile:', error)
@@ -148,6 +194,7 @@ export function AuthProvider({
     user,
     session,
     profile,
+    professionalRoles,
     loading,
     error,
     signOut,
@@ -179,6 +226,7 @@ export const isPublicRoute = (pathname: string): boolean => {
     '/auth/signup', 
     '/browse',
     '/studios',
+    '/profiles',
   ]
   
   return publicRoutes.some(route => {

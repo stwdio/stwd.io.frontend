@@ -3,7 +3,7 @@
 import React from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { User, Bell, Shield, CreditCard } from "lucide-react"
+import { User, Bell, Shield, CreditCard, Briefcase } from "lucide-react"
 
 export default function SettingsPage() {
   return (
@@ -26,6 +26,20 @@ export default function SettingsPage() {
                 </CardTitle>
                 <CardDescription>
                   Manage your personal information and username
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/profile/settings/professional">
+            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Briefcase className="h-5 w-5" />
+                  Professional Profile
+                </CardTitle>
+                <CardDescription>
+                  Customize your public profile, bio, and portfolio links
                 </CardDescription>
               </CardHeader>
             </Card>

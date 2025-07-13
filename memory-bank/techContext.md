@@ -8,6 +8,7 @@
   - Built-in routing and API routes
   - Optimized performance and SEO
   - Vercel deployment optimization
+  - Turbopack for fast development builds
 
 ### Language & Type Safety
 - **TypeScript 5**: Full type safety across the application
@@ -15,6 +16,19 @@
   - Type definitions for all external libraries
   - ✅ **VERIFIED**: Custom type definitions matching production database schema
 - **React 19**: Latest React with concurrent features
+
+### Data Fetching & State Management
+- **React Query v5 (@tanstack/react-query)**: Modern data fetching and caching
+  - Intelligent cache management with configurable TTLs
+  - Optimistic updates for better UX
+  - Background refetching and stale-while-revalidate
+  - Infinite queries for pagination
+  - Real-time subscription integration
+- **@supabase-cache-helpers/postgrest-react-query**: Seamless Supabase integration
+  - Automatic query key generation
+  - Built-in RLS support
+  - Type-safe query builders
+  - Optimized for PostgREST APIs
 
 ### Styling & UI
 - **Tailwind CSS**: Utility-first CSS framework
@@ -83,7 +97,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key       # CONFIGURED
 # Install dependencies
 pnpm install
 
-# Start development server
+# Start development server with Turbopack
 pnpm dev                    # ✅ WORKING
 
 # Build for production
@@ -96,7 +110,7 @@ pnpm start
 pnpm type-check            # ✅ PASSING
 
 # Linting
-pnpm lint
+pnpm lint                   # ✅ CONFIGURED
 ```
 
 ## Project Configuration
@@ -125,6 +139,37 @@ pnpm lint
 - Modern browsers (ES2020+)
 - Mobile-first responsive design
 - Progressive Web App capabilities
+
+### React Query Implementation Patterns
+- **Query Client Configuration**:
+  ```typescript
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5, // 5 minutes default
+        gcTime: 1000 * 60 * 30, // 30 minutes cache
+        retry: (failureCount, error) => {
+          // Skip retry for RLS errors
+          if (error?.code === 'PGRST301') return false
+          return failureCount < 3
+        },
+      },
+    },
+  })
+  ```
+
+- **Domain-Specific Query Hooks**:
+  - `useStudios()` - Studio listing with filters
+  - `useStudioDetails()` - Individual studio data
+  - `useUserProfile()` - User profile management
+  - `useMessages()` - Real-time messaging
+  - `useInfiniteStudios()` - Infinite scroll for browse
+
+- **Cache Strategy by Data Type**:
+  - Messages: 30 seconds (real-time priority)
+  - User profiles: 5 minutes (moderate updates)
+  - Studio data: 10 minutes (less frequent changes)
+  - Static data: 1 hour (amenities, categories)
 
 ### ✅ **Performance Requirements - ENTERPRISE IMPLEMENTATION** (Updated January 31, 2025)
 - ✅ **Core Web Vitals optimization**: Browse page load time reduced from 9+ seconds to <2 seconds
@@ -256,6 +301,17 @@ export async function addStudioToList(studioId: number, listId: number) {
 - **✅ Profile Management**: Real-time profile updates and username validation
 - **✅ Lists Functionality**: Fixed redirect loops and authentication issues
 - **✅ Performance Optimized**: Singleton pattern preventing client conflicts
+
+### Key Dependencies
+- **@supabase/supabase-js**: Database client
+- **@supabase/ssr**: Server-side auth helpers  
+- **@tanstack/react-query**: v5 for data fetching
+- **@supabase-cache-helpers/postgrest-react-query**: Query integration
+- **lucide-react**: Modern icon library
+- **date-fns**: Date manipulation utilities
+- **react-hook-form**: Form state management
+- **zod**: Schema validation
+- **clsx & tailwind-merge**: Utility class management
 
 ### Payments (Future)
 - Stripe integration planned

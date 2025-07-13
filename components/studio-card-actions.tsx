@@ -8,6 +8,7 @@ import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { Plus, Eye, MessageSquare, BookmarkPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import AddToListDropdown from './add-to-list-dropdown'
+import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 
 interface Profile {
   id: number
@@ -51,6 +52,7 @@ export function StudioCardActions({
   const [hasInquiry, setHasInquiry] = useState(false)
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
+  const authModal = useAuthModal()
 
   const isInBasket = isStudioInBasket(studio.id)
 
@@ -146,33 +148,31 @@ export function StudioCardActions({
           <Eye className="h-4 w-4 mr-1" />
           View
         </Button>
-        <AddToListDropdown
-          studioId={studio.id.toString()}
-          studioName={studio.name}
-          initialMemberships={memberships}
-          sharedLists={sharedLists}
-          listsLoading={listsLoading}
-          onSuccess={onListsChange}
-          trigger={
-            <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
-              <BookmarkPlus className="h-4 w-4 mr-1" />
-              List
-            </Button>
-          }
-        />
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex-1 text-xs px-2"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            authModal.open("Sign in to save studios", "Create an account to save studios to your lists and organize your favorites.")
+          }}
+        >
+          <BookmarkPlus className="h-4 w-4 mr-1" />
+          List
+        </Button>
         <Button
           size="sm"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            addStudio(studio)
+            authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")
           }}
           className="flex-1 text-xs px-2"
-          disabled={isInBasket}
-          variant={isInBasket ? "secondary" : "default"}
+          variant="default"
         >
           <Plus className="h-4 w-4 mr-1" />
-          {isInBasket ? 'Quote' : 'Quote'}
+          Quote
         </Button>
       </div>
     )

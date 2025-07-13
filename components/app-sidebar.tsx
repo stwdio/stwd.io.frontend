@@ -15,6 +15,9 @@ import {
   IconUser,
   IconLogout,
   IconBookmark,
+  IconMusic,
+  IconMicrophone,
+  IconBriefcase,
 } from "@tabler/icons-react"
 import { generateIdenticon } from "@/lib/identicon"
 
@@ -33,7 +36,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -75,14 +78,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const getNavItems = () => {
     const baseItems = [
       {
-        title: "Browse Studios",
+        title: "Studios",
         url: "/browse",
-        icon: IconSearch,
+        icon: IconBuilding,
+      },
+      {
+        title: "Artists",
+        url: "/browse/artists",
+        icon: IconMusic,
+      },
+      {
+        title: "Engineers",
+        url: "/browse/engineers",
+        icon: IconMicrophone,
+      },
+      {
+        title: "Industry",
+        url: "/browse/industry",
+        icon: IconBriefcase,
       },
     ]
 
     // Add My Lists for creators only
-    if (profile?.role === 'creator') {
+    if (profile?.system_role === 'user') {
       baseItems.push({
         title: "My Lists",
         url: "/lists",
@@ -97,7 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     name: getDisplayName(),
     email: user?.email || "",
     avatar: avatarSrc || "",
-    role: profile?.role || "creator",
+    role: profile?.system_role || "user",
   })
 
   if (loading) {
@@ -145,12 +163,39 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarHeader>
         
         <SidebarContent>
-          <div className="p-4 text-center">
-            <p className="text-muted-foreground text-sm mb-4">
-              Sign in to access all features
-            </p>
+          <NavMain items={[
+            {
+              title: "Studios",
+              url: "/browse",
+              icon: IconBuilding,
+            },
+            {
+              title: "Artists",
+              url: "/browse/artists",
+              icon: IconMusic,
+            },
+            {
+              title: "Engineers",
+              url: "/browse/engineers",
+              icon: IconMicrophone,
+            },
+            {
+              title: "Industry",
+              url: "/browse/industry",
+              icon: IconBriefcase,
+            }
+          ]} />
+          <div className="p-4 space-y-3 mt-auto">
+            <div className="text-center">
+              <p className="text-muted-foreground text-sm mb-4">
+                Sign in to access all features
+              </p>
+            </div>
             <Button asChild className="w-full">
               <a href="/auth/login" onClick={handleMobileNavClick}>Sign In</a>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <a href="/auth/login?signup=true" onClick={handleMobileNavClick}>Sign Up</a>
             </Button>
           </div>
         </SidebarContent>
@@ -201,13 +246,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <div className="flex flex-col items-start text-sm group-data-[collapsible=icon]:hidden">
                     <span className="font-medium">{getDisplayName()}</span>
                     <span className="text-xs text-muted-foreground capitalize">
-                      {profile?.role || 'creator'}
+                      {profile?.system_role || 'user'}
                     </span>
                   </div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuItem asChild>
+                <Link href={`/profiles/${profile?.username}`} className="flex items-center" onClick={handleMobileNavClick}>
+                  <IconUser className="mr-2 h-4 w-4" />
+                  View Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/profile/dashboard" className="flex items-center" onClick={handleMobileNavClick}>
                   <IconDashboard className="mr-2 h-4 w-4" />
@@ -226,6 +278,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   Settings
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <IconLogout className="mr-2 h-4 w-4" />
                 Sign Out

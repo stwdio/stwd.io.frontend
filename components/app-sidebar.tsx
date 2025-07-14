@@ -40,7 +40,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import Link from "next/link"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, profile, loading, signOut } = useAuth()
+  const { user, profile, professionalRoles, loading, signOut } = useAuth()
   const router = useRouter()
   const { isMobile, setOpenMobile } = useSidebar()
 
@@ -72,6 +72,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       return `${profile.first_name} ${profile.last_name}`
     }
     return profile.first_name || "User"
+  }
+
+  const getProfessionalRole = () => {
+    if (!professionalRoles || professionalRoles.length === 0) return null
+    return professionalRoles[0]?.role?.name || null
   }
 
   // Navigation items based on role
@@ -116,6 +121,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     email: user?.email || "",
     avatar: avatarSrc || "",
     role: profile?.system_role || "user",
+    professionalRole: getProfessionalRole(),
   })
 
   if (loading) {
@@ -245,8 +251,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </div>
                   <div className="flex flex-col items-start text-sm group-data-[collapsible=icon]:hidden">
                     <span className="font-medium">{getDisplayName()}</span>
-                    <span className="text-xs text-muted-foreground capitalize">
-                      {profile?.system_role || 'user'}
+                    <span className="text-xs text-muted-foreground">
+                      {getProfessionalRole() || 'User'}
                     </span>
                   </div>
                 </div>

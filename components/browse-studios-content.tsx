@@ -14,6 +14,7 @@ import { StudioCard } from "@/components/studio-card"
 import { MobileFilterSheet } from "@/components/mobile-filter-sheet"
 import { BrowsePageSkeleton, StudioCardSkeleton } from "@/components/skeletons"
 import { useAuth } from "@/lib/auth/auth-context"
+import { PRICE_TIERS } from "@/lib/constants/currencies"
 
 // React Query hooks
 import { useStudiosInfinite, useAmenities, useStudioListMemberships, useAvailableGear } from "@/lib/hooks/queries/studios"
@@ -32,6 +33,7 @@ interface GearItem {
 interface FilterState {
   location: string
   priceRange: [number, number]
+  selectedPriceTiers: number[]
   selectedAmenities: string[]
   selectedGear: string[]
   amenitySearch: string
@@ -121,9 +123,6 @@ function FiltersContent({
     onFilterChange({ gearSearch: e.target.value })
   }, [onFilterChange])
 
-  const handlePriceRangeChange = useCallback((value: number[]) => {
-    onFilterChange({ priceRange: [value[0], value[1]] })
-  }, [onFilterChange])
 
   const handleAmenityToggle = useCallback((amenityName: string, checked: boolean) => {
     const newAmenities = checked
@@ -148,15 +147,16 @@ function FiltersContent({
     filters.location.trim() !== "" ||
     filters.selectedAmenities.length > 0 ||
     filters.selectedGear.length > 0 ||
+    filters.selectedPriceTiers.length > 0 ||
     filters.priceRange[0] !== 0 ||
     filters.priceRange[1] !== 500
   , [filters])
 
   return (
     <div className="flex flex-col h-full">
-      <form onSubmit={handleFormSubmit} className="flex-1 space-y-6 overflow-y-auto">
+      <form onSubmit={handleFormSubmit} className="flex-1 flex flex-col gap-3 min-h-0">
         {/* Location Search */}
-        <div className="space-y-4">
+        <div className="space-y-2 flex-shrink-0">
         <Label className="text-sm font-medium">Location</Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -183,27 +183,45 @@ function FiltersContent({
         </div>
       </div>
 
-      {/* Price Range Filter */}
-      <div className="space-y-4">
+      {/* Price Tier Filter */}
+      <div className="space-y-2 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Price Range (Per Hour)</Label>
-          <div className="text-sm text-muted-foreground">
-            ${filters.priceRange[0]} - ${filters.priceRange[1]}
-          </div>
+          <Label className="text-sm font-medium">Price Tier</Label>
+          <Badge variant="secondary" className="text-xs">
+            {filters.selectedPriceTiers.length} selected
+          </Badge>
         </div>
-        <Slider 
-          value={filters.priceRange}
-          onValueChange={handlePriceRangeChange}
-          max={500} 
-          min={0} 
-          step={10} 
-          className="w-full"
-          disabled={isLoading}
-        />
+        <div className="space-y-1">
+          {Object.entries(PRICE_TIERS).map(([tier, info]) => (
+            <div key={tier} className="flex items-center space-x-2">
+              <Checkbox
+                id={`tier-${tier}`}
+                checked={filters.selectedPriceTiers.includes(parseInt(tier))}
+                onCheckedChange={(checked) => {
+                  const tierNum = parseInt(tier)
+                  const newTiers = checked
+                    ? [...filters.selectedPriceTiers, tierNum]
+                    : filters.selectedPriceTiers.filter(t => t !== tierNum)
+                  onFilterChange({ selectedPriceTiers: newTiers })
+                }}
+                disabled={isLoading}
+              />
+              <Label
+                htmlFor={`tier-${tier}`}
+                className="text-sm font-normal cursor-pointer"
+              >
+                <span className="flex-1">
+                  {info.symbol} - {info.label}
+                  <span className="text-xs text-muted-foreground ml-1">({info.description})</span>
+                </span>
+              </Label>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Amenities Filter */}
-      <div className="space-y-4">
+      <div className="flex flex-col space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Amenities</Label>
           <Badge 
@@ -240,7 +258,7 @@ function FiltersContent({
           )}
         </div>
 
-        <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-input p-3">
+        <div className="max-h-32 overflow-y-auto space-y-2 rounded-md border border-input p-3">
           {filteredAmenities.length > 0 ? (
             filteredAmenities.map((amenity) => (
               <div key={amenity.id} className="flex items-center space-x-2">
@@ -267,7 +285,7 @@ function FiltersContent({
       </div>
 
       {/* Gear Filter */}
-      <div className="space-y-4">
+      <div className="flex flex-col space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Equipment & Gear</Label>
           <Badge 
@@ -304,7 +322,7 @@ function FiltersContent({
           )}
         </div>
 
-        <div className="max-h-48 overflow-y-auto space-y-3 rounded-md border border-input p-3">
+        <div className="max-h-32 overflow-y-auto space-y-3 rounded-md border border-input p-3">
           {filteredGear.length > 0 ? (
             // Group gear by category
             Object.entries(
@@ -351,7 +369,7 @@ function FiltersContent({
       </form>
 
       {/* Action Buttons - Sticky at bottom */}
-      <div className="flex-shrink-0 space-y-2 pt-4 mt-4 border-t bg-background">
+      <div className="flex-shrink-0 space-y-2 pt-3 mt-auto border-t bg-background">
         <Button 
           type="submit"
           onClick={handleFormSubmit}
@@ -414,6 +432,7 @@ export function BrowseStudiosContent() {
         parseInt(params.get('minPrice') || '0'),
         parseInt(params.get('maxPrice') || '500')
       ] as [number, number],
+      selectedPriceTiers: params.get('tiers') ? params.get('tiers')!.split(',').map(Number) : [],
       selectedAmenities: params.get('amenities') ? params.get('amenities')!.split(',') : [],
       selectedGear: params.get('gear') ? params.get('gear')!.split(',') : [],
       amenitySearch: "",
@@ -430,6 +449,7 @@ export function BrowseStudiosContent() {
         parseInt(params.get('minPrice') || '0'),
         parseInt(params.get('maxPrice') || '500')
       ] as [number, number],
+      selectedPriceTiers: params.get('tiers') ? params.get('tiers')!.split(',').map(Number) : [],
       selectedAmenities: params.get('amenities') ? params.get('amenities')!.split(',') : [],
       selectedGear: params.get('gear') ? params.get('gear')!.split(',') : [],
       amenitySearch: "",
@@ -475,6 +495,7 @@ export function BrowseStudiosContent() {
     location: activeFilters.location,
     minRate: activeFilters.priceRange[0],
     maxRate: activeFilters.priceRange[1],
+    priceTiers: activeFilters.selectedPriceTiers,
     amenityIds: selectedAmenityIds,
     gearItems: activeFilters.selectedGear,
   })
@@ -565,6 +586,10 @@ export function BrowseStudiosContent() {
     if (currentFilters.selectedGear.length > 0) {
       params.set('gear', currentFilters.selectedGear.join(','))
     }
+    
+    if (currentFilters.selectedPriceTiers.length > 0) {
+      params.set('tiers', currentFilters.selectedPriceTiers.join(','))
+    }
 
     const newURL = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`
     router.replace(newURL, { scroll: false })
@@ -580,6 +605,7 @@ export function BrowseStudiosContent() {
     const clearedFilters = {
       location: "",
       priceRange: [0, 500] as [number, number],
+      selectedPriceTiers: [],
       selectedAmenities: [],
       selectedGear: [],
       amenitySearch: "",
@@ -596,7 +622,7 @@ export function BrowseStudiosContent() {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 min-h-screen">
+    <div className="p-3 sm:p-4 md:p-6">
       <div className={`flex gap-4 max-w-full mx-auto ${isFullHDOrLarger ? 'flex-row' : 'flex-col'}`}>
         {/* Filter Button for screens below 1080p */}
         {!isFullHDOrLarger && (
@@ -640,10 +666,10 @@ export function BrowseStudiosContent() {
         {/* Desktop Filters Sidebar - Only show on 1080p+ screens */}
         {isFullHDOrLarger && (
         <div className="w-96 flex-shrink-0">
-          <div className="sticky top-6 h-[calc(100vh-3rem)]">
-            <Card className="shadow-sm h-full">
-              <CardContent className="p-4 lg:p-6 h-full overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
+          <div className="sticky top-20 h-[calc(100vh-8rem)]">
+            <Card className="shadow-sm h-full flex flex-col">
+              <CardContent className="p-4 lg:p-6 flex-1 flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between mb-4 flex-shrink-0">
                   <h2 className="text-lg font-semibold">Filters</h2>
                   <Badge 
                     variant="secondary" 
@@ -726,11 +752,11 @@ export function BrowseStudiosContent() {
 
               {/* Infinite Scroll Trigger & Loading Indicator */}
               {hasNextPage && (
-                <div ref={loadMoreRef} className="mt-8 min-h-[20px] flex items-center justify-center">
+                <div ref={loadMoreRef} className="mt-4 flex items-center justify-center">
                   {isFetchingNextPage ? (
                     <InfiniteScrollLoader />
                   ) : (
-                    <div className="h-4 w-full" />
+                    <div className="h-1" />
                   )}
                 </div>
               )}

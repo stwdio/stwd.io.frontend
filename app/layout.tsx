@@ -35,6 +35,7 @@ export default async function RootLayout({
 
   // 3. If a user exists, fetch their profile
   let profile = null;
+  let professionalRoles = [];
   if (user) {
     const { data: profileData } = await supabase
       .from('profiles')
@@ -42,15 +43,30 @@ export default async function RootLayout({
       .eq('user_id', user.id)
       .single();
     profile = profileData;
+    
+    // 4. If profile exists, fetch their professional roles
+    if (profile) {
+      const { data: rolesData } = await supabase
+        .from('profile_roles')
+        .select(`
+          role_id,
+          role:roles(*)
+        `)
+        .eq('profile_id', profile.id);
+      
+      if (rolesData) {
+        professionalRoles = rolesData;
+      }
+    }
   }
 
-  // 4. Pass the resolved data to the client-side AuthProvider
-  // 5. Wrap with ReactQueryProvider for optimal caching
+  // 5. Pass the resolved data to the client-side AuthProvider
+  // 6. Wrap with ReactQueryProvider for optimal caching
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <ReactQueryProvider>
-          <AuthProvider initialUser={user} initialProfile={profile}>
+          <AuthProvider initialUser={user} initialProfile={profile} initialRoles={professionalRoles}>
             <RouteGuard>
               <ClientLayout>
                 {children}

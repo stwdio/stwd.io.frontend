@@ -46,7 +46,7 @@ interface ConversationDetails {
 }
 
 export function STWDChatLayout() {
-  const [currentUser, setCurrentUser] = useState<{ id: number; role: string } | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: number; system_role: string } | null>(null)
   const [selectedConversation, setSelectedConversation] = useState<ConversationDetails | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [showChat, setShowChat] = useState(false)
@@ -75,10 +75,10 @@ export function STWDChatLayout() {
         return
       }
 
-      // Get user profile with role
+      // Get user profile with system_role
       const { data: profile, error: profileError } = await createClient()
         .from('profiles')
-        .select('id, role')
+        .select('id, system_role')
         .eq('user_id', user.id)
         .single()
 
@@ -87,7 +87,7 @@ export function STWDChatLayout() {
         return
       }
 
-      setCurrentUser({ id: profile.id, role: profile.role || 'creator' })
+      setCurrentUser({ id: profile.id, system_role: profile.system_role || 'user' })
     }
 
     getCurrentUser()

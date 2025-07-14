@@ -10,7 +10,16 @@ export default function LoginPage() {
   const [redirectTo, setRedirectTo] = useState<string>("/auth/callback")
 
   useEffect(() => {
-    setRedirectTo(`${window.location.origin}/auth/callback`)
+    // Check if there's a redirect path stored
+    const storedRedirect = localStorage.getItem('redirectAfterAuth')
+    if (storedRedirect) {
+      // Include the redirect path as a query parameter
+      setRedirectTo(`${window.location.origin}/auth/callback?next=${encodeURIComponent(storedRedirect)}`)
+      // Clear the stored redirect
+      localStorage.removeItem('redirectAfterAuth')
+    } else {
+      setRedirectTo(`${window.location.origin}/auth/callback`)
+    }
   }, [])
 
   return (

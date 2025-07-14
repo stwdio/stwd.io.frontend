@@ -25,6 +25,7 @@ interface Studio {
   published: boolean
   verification_status: string
   created_at: string
+  slug?: string
 }
 
 interface MobileStudioCardProps {

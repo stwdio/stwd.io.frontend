@@ -27,6 +27,7 @@ export function useStudios() {
         published,
         verified,
         verification_status,
+        slug,
         created_at,
         updated_at,
         amenities!studio_amenities(
@@ -118,6 +119,7 @@ export function useStudiosInfinite(filters?: {
   location?: string
   minRate?: number
   maxRate?: number
+  priceTiers?: number[]
   amenityIds?: number[]
   gearItems?: string[]
   verified?: boolean
@@ -135,9 +137,13 @@ export function useStudiosInfinite(filters?: {
           description,
           location,
           hourly_rate,
+          daily_rate,
+          price_tier,
+          currency,
           photo_urls,
           verified,
           verification_status,
+          slug,
           amenities!studio_amenities(
             id,
             name
@@ -158,6 +164,10 @@ export function useStudiosInfinite(filters?: {
       
       if (filters?.maxRate) {
         query = query.lte('hourly_rate', filters.maxRate)
+      }
+      
+      if (filters?.priceTiers && filters.priceTiers.length > 0) {
+        query = query.in('price_tier', filters.priceTiers)
       }
       
       if (filters?.verified !== undefined) {

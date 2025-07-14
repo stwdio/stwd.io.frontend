@@ -8,10 +8,13 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { FloatingCartButton } from "@/components/floating-cart-button"
 import { SiteHeader } from "@/components/site-header"
 import { useAuth } from "@/lib/auth/auth-context"
+import { AuthModal } from "@/components/auth/auth-modal"
+import { useAuthModal } from "@/lib/hooks/use-auth-modal"
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { user, profile } = useAuth()
+  const authModal = useAuthModal()
   const [isLargeScreen, setIsLargeScreen] = useState(false)
   
   // Check if screen is 1080p (1920px) or larger for sidebar
@@ -80,6 +83,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       )}
+      <AuthModal 
+        open={authModal.isOpen} 
+        onOpenChange={authModal.close}
+        title={authModal.title}
+        description={authModal.description}
+      />
     </ThemeProvider>
   )
 } 

@@ -627,6 +627,39 @@ export type Database = {
           },
         ]
       }
+      profile_roles: {
+        Row: {
+          created_at: string | null
+          profile_id: number
+          role_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          profile_id: number
+          role_id: number
+        }
+        Update: {
+          created_at?: string | null
+          profile_id?: number
+          role_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_roles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -635,11 +668,16 @@ export type Database = {
           id: number
           last_name: string | null
           middle_name: string | null
-          role: string | null
           stripe_customer_id: string | null
+          system_role: string | null
           updated_at: string | null
           user_id: string | null
           username: string
+          bio: string | null
+          social_links: Record<string, string>
+          portfolio_links: Record<string, string>
+          website: string | null
+          skills: string[]
         }
         Insert: {
           avatar_url?: string | null
@@ -648,11 +686,16 @@ export type Database = {
           id?: never
           last_name?: string | null
           middle_name?: string | null
-          role?: string | null
           stripe_customer_id?: string | null
+          system_role?: string | null
           updated_at?: string | null
           user_id?: string | null
           username: string
+          bio?: string | null
+          social_links?: Record<string, string>
+          portfolio_links?: Record<string, string>
+          website?: string | null
+          skills?: string[]
         }
         Update: {
           avatar_url?: string | null
@@ -661,11 +704,40 @@ export type Database = {
           id?: never
           last_name?: string | null
           middle_name?: string | null
-          role?: string | null
           stripe_customer_id?: string | null
+          system_role?: string | null
           updated_at?: string | null
           user_id?: string | null
           username?: string
+          bio?: string | null
+          social_links?: Record<string, string>
+          portfolio_links?: Record<string, string>
+          website?: string | null
+          skills?: string[]
+        }
+        Relationships: []
+      }
+      roles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          name?: string
+          slug?: string
         }
         Relationships: []
       }
@@ -758,6 +830,8 @@ export type Database = {
         Row: {
           claimed_by: number | null
           created_at: string | null
+          currency: string
+          daily_rate: number | null
           description: string | null
           gear: Json | null
           hourly_rate: number
@@ -766,7 +840,9 @@ export type Database = {
           name: string
           owner_id: number | null
           photo_urls: string[] | null
+          price_tier: number
           published: boolean | null
+          slug: string
           updated_at: string | null
           verification_documents: Json | null
           verification_status: string | null
@@ -775,6 +851,8 @@ export type Database = {
         Insert: {
           claimed_by?: number | null
           created_at?: string | null
+          currency?: string
+          daily_rate?: number | null
           description?: string | null
           gear?: Json | null
           hourly_rate: number
@@ -783,7 +861,9 @@ export type Database = {
           name: string
           owner_id?: number | null
           photo_urls?: string[] | null
+          price_tier?: number
           published?: boolean | null
+          slug?: string
           updated_at?: string | null
           verification_documents?: Json | null
           verification_status?: string | null
@@ -792,6 +872,8 @@ export type Database = {
         Update: {
           claimed_by?: number | null
           created_at?: string | null
+          currency?: string
+          daily_rate?: number | null
           description?: string | null
           gear?: Json | null
           hourly_rate?: number
@@ -800,7 +882,9 @@ export type Database = {
           name?: string
           owner_id?: number | null
           photo_urls?: string[] | null
+          price_tier?: number
           published?: boolean | null
+          slug?: string
           updated_at?: string | null
           verification_documents?: Json | null
           verification_status?: string | null

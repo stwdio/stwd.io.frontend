@@ -145,6 +145,88 @@ stwd.io.frontend/
 
 ## Key Design Patterns
 
+### React Query Data Fetching Patterns
+
+**Pattern**: Modern data fetching and caching with React Query v5
+- **Intelligent Caching**: Configure different cache times for different data types
+- **Optimistic Updates**: Update UI immediately while mutation is in progress
+- **Background Refetching**: Keep data fresh automatically
+- **Query Invalidation**: Smart cache updates after mutations
+
+**Query Client Configuration**:
+```typescript
+// Centralized query client with smart defaults
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes default
+      gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
+      retry: (failureCount, error: any) => {
+        // Skip retry for RLS errors
+        if (error?.code === 'PGRST301') return false
+        return failureCount < 3
+      },
+    },
+  },
+})
+```
+
+**Domain-Specific Query Hooks**:
+```typescript
+// Studio queries with Supabase integration
+export const useStudios = (filters?: StudioFilters) => {
+  return useQuery(
+    supabase
+      .from('studios')
+      .select('*, profiles!studios_owner_id_fkey(*)')
+      .eq('published', true)
+      .match(filters || {}),
+    {
+      staleTime: 1000 * 60 * 10, // 10 minutes for studio data
+    }
+  )
+}
+
+// Real-time messaging with shorter cache
+export const useMessages = (conversationId: number) => {
+  return useQuery(
+    supabase
+      .from('messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at'),
+    {
+      staleTime: 1000 * 30, // 30 seconds for messages
+      refetchInterval: 1000 * 30, // Auto-refresh every 30s
+    }
+  )
+}
+```
+
+**Infinite Query Pattern**:
+```typescript
+// Infinite scroll for large datasets
+export const useInfiniteStudios = (pageSize = 12) => {
+  return useInfiniteQuery({
+    queryKey: ['studios', 'infinite'],
+    queryFn: ({ pageParam = 0 }) =>
+      supabase
+        .from('studios')
+        .select('*')
+        .range(pageParam, pageParam + pageSize - 1),
+    getNextPageParam: (lastPage, pages) => 
+      lastPage.length === pageSize ? pages.length * pageSize : undefined,
+  })
+}
+```
+
+**Cache Strategy by Data Type**:
+- **Messages**: 30 seconds (real-time priority)
+- **User Profiles**: 5 minutes (moderate updates)
+- **Studio Data**: 10 minutes (less frequent changes)  
+- **Static Data**: 1 hour (amenities, categories)
+- **Search Results**: 2 minutes (balance freshness/performance)
+
 ### 1. ✅ **Performance Optimization Patterns - ENTERPRISE READY** (Added January 31, 2025)
 **Pattern**: Comprehensive performance optimization strategies for React/Next.js applications with Supabase
 - ✅ **N+1 Query Elimination**: Replace individual component queries with batched server actions

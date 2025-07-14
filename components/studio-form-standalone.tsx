@@ -15,12 +15,18 @@ import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioPhotoUploader } from "@/components/studio-photo-uploader"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { SUPPORTED_CURRENCIES, PRICE_TIERS } from "@/lib/constants/currencies"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 interface Studio {
   id: number
   name: string
   description: string | null
   hourly_rate: number
+  daily_rate?: number | null
+  price_tier?: number
+  currency?: string
   published: boolean
   gear: any
   location?: string
@@ -52,6 +58,10 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
     description: "",
     location: "",
     hourly_rate: 0,
+    daily_rate: 0,
+    price_display: "specific" as "specific" | "tier",
+    price_tier: 2,
+    currency: "USD",
     published: false,
     gear: "",
   })
@@ -64,6 +74,10 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
         description: studio.description || "",
         location: studio.location || "",
         hourly_rate: studio.hourly_rate,
+        daily_rate: studio.daily_rate || studio.hourly_rate * 8,
+        price_display: studio.daily_rate ? "specific" : "tier",
+        price_tier: studio.price_tier || 2,
+        currency: studio.currency || "USD",
         published: studio.published,
         gear: studio.gear ? JSON.stringify(studio.gear, null, 2) : "",
       })
@@ -119,8 +133,8 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
       if (!formData.location.trim()) {
         throw new Error("Studio location is required")
       }
-      if (formData.hourly_rate <= 0) {
-        throw new Error("Hourly rate must be greater than 0")
+      if (formData.price_display === "specific" && formData.daily_rate <= 0) {
+        throw new Error("Daily rate must be greater than 0")
       }
 
       let gearData
@@ -141,6 +155,9 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
             description: formData.description.trim(),
             location: formData.location.trim(),
             hourly_rate: formData.hourly_rate,
+            daily_rate: formData.price_display === "specific" ? formData.daily_rate : null,
+            price_tier: formData.price_tier,
+            currency: formData.currency,
             published: formData.published,
             gear: gearData,
           })
@@ -158,7 +175,10 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
             name: formData.name.trim(),
             description: formData.description.trim(),
             location: formData.location.trim(),
-            hourly_rate: formData.hourly_rate,
+            hourly_rate: formData.daily_rate ? formData.daily_rate / 8 : 100, // Convert daily to hourly for backward compatibility
+            daily_rate: formData.price_display === "specific" ? formData.daily_rate : null,
+            price_tier: formData.price_tier,
+            currency: formData.currency,
             published: formData.published,
             gear: gearData,
             owner_id: ownerId,
@@ -269,24 +289,79 @@ export function StudioFormStandalone({ studio, onSaved, ownerId, showActions = t
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="hourly_rate" className="text-base font-medium flex items-center gap-2">
+                  <Label className="text-base font-medium flex items-center gap-2">
                     <DollarSign className="h-4 w-4" />
-                    Hourly Rate
+                    Pricing Model
                   </Label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground text-base">$</span>
-                    <Input
-                      id="hourly_rate"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.hourly_rate}
-                      onChange={(e) => handleInputChange("hourly_rate", Number.parseFloat(e.target.value) || 0)}
-                      className="pl-10 h-12 text-base"
-                      placeholder="0.00"
-                      required
-                    />
+                  
+                  {/* Currency Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="currency" className="text-sm">Currency</Label>
+                    <Select value={formData.currency} onValueChange={(value) => handleInputChange("currency", value)}>
+                      <SelectTrigger id="currency">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_CURRENCIES.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            {currency.symbol} - {currency.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  {/* Price Display Type */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Price Display</Label>
+                    <RadioGroup value={formData.price_display} onValueChange={(value) => handleInputChange("price_display", value)}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="specific" id="specific" />
+                        <Label htmlFor="specific" className="font-normal">Show specific daily rate</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="tier" id="tier" />
+                        <Label htmlFor="tier" className="font-normal">Show price tier only ($, $$, $$$)</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Conditional Fields */}
+                  {formData.price_display === "specific" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="daily_rate" className="text-sm">Daily Rate</Label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground text-base">
+                          {SUPPORTED_CURRENCIES.find(c => c.code === formData.currency)?.symbol || '$'}
+                        </span>
+                        <Input
+                          id="daily_rate"
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={formData.daily_rate}
+                          onChange={(e) => handleInputChange("daily_rate", Number.parseFloat(e.target.value) || 0)}
+                          className="pl-10 h-12 text-base"
+                          placeholder="0"
+                          required
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label className="text-sm">Price Tier</Label>
+                      <RadioGroup value={formData.price_tier.toString()} onValueChange={(value) => handleInputChange("price_tier", parseInt(value))}>
+                        {Object.entries(PRICE_TIERS).map(([tier, info]) => (
+                          <div key={tier} className="flex items-center space-x-2">
+                            <RadioGroupItem value={tier} id={`tier-${tier}`} />
+                            <Label htmlFor={`tier-${tier}`} className="font-normal">
+                              {info.symbol} - {info.label} ({info.description})
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -9,12 +9,16 @@ import { StudioListMembershipIndicators } from '@/components/studio-list-members
 import { StudioCardActions } from '@/components/studio-card-actions'
 import { ReactNode } from 'react'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
+import { formatPrice, getPriceTierSymbol } from '@/lib/constants/currencies'
 
 interface Studio {
   id: number
   name: string
   description: string
   hourly_rate: number
+  daily_rate?: number | null
+  price_tier?: number
+  currency?: string
   location: string
   owner_id: string
   published?: boolean
@@ -26,6 +30,7 @@ interface Studio {
   gear?: any
   notes?: string // For lists view
   photo_urls?: string[]
+  slug?: string
 }
 
 interface Profile {
@@ -100,10 +105,19 @@ export function StudioCard({
       <CardContent className="p-4 flex flex-col flex-1">
         {/* Header with title and price */}
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg truncate">{studio.name}</h3>
-          <div className="text-right">
-            <p className="font-bold text-lg">${studio.hourly_rate}</p>
-            <p className="text-sm text-muted-foreground">per hour</p>
+          <h3 className="font-semibold text-lg truncate flex-1">{studio.name}</h3>
+          <div className="flex items-start gap-3">
+            {studio.price_tier && (
+              <div className="text-center">
+                <p className="text-lg text-muted-foreground">{getPriceTierSymbol(studio.price_tier)}</p>
+              </div>
+            )}
+            {studio.daily_rate && (
+              <div className="text-right">
+                <p className="font-bold text-lg">{formatPrice(studio.daily_rate, studio.currency || 'USD')}</p>
+                <p className="text-sm text-muted-foreground">per day</p>
+              </div>
+            )}
           </div>
         </div>
         
@@ -180,7 +194,7 @@ export function StudioCard({
   // Wrap with link if linkToStudio is true
   if (linkToStudio) {
     return (
-      <Link href={`/studios/${studio.id}`} className="block">
+      <Link href={`/studios/${studio.slug || studio.id}`} className="block">
         {cardContent}
       </Link>
     )

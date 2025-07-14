@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -20,6 +20,7 @@ interface Studio {
   verification_status: string
   published: boolean
   photo_urls?: string[]
+  slug: string
 }
 
 interface Review {
@@ -34,15 +35,33 @@ interface Amenity {
   name: string
 }
 
-export default async function StudioDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: studioId } = await params
+export default async function StudioDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
 
-  // Fetch studio details server-side
+  // Check if slug is actually a numeric ID for backward compatibility
+  const isNumericId = /^\d+$/.test(slug)
+  
   const supabase = await createServerComponentClient()
+  
+  if (isNumericId) {
+    // If it's a numeric ID, redirect to the slug-based URL
+    const { data: studioData } = await supabase
+      .from("studios")
+      .select("slug")
+      .eq("id", parseInt(slug))
+      .single()
+    
+    if (studioData?.slug) {
+      redirect(`/studios/${studioData.slug}`)
+    }
+    notFound()
+  }
+
+  // Fetch studio details server-side using slug
   const { data: studioData, error: studioError } = await supabase
     .from("studios")
     .select("*")
-    .eq("id", studioId)
+    .eq("slug", slug)
     .single()
 
   if (studioError || !studioData) {
@@ -57,7 +76,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
     .select(`
       amenities (name)
     `)
-    .eq("studio_id", studioId)
+    .eq("studio_id", studio.id)
 
   const amenities: Amenity[] =
     amenitiesData
@@ -66,7 +85,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
       ?.map((amenity: any) => ({ name: amenity.name })) || []
 
   // Fetch reviews server-side
-  const reviewsData = await getStudioReviews(parseInt(studioId))
+  const reviewsData = await getStudioReviews(studio.id)
   const reviews = reviewsData.reviews
   const averageRating = reviewsData.averageRating
 
@@ -92,4 +111,4 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ i
       </div>
     </Suspense>
   )
-} 
+}

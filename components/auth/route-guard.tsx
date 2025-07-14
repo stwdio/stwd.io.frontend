@@ -10,7 +10,7 @@ interface RouteGuardProps {
 }
 
 export function RouteGuard({ children }: RouteGuardProps) {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, professionalRoles, loading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -32,31 +32,34 @@ export function RouteGuard({ children }: RouteGuardProps) {
       return
     }
 
-    // User is logged in but has no role, redirect to onboarding
-    if (user && !profile?.role && pathname !== '/onboarding') {
-      console.log('RouteGuard: User without role, redirecting to onboarding')
+    // User is logged in but has no professional roles, redirect to onboarding
+    if (user && profile && professionalRoles.length === 0 && pathname !== '/onboarding') {
+      console.log('RouteGuard: User without professional roles, redirecting to onboarding')
       router.replace('/onboarding')
       return
     }
 
-    // User is logged in with a role and tries to access onboarding
-    if (user && profile?.role && pathname === '/onboarding') {
-      console.log('RouteGuard: User with role on onboarding, redirecting to dashboard')
-      router.replace(getDefaultDashboard(profile.role))
+    // User is logged in with professional roles and tries to access onboarding
+    if (user && profile && professionalRoles.length > 0 && pathname === '/onboarding') {
+      console.log('RouteGuard: User with professional roles on onboarding, redirecting to dashboard')
+      // Determine dashboard based on whether they own studios
+      const isStudioOwner = professionalRoles.some(pr => pr.role?.slug === 'studio-owner')
+      router.replace(isStudioOwner ? '/profile/dashboard' : '/dashboard')
       return
     }
 
     // User trying to access auth pages when already logged in
     if (user && pathname.startsWith('/auth/') && pathname !== '/auth/callback') {
       console.log('RouteGuard: Authenticated user on auth page, redirecting')
-      if (profile?.role) {
-        router.replace(getDefaultDashboard(profile.role))
+      if (professionalRoles.length > 0) {
+        const isStudioOwner = professionalRoles.some(pr => pr.role?.slug === 'studio-owner')
+        router.replace(isStudioOwner ? '/profile/dashboard' : '/dashboard')
       } else {
         router.replace('/onboarding')
       }
       return
     }
-  }, [user, profile?.role, loading, pathname, router])
+  }, [user, profile, professionalRoles, loading, pathname, router])
 
   // 3. Display a minimal loader ONLY during client-side state changes.
   // This will not show on the initial page load because data is pre-fetched.

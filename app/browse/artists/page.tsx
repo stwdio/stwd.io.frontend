@@ -92,13 +92,15 @@ export default function BrowseArtistsPage() {
             username: curr.username,
             bio: curr.bio,
             avatar_url: curr.avatar_url,
-            profile_roles: curr.profile_roles.map((pr: any) => ({
-              role: {
-                id: pr.role.id,
-                name: pr.role.name,
-                slug: pr.role.slug
-              }
-            }))
+            profile_roles: Array.isArray(curr.profile_roles) 
+              ? curr.profile_roles.map((pr: any) => ({
+                  role: {
+                    id: pr.role.id,
+                    name: pr.role.name,
+                    slug: pr.role.slug
+                  }
+                }))
+              : []
           }
           acc.push(profile)
         }
@@ -195,7 +197,7 @@ export default function BrowseArtistsPage() {
         {profiles.map((profile) => {
           const avatarSrc = profile.avatar_url && profile.avatar_url.trim() !== '' 
             ? profile.avatar_url 
-            : `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user_id}`
+            : `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
           const artistRoles = getArtistRoles(profile)
           
           return (
@@ -203,7 +205,7 @@ export default function BrowseArtistsPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-black">
                       <img
                         src={avatarSrc}
                         alt={getDisplayName(profile)}

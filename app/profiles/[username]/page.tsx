@@ -126,7 +126,7 @@ export default async function UserProfilePage({
   // Use a deterministic avatar service for server components
   const avatarSrc = profileWithRoles.avatar_url && profileWithRoles.avatar_url.trim() !== '' 
     ? profileWithRoles.avatar_url 
-    : `https://api.dicebear.com/7.x/identicon/svg?seed=${profileWithRoles.user_id}`
+    : `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
 
   const getDisplayName = () => {
     if (profileWithRoles.first_name && profileWithRoles.last_name) {
@@ -143,7 +143,7 @@ export default async function UserProfilePage({
     <div className="container max-w-4xl mx-auto px-4 py-8">
       {/* Profile Header */}
       <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
-        <div className="h-32 w-32 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+        <div className="h-32 w-32 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-black">
           <img
             src={avatarSrc}
             alt={getDisplayName()}

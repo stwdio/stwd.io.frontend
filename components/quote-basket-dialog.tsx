@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogPortal, DialogOverlay } from '@/components/ui/dialog'
+import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { X, MapPin, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 export function QuoteBasketDialog() {
   const { studios, isOpen, toggleBasket, removeStudio, clearBasket, submitInquiry } = useQuoteBasket()
@@ -71,13 +73,28 @@ export function QuoteBasketDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={toggleBasket}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Quote Basket ({studios.length})</DialogTitle>
-          <DialogDescription>
-            Send your project details to all selected studios at once
-          </DialogDescription>
-        </DialogHeader>
+      <DialogPortal>
+        <DialogOverlay />
+        <DialogPrimitive.Content
+          className={cn(
+            "fixed left-[50%] top-[50%] z-50 grid w-full max-w-4xl max-h-[90vh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200",
+            "data-[state=open]:animate-in data-[state=closed]:animate-out",
+            "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+            "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+            "sm:rounded-lg"
+          )}
+        >
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+          
+          <DialogHeader>
+            <DialogTitle>Quote Basket ({studios.length})</DialogTitle>
+            <DialogDescription>
+              Send your project details to all selected studios at once
+            </DialogDescription>
+          </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Studios List */}
@@ -237,7 +254,8 @@ export function QuoteBasketDialog() {
             </form>
           </div>
         </div>
-      </DialogContent>
+        </DialogPrimitive.Content>
+      </DialogPortal>
     </Dialog>
   )
 } 

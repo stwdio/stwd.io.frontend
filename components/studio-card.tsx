@@ -36,7 +36,17 @@ interface Studio {
 interface Profile {
   id: number
   user_id: string
-  role: 'creator' | 'owner' | 'admin' | null
+  system_role: 'user' | 'admin' | null
+}
+
+interface ProfessionalRole {
+  role_id: number
+  role: {
+    id: number
+    name: string
+    slug: string
+    description: string | null
+  }
 }
 
 interface StudioCardProps {
@@ -45,6 +55,7 @@ interface StudioCardProps {
   memberships?: {list_id: number, list_name: string, list_icon_emoji: string}[]
   sharedProfile?: Profile | null
   profileLoading?: boolean
+  sharedProfessionalRoles?: ProfessionalRole[]
   sharedLists?: any[]
   listsLoading?: boolean
   onListsChange?: () => void
@@ -64,6 +75,7 @@ export function StudioCard({
   memberships = [],
   sharedProfile,
   profileLoading = false,
+  sharedProfessionalRoles = [],
   sharedLists = [],
   listsLoading = false,
   onListsChange,
@@ -181,6 +193,7 @@ export function StudioCard({
               memberships={memberships}
               sharedProfile={sharedProfile}
               profileLoading={profileLoading}
+              sharedProfessionalRoles={sharedProfessionalRoles}
               sharedLists={sharedLists}
               listsLoading={listsLoading}
               onListsChange={onListsChange}

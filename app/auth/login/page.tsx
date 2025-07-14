@@ -93,7 +93,7 @@ export default function LoginPage() {
                 }
               }
             }}
-            providers={['google']}
+            providers={[]}
             redirectTo={redirectTo}
             onlyThirdPartyProviders={false}
             magicLink={true}

@@ -81,6 +81,10 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       ) : (
         <div className="min-h-screen">
           {children}
+          {/* Show floating cart button on browse and lists pages */}
+          {(pathname.startsWith('/browse') || pathname.startsWith('/lists')) && (
+            <FloatingCartButton />
+          )}
         </div>
       )}
       <AuthModal 

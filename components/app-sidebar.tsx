@@ -56,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const avatarSrc = profile?.avatar_url && profile.avatar_url.trim() !== ''
     ? profile.avatar_url
     : profile?.user_id 
-      ? `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user_id}`
+      ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
       : null
 
   const getDisplayName = () => {
@@ -254,7 +254,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10"
               onClick={handleMobileNavClick}
             >
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 border border-black">
                 {avatarSrc ? (
                   <img 
                     src={avatarSrc} 

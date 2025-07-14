@@ -5,9 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/lib/auth/auth-context'
 import { Briefcase, Users, ChevronRight, MapPin } from 'lucide-react'
-import { generateIdenticon } from '@/lib/identicon'
 import Link from 'next/link'
 import { ProfileCardSkeleton } from '@/components/skeletons'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -25,6 +23,7 @@ interface Profile {
   last_name: string | null
   username: string
   bio: string | null
+  avatar_url: string | null
   profile_roles: {
     role: {
       id: number
@@ -39,7 +38,6 @@ export default function BrowseIndustryPage() {
   const [loading, setLoading] = useState(true)
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const supabase = createClient()
-  const { profile } = useAuth()
 
   useEffect(() => {
     fetchIndustryProfessionals()
@@ -57,6 +55,7 @@ export default function BrowseIndustryPage() {
           last_name,
           username,
           bio,
+          avatar_url,
           profile_roles!inner(
             role:roles!inner(
               id,
@@ -177,7 +176,9 @@ export default function BrowseIndustryPage() {
       {/* Results */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {profiles.map((profile) => {
-          const avatarSrc = generateIdenticon(profile.user_id)
+          const avatarSrc = profile.avatar_url && profile.avatar_url.trim() !== '' 
+            ? profile.avatar_url 
+            : `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user_id}`
           const industryRoles = getIndustryRoles(profile)
           
           return (

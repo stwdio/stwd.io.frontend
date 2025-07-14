@@ -794,3 +794,21 @@ The platform now has an enterprise-grade foundation with comprehensive security 
   - SEO-friendly for search engine indexing
 
 **Updated July 13, 2025**: Rich user profiles complete - users now have comprehensive public profiles with bio, skills, portfolio links, and social media integration.
+
+### ✅ **PROFILE CREATION TRIGGER FIX - COMPLETED** (Added July 14, 2025)
+- **✅ Fixed Database Trigger**: Corrected column name mismatch in `handle_new_user()` function
+  - Issue: Function was inserting into `role` column but table has `system_role` column
+  - Fixed by updating INSERT statement to use correct `system_role` column name
+  - Applied migration `fix_handle_new_user_column_name` to production
+- **✅ Temporary Profile Creation**: Manually created profile for affected user
+  - User luke123halley@gmail.com lacked profile due to trigger failure
+  - Profile created with ID 12, username luke123halley, system_role NULL
+  - User can now access onboarding page to select professional roles
+- **✅ Onboarding Page Enhancement**: Added profile refresh on mount
+  - Added useEffect hook to refresh profile when user exists but profile is missing
+  - Ensures auth context has latest profile data before role selection
+  - Prevents "profile.id undefined" errors during role submission
+- **✅ Root Cause Analysis**: Identified trigger testing gap
+  - Trigger existed and was enabled but had incorrect column reference
+  - No errors logged due to EXCEPTION handler returning NEW silently
+  - Future migrations should include trigger execution tests

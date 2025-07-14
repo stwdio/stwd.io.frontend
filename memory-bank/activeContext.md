@@ -1,8 +1,8 @@
 # Active Context: stwd.io Frontend
 
 ## Current Work Session
-**Date**: July 13, 2025
-**Focus**: Implementing 8-phase transformation tasks for stwd.io
+**Date**: July 14, 2025
+**Focus**: Bug fixes and single role enforcement
 
 ## Recent Completions
 
@@ -37,9 +37,9 @@
 
 ### Task 5: Expanded User Roles ✅
 - Created professional roles system with 7 roles
-- Implemented many-to-many relationship (profile_roles table)
-- Updated onboarding with multi-role selection
-- Added role management to profile settings
+- Implemented one-to-one relationship (profile_roles table) - UPDATED: Single role per user
+- Updated onboarding with single role selection using radio buttons
+- Role management simplified - users choose one primary role
 - Migrated all components from old role system to new
 
 ### Task 6: Navigation Refactor ✅
@@ -113,3 +113,6 @@ All 8 implementation plans have been created in `/implementation-plans/to-do/`:
 - Fixed Next.js 15 async params handling
 - Fixed browse page layout and scrolling issues
 - Fixed profile settings indentation runtime error
+- Fixed profile creation trigger column name mismatch (role → system_role)
+- Fixed onboarding page profile refresh issue
+- Enforced single role per user (changed from multi-role to single role selection)

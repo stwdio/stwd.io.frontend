@@ -36,6 +36,7 @@ export function NavUser({
     name: string
     email: string
     avatar: string
+    professionalRole?: string | null
   }
 }) {
   const { isMobile } = useSidebar()
@@ -56,7 +57,7 @@ export function NavUser({
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {user.email}
+                  {user.professionalRole || user.email}
                 </span>
               </div>
               <IconDotsVertical className="ml-auto size-4" />
@@ -76,6 +77,11 @@ export function NavUser({
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
+                  {user.professionalRole && (
+                    <span className="text-muted-foreground truncate text-xs">
+                      {user.professionalRole}
+                    </span>
+                  )}
                   <span className="text-muted-foreground truncate text-xs">
                     {user.email}
                   </span>

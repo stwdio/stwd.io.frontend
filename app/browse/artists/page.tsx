@@ -5,9 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/lib/auth/auth-context'
-import { Music, Mic, Radio, ChevronRight, MapPin } from 'lucide-react'
-import { generateIdenticon } from '@/lib/identicon'
+import { Music, Mic, Radio, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { ProfileCardSkeleton } from '@/components/skeletons'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -26,6 +24,7 @@ interface Profile {
   last_name: string | null
   username: string
   bio: string | null
+  avatar_url: string | null
   profile_roles: {
     role: {
       id: number
@@ -41,7 +40,6 @@ export default function BrowseArtistsPage() {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedLocation, setSelectedLocation] = useState<string>('')
   const supabase = createClient()
-  const { profile } = useAuth()
 
   useEffect(() => {
     fetchArtists()
@@ -59,6 +57,7 @@ export default function BrowseArtistsPage() {
           last_name,
           username,
           bio,
+          avatar_url,
           profile_roles!inner(
             role:roles!inner(
               id,
@@ -81,10 +80,27 @@ export default function BrowseArtistsPage() {
         return
       }
 
-      // Deduplicate profiles (in case someone has multiple artist roles)
-      const uniqueProfiles = data?.reduce((acc: Profile[], curr) => {
+      // Transform and deduplicate profiles
+      const uniqueProfiles = data?.reduce((acc: Profile[], curr: any) => {
         if (!acc.find(p => p.id === curr.id)) {
-          acc.push(curr)
+          // Transform the data to match Profile interface
+          const profile: Profile = {
+            id: curr.id,
+            user_id: curr.user_id,
+            first_name: curr.first_name,
+            last_name: curr.last_name,
+            username: curr.username,
+            bio: curr.bio,
+            avatar_url: curr.avatar_url,
+            profile_roles: curr.profile_roles.map((pr: any) => ({
+              role: {
+                id: pr.role.id,
+                name: pr.role.name,
+                slug: pr.role.slug
+              }
+            }))
+          }
+          acc.push(profile)
         }
         return acc
       }, []) || []
@@ -177,7 +193,9 @@ export default function BrowseArtistsPage() {
       {/* Results */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {profiles.map((profile) => {
-          const avatarSrc = generateIdenticon(profile.user_id)
+          const avatarSrc = profile.avatar_url && profile.avatar_url.trim() !== '' 
+            ? profile.avatar_url 
+            : `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user_id}`
           const artistRoles = getArtistRoles(profile)
           
           return (

@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Music, Mic, Radio, Briefcase, Wrench, Users, Building, ChevronRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
@@ -24,7 +24,7 @@ const roleIcons = {
 
 export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
-  const [selectedRoles, setSelectedRoles] = useState<number[]>([])
+  const [selectedRole, setSelectedRole] = useState<number | null>(null)
   const { user, profile, refreshProfile } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
@@ -33,19 +33,22 @@ export default function OnboardingPage() {
   // Fetch available roles
   const { data: roles = [], isLoading: rolesLoading } = useRoles()
 
-  const handleRoleToggle = (roleId: number) => {
-    setSelectedRoles(prev => 
-      prev.includes(roleId) 
-        ? prev.filter(id => id !== roleId)
-        : [...prev, roleId]
-    )
+  // Refresh profile on mount to ensure we have the latest data
+  useEffect(() => {
+    if (user && !profile) {
+      refreshProfile()
+    }
+  }, [user, profile, refreshProfile])
+
+  const handleRoleSelect = (roleId: number) => {
+    setSelectedRole(roleId)
   }
 
   const handleSubmit = async () => {
-    if (!user || !profile || selectedRoles.length === 0) {
+    if (!user || !profile || !selectedRole) {
       toast({
-        title: "Please select at least one role",
-        description: "Choose the roles that best describe your professional identity.",
+        title: "Please select a role",
+        description: "Choose the role that best describes your professional identity.",
         variant: "destructive",
       })
       return
@@ -54,39 +57,53 @@ export default function OnboardingPage() {
     setLoading(true)
     
     try {
-      // Insert selected roles
-      const roleInserts = selectedRoles.map(roleId => ({
-        profile_id: profile.id,
-        role_id: roleId,
-      }))
-
-      const { error } = await supabase
+      // Insert selected role
+      const { error: roleError } = await supabase
         .from("profile_roles")
-        .insert(roleInserts)
+        .insert({
+          profile_id: profile.id,
+          role_id: selectedRole,
+        })
 
-      if (error) {
-        console.error("Error setting roles:", error)
+      if (roleError) {
+        console.error("Error setting role:", roleError)
         toast({
           title: "Error",
-          description: "Failed to set your roles. Please try again.",
+          description: "Failed to set your role. Please try again.",
           variant: "destructive",
         })
         setLoading(false)
         return
       }
 
-      // Refresh the profile to get the updated roles
+      // Update system_role to 'user' to mark onboarding complete
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ system_role: 'user' })
+        .eq('id', profile.id)
+
+      if (profileError) {
+        console.error("Error updating profile:", profileError)
+        toast({
+          title: "Error",
+          description: "Failed to complete onboarding. Please try again.",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      // Refresh the profile to get the updated role
       await refreshProfile()
 
       toast({
         title: "Welcome to stwd.io!",
-        description: "Your professional roles have been set.",
+        description: "Your professional role has been set.",
       })
 
-      // Determine dashboard based on roles
-      const isStudioOwner = selectedRoles.some(id => 
-        roles.find(r => r.id === id)?.slug === 'studio-owner'
-      )
+      // Determine dashboard based on role
+      const selectedRoleData = roles.find(r => r.id === selectedRole)
+      const isStudioOwner = selectedRoleData?.slug === 'studio-owner'
       
       router.replace(isStudioOwner ? '/profile/dashboard' : '/dashboard')
     } catch (err) {
@@ -119,25 +136,29 @@ export default function OnboardingPage() {
             Welcome to stwd.io!
           </h1>
           <p className="text-muted-foreground text-lg mb-2">
-            Select all the roles that describe your professional identity
+            Select the role that best describes your professional identity
           </p>
           <p className="text-sm text-muted-foreground">
-            You can select multiple roles - many professionals wear different hats
+            Choose your primary role to get started
           </p>
         </div>
         
         <Card className="border-border">
           <CardHeader>
-            <CardTitle>Your Professional Roles</CardTitle>
+            <CardTitle>Your Professional Role</CardTitle>
             <CardDescription>
-              Choose all that apply to you. You can update these later in your profile settings.
+              Choose the role that best represents your primary activity on stwd.io.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <RadioGroup 
+              value={selectedRole?.toString() || ""} 
+              onValueChange={(value) => handleRoleSelect(parseInt(value))}
+              className="space-y-4"
+            >
               {roles.map((role) => {
                 const Icon = roleIcons[role.slug as keyof typeof roleIcons] || Users
-                const isSelected = selectedRoles.includes(role.id)
+                const isSelected = selectedRole === role.id
                 
                 return (
                   <div
@@ -147,12 +168,11 @@ export default function OnboardingPage() {
                         ? 'bg-primary/10 border-primary' 
                         : 'hover:bg-muted/50 border-border'
                     }`}
-                    onClick={() => handleRoleToggle(role.id)}
+                    onClick={() => handleRoleSelect(role.id)}
                   >
-                    <Checkbox
+                    <RadioGroupItem
+                      value={role.id.toString()}
                       id={`role-${role.id}`}
-                      checked={isSelected}
-                      onCheckedChange={() => handleRoleToggle(role.id)}
                       className="mt-1"
                     />
                     <div className="flex-1">
@@ -174,12 +194,12 @@ export default function OnboardingPage() {
                   </div>
                 )
               })}
-            </div>
+            </RadioGroup>
 
             <div className="mt-8 flex justify-end">
               <Button
                 onClick={handleSubmit}
-                disabled={loading || selectedRoles.length === 0}
+                disabled={loading || !selectedRole}
                 size="lg"
                 className="min-w-[200px]"
               >

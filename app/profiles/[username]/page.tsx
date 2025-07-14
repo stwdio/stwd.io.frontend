@@ -143,7 +143,7 @@ export default async function UserProfilePage({
     <div className="container max-w-4xl mx-auto px-4 py-8">
       {/* Profile Header */}
       <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
-        <div className="h-32 w-32 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+        <div className="h-32 w-32 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-black">
           <img
             src={avatarSrc}
             alt={getDisplayName()}

@@ -203,7 +203,7 @@ export default function BrowseArtistsPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-black">
                       <img
                         src={avatarSrc}
                         alt={getDisplayName(profile)}

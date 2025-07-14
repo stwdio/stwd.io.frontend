@@ -99,8 +99,23 @@ stwd.io.frontend/
 **SECURITY DEFINER Functions:**
 - Complex, protected actions encapsulated in secure Postgres functions
 - Logic cannot be bypassed by client
-- Enhanced with explicit search_path protection
+- **MANDATORY**: All functions must include `SET search_path = public`
 - Ultimate layer of security model
+
+**Function Security Pattern (Updated January 31, 2025):**
+```sql
+-- ✅ SECURE: Explicit search path prevents SQL injection
+CREATE OR REPLACE FUNCTION public.secure_function()
+RETURNS type
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public  -- MANDATORY for all SECURITY DEFINER functions
+AS $function$
+BEGIN
+  -- function body
+END;
+$function$;
+```
 
 ## Critical Development Process Rules
 
@@ -697,11 +712,13 @@ $$;
 - **Maintainability**: Security logic centralized in database policies
 - **Auditability**: Clear security model with comprehensive policy coverage
 
-### 6. ✅ **Enterprise Performance Optimization Pattern - PRODUCTION READY** (Added January 22, 2025)
+### 6. ✅ **Enterprise Performance Optimization Pattern - PRODUCTION READY** (Updated January 31, 2025)
 **Pattern**: Comprehensive database performance optimization for production scale
 - ✅ **ZERO CRITICAL PERFORMANCE ISSUES**: Complete Supabase Performance Advisor resolution
 - ✅ **RLS PERFORMANCE OPTIMIZATION**: Enhanced query planning and policy consolidation
 - ✅ **STRATEGIC INDEX MANAGEMENT**: Optimal indexing for all query patterns
+- ✅ **FOREIGN KEY INDEXING**: All 26 foreign keys now have proper indexes
+- ✅ **QUERY PATTERN OPTIMIZATION**: Strategic indexes for common application queries
 
 **Performance Optimization Categories**:
 ```sql
@@ -750,6 +767,12 @@ SELECT query, mean_exec_time, calls
 FROM pg_stat_statements 
 ORDER BY mean_exec_time DESC LIMIT 10;
 ```
+
+**Index Management Best Practices (Added January 31, 2025)**:
+- **Foreign Key Rule**: Every foreign key column MUST have an index
+- **Partial Index Usage**: Use WHERE clauses for conditional queries
+- **Composite Index Strategy**: Order columns by selectivity (most selective first)
+- **Maintenance**: Regular VACUUM and ANALYZE for optimal performance
 
 ### 7. ✅ **Complete Backend Documentation Pattern - ENTERPRISE READY** (Added January 22, 2025)
 **Pattern**: Comprehensive backend state documentation for enterprise development

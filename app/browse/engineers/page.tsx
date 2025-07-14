@@ -156,7 +156,7 @@ export default function BrowseEngineersPage() {
         {profiles.map((profile) => {
           const avatarSrc = profile.avatar_url && profile.avatar_url.trim() !== '' 
             ? profile.avatar_url 
-            : `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user_id}`
+            : `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
           
           return (
             <Card key={profile.id} className="hover:shadow-lg transition-shadow">

@@ -56,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const avatarSrc = profile?.avatar_url && profile.avatar_url.trim() !== ''
     ? profile.avatar_url
     : profile?.user_id 
-      ? `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user_id}`
+      ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
       : null
 
   const getDisplayName = () => {

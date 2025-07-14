@@ -622,7 +622,7 @@ export function BrowseStudiosContent() {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 min-h-screen">
+    <div className="p-3 sm:p-4 md:p-6">
       <div className={`flex gap-4 max-w-full mx-auto ${isFullHDOrLarger ? 'flex-row' : 'flex-col'}`}>
         {/* Filter Button for screens below 1080p */}
         {!isFullHDOrLarger && (
@@ -666,9 +666,9 @@ export function BrowseStudiosContent() {
         {/* Desktop Filters Sidebar - Only show on 1080p+ screens */}
         {isFullHDOrLarger && (
         <div className="w-96 flex-shrink-0">
-          <div className="sticky top-6 h-[calc(100vh-3rem)]">
+          <div className="sticky top-20 h-[calc(100vh-8rem)]">
             <Card className="shadow-sm h-full flex flex-col">
-              <CardContent className="p-4 lg:p-6 flex-1 flex flex-col">
+              <CardContent className="p-4 lg:p-6 flex-1 flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
                   <h2 className="text-lg font-semibold">Filters</h2>
                   <Badge 
@@ -752,11 +752,11 @@ export function BrowseStudiosContent() {
 
               {/* Infinite Scroll Trigger & Loading Indicator */}
               {hasNextPage && (
-                <div ref={loadMoreRef} className="mt-8 min-h-[20px] flex items-center justify-center">
+                <div ref={loadMoreRef} className="mt-4 flex items-center justify-center">
                   {isFetchingNextPage ? (
                     <InfiniteScrollLoader />
                   ) : (
-                    <div className="h-4 w-full" />
+                    <div className="h-1" />
                   )}
                 </div>
               )}

@@ -186,7 +186,7 @@ export function MobileFilterSheet({
                 </div>
 
                 {/* Amenities List */}
-                <div className="space-y-3 max-h-48 overflow-y-auto">
+                <div className="space-y-3 max-h-48 overflow-y-auto rounded-md border border-input p-3">
                   {filteredAmenities.map((amenity) => (
                     <div key={amenity.id} className="flex items-center space-x-2">
                       <Checkbox
@@ -238,7 +238,7 @@ export function MobileFilterSheet({
                 </div>
 
                 {/* Gear List by Category */}
-                <div className="space-y-4 max-h-64 overflow-y-auto">
+                <div className="space-y-4 max-h-56 overflow-y-auto rounded-md border border-input p-3">
                   {Object.entries(groupedGear).map(([category, items]) => (
                     <div key={category} className="space-y-2">
                       <Label className="text-xs uppercase tracking-wide text-muted-foreground">

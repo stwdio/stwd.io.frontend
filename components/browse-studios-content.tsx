@@ -154,7 +154,7 @@ function FiltersContent({
 
   return (
     <div className="flex flex-col h-full">
-      <form onSubmit={handleFormSubmit} className="flex-1 flex flex-col gap-3 min-h-0">
+      <form onSubmit={handleFormSubmit} className="flex-1 flex flex-col gap-6 min-h-0 overflow-y-auto">
         {/* Location Search */}
         <div className="space-y-2 flex-shrink-0">
         <Label className="text-sm font-medium">Location</Label>
@@ -184,7 +184,7 @@ function FiltersContent({
       </div>
 
       {/* Price Tier Filter */}
-      <div className="space-y-2 flex-shrink-0">
+      <div className="space-y-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Price Tier</Label>
           <Badge variant="secondary" className="text-xs">
@@ -221,7 +221,7 @@ function FiltersContent({
       </div>
 
       {/* Amenities Filter */}
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-col space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Amenities</Label>
           <Badge 
@@ -258,7 +258,7 @@ function FiltersContent({
           )}
         </div>
 
-        <div className="max-h-32 overflow-y-auto space-y-2 rounded-md border border-input p-3">
+        <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-input p-3">
           {filteredAmenities.length > 0 ? (
             filteredAmenities.map((amenity) => (
               <div key={amenity.id} className="flex items-center space-x-2">
@@ -285,7 +285,7 @@ function FiltersContent({
       </div>
 
       {/* Gear Filter */}
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-col space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Equipment & Gear</Label>
           <Badge 
@@ -322,7 +322,7 @@ function FiltersContent({
           )}
         </div>
 
-        <div className="max-h-32 overflow-y-auto space-y-3 rounded-md border border-input p-3">
+        <div className="max-h-56 overflow-y-auto space-y-3 rounded-md border border-input p-3">
           {filteredGear.length > 0 ? (
             // Group gear by category
             Object.entries(
@@ -369,7 +369,7 @@ function FiltersContent({
       </form>
 
       {/* Action Buttons - Sticky at bottom */}
-      <div className="flex-shrink-0 space-y-2 pt-3 mt-auto border-t bg-background">
+      <div className="flex-shrink-0 space-y-2 pt-4 border-t bg-background">
         <Button 
           type="submit"
           onClick={handleFormSubmit}
@@ -408,7 +408,7 @@ function FiltersContent({
 export function BrowseStudiosContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { profile: sharedProfile, loading: profileLoading } = useAuth()
+  const { profile: sharedProfile, loading: profileLoading, professionalRoles } = useAuth()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   const [isFullHDOrLarger, setIsFullHDOrLarger] = useState(false)
 
@@ -666,10 +666,10 @@ export function BrowseStudiosContent() {
         {/* Desktop Filters Sidebar - Only show on 1080p+ screens */}
         {isFullHDOrLarger && (
         <div className="w-96 flex-shrink-0">
-          <div className="sticky top-20 h-[calc(100vh-8rem)]">
+          <div className="sticky top-16 h-[calc(100vh-5rem)] pb-4">
             <Card className="shadow-sm h-full flex flex-col">
-              <CardContent className="p-4 lg:p-6 flex-1 flex flex-col overflow-hidden">
-                <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <CardContent className="p-4 lg:p-6 flex-1 flex flex-col min-h-0">
+                <div className="flex items-center justify-between mb-6 flex-shrink-0">
                   <h2 className="text-lg font-semibold">Filters</h2>
                   <Badge 
                     variant="secondary" 
@@ -740,6 +740,7 @@ export function BrowseStudiosContent() {
                     memberships={membershipsByStudio[studio.id.toString()] || []}
                     sharedProfile={sharedProfile}
                     profileLoading={profileLoading}
+                    sharedProfessionalRoles={professionalRoles}
                     sharedLists={userListsData || []}
                     listsLoading={listsLoading}
                     onListsChange={() => {}} // React Query automatically updates

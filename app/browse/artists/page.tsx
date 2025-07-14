@@ -92,13 +92,15 @@ export default function BrowseArtistsPage() {
             username: curr.username,
             bio: curr.bio,
             avatar_url: curr.avatar_url,
-            profile_roles: curr.profile_roles.map((pr: any) => ({
-              role: {
-                id: pr.role.id,
-                name: pr.role.name,
-                slug: pr.role.slug
-              }
-            }))
+            profile_roles: Array.isArray(curr.profile_roles) 
+              ? curr.profile_roles.map((pr: any) => ({
+                  role: {
+                    id: pr.role.id,
+                    name: pr.role.name,
+                    slug: pr.role.slug
+                  }
+                }))
+              : []
           }
           acc.push(profile)
         }

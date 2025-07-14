@@ -13,7 +13,17 @@ import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 interface Profile {
   id: number
   user_id: string
-  role: 'creator' | 'owner' | 'admin' | null
+  system_role: 'user' | 'admin' | null
+}
+
+interface ProfessionalRole {
+  role_id: number
+  role: {
+    id: number
+    name: string
+    slug: string
+    description: string | null
+  }
 }
 
 interface StudioCardActionsProps {
@@ -31,6 +41,8 @@ interface StudioCardActionsProps {
   // OPTIMIZED: Receive shared profile data to eliminate individual auth calls
   sharedProfile?: Profile | null
   profileLoading?: boolean
+  // OPTIMIZED: Receive shared professional roles
+  sharedProfessionalRoles?: ProfessionalRole[]
   // OPTIMIZED: Receive shared lists data to eliminate individual list fetches per dropdown
   sharedLists?: any[]
   listsLoading?: boolean
@@ -42,6 +54,7 @@ export function StudioCardActions({
   memberships = [], 
   sharedProfile, 
   profileLoading = false,
+  sharedProfessionalRoles = [],
   sharedLists = [],
   listsLoading = false,
   onListsChange
@@ -49,6 +62,7 @@ export function StudioCardActions({
   // OPTIMIZED: Use shared profile instead of individual fetching
   const profile = sharedProfile
   const loading = profileLoading
+  const professionalRoles = sharedProfessionalRoles
   const [hasInquiry, setHasInquiry] = useState(false)
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
@@ -91,7 +105,11 @@ export function StudioCardActions({
   }
 
   const checkInquiryStatus = async (profileData: Profile) => {
-    if (profileData.role !== 'creator') return
+    // Check if user has any creator-type role (not studio owner)
+    const hasCreatorRole = professionalRoles.some(pr => 
+      ['musician', 'podcaster', 'voice-actor', 'a-and-r', 'engineer', 'manager'].includes(pr.role.slug)
+    )
+    if (!hasCreatorRole) return
     
     const { data: inquiryCheck } = await createClient()
       .from('inquiry_recipients')
@@ -170,7 +188,7 @@ export function StudioCardActions({
   }
 
   // If user owns this studio OR is an admin - return null (no actions needed)
-  if (profile.role === 'admin' || parseInt(studio.owner_id) === profile.id) {
+  if (profile.system_role === 'admin' || parseInt(studio.owner_id) === profile.id) {
     return null
   }
 

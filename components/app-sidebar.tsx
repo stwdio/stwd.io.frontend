@@ -19,10 +19,8 @@ import {
   IconMicrophone,
   IconBriefcase,
 } from "@tabler/icons-react"
-import { generateIdenticon } from "@/lib/identicon"
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
+import { NavSection } from "@/components/nav-section"
 import {
   Sidebar,
   SidebarContent,
@@ -36,7 +34,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -55,15 +52,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }
 
-  // State for avatar to avoid hydration mismatch
-  const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Generate avatar on client side only
-    if (profile?.user_id) {
-      setAvatarSrc(generateIdenticon(profile.user_id))
-    }
-  }, [profile?.user_id])
+  // Generate avatar URL using Dicebear
+  const avatarSrc = profile?.avatar_url && profile.avatar_url.trim() !== ''
+    ? profile.avatar_url
+    : profile?.user_id 
+      ? `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user_id}`
+      : null
 
   const getDisplayName = () => {
     if (!profile) return "User"
@@ -79,42 +73,53 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return professionalRoles[0]?.role?.name || null
   }
 
-  // Navigation items based on role
-  const getNavItems = () => {
-    const baseItems = [
-      {
-        title: "Studios",
-        url: "/browse",
-        icon: IconBuilding,
-      },
-      {
-        title: "Artists",
-        url: "/browse/artists",
-        icon: IconMusic,
-      },
-      {
-        title: "Engineers",
-        url: "/browse/engineers",
-        icon: IconMicrophone,
-      },
-      {
-        title: "Industry",
-        url: "/browse/industry",
-        icon: IconBriefcase,
-      },
-    ]
+  // Navigation items for Discover section
+  const getDiscoverItems = () => [
+    {
+      title: "Studios",
+      url: "/browse",
+      icon: IconBuilding,
+    },
+    {
+      title: "Artists",
+      url: "/browse/artists",
+      icon: IconMusic,
+    },
+    {
+      title: "Engineers",
+      url: "/browse/engineers",
+      icon: IconMicrophone,
+    },
+    {
+      title: "Industry",
+      url: "/browse/industry",
+      icon: IconBriefcase,
+    },
+  ]
 
-    // Add My Lists for creators only
-    if (profile?.system_role === 'user') {
-      baseItems.push({
-        title: "My Lists",
-        url: "/lists",
-        icon: IconBookmark,
-      })
-    }
-
-    return baseItems
-  }
+  // Navigation items for Profile section
+  const getProfileItems = () => [
+    {
+      title: "Messages",
+      url: "/profile/messages",
+      icon: IconMessage,
+    },
+    {
+      title: "Lists",
+      url: "/lists",
+      icon: IconBookmark,
+    },
+    {
+      title: "Dashboard",
+      url: "/profile/dashboard",
+      icon: IconDashboard,
+    },
+    {
+      title: "Settings",
+      url: "/profile/settings",
+      icon: IconSettings,
+    },
+  ]
 
   const getUserData = () => ({
     name: getDisplayName(),
@@ -169,40 +174,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarHeader>
         
         <SidebarContent>
-          <NavMain items={[
-            {
-              title: "Studios",
-              url: "/browse",
-              icon: IconBuilding,
-            },
-            {
-              title: "Artists",
-              url: "/browse/artists",
-              icon: IconMusic,
-            },
-            {
-              title: "Engineers",
-              url: "/browse/engineers",
-              icon: IconMicrophone,
-            },
-            {
-              title: "Industry",
-              url: "/browse/industry",
-              icon: IconBriefcase,
-            }
-          ]} />
-          <div className="p-4 space-y-3 mt-auto">
-            <div className="text-center">
-              <p className="text-muted-foreground text-sm mb-4">
-                Sign in to access all features
-              </p>
+          <div className="flex flex-col h-full">
+            {/* Discover Section for guests */}
+            <NavSection 
+              title="Discover" 
+              items={getDiscoverItems()} 
+              onItemClick={handleMobileNavClick}
+            />
+            
+            {/* Spacer */}
+            <div className="flex-1" />
+            
+            {/* Sign in prompt at bottom */}
+            <div className="p-4 space-y-3">
+              <div className="text-center">
+                <p className="text-muted-foreground text-sm mb-4">
+                  Sign in to access all features
+                </p>
+              </div>
+              <Button asChild className="w-full">
+                <a href="/auth/login" onClick={handleMobileNavClick}>Sign In</a>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <a href="/auth/login?signup=true" onClick={handleMobileNavClick}>Sign Up</a>
+              </Button>
             </div>
-            <Button asChild className="w-full">
-              <a href="/auth/login" onClick={handleMobileNavClick}>Sign In</a>
-            </Button>
-            <Button asChild variant="outline" className="w-full">
-              <a href="/auth/login?signup=true" onClick={handleMobileNavClick}>Sign Up</a>
-            </Button>
           </div>
         </SidebarContent>
         <SidebarRail />
@@ -229,68 +225,65 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       
       <SidebarContent>
-        <NavMain items={getNavItems()} />
+        <div className="flex flex-col h-full">
+          {/* Discover Section */}
+          <NavSection 
+            title="Discover" 
+            items={getDiscoverItems()} 
+            onItemClick={handleMobileNavClick}
+          />
+          
+          {/* Spacer to push profile section to bottom */}
+          <div className="flex-1" />
+          
+          {/* Profile Section */}
+          <NavSection 
+            title="Profile" 
+            items={getProfileItems()} 
+            onItemClick={handleMobileNavClick}
+          />
+        </div>
       </SidebarContent>
       
       <SidebarFooter>
         <div className="p-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start p-2 group-data-[collapsible=icon]:justify-center">
-                <div className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0">
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                    {avatarSrc ? (
-                      <img 
-                        src={avatarSrc} 
-                        alt="Avatar" 
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <IconUser className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex flex-col items-start text-sm group-data-[collapsible=icon]:hidden">
-                    <span className="font-medium">{getDisplayName()}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {getProfessionalRole() || 'User'}
-                    </span>
-                  </div>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link href={`/profiles/${profile?.username}`} className="flex items-center" onClick={handleMobileNavClick}>
-                  <IconUser className="mr-2 h-4 w-4" />
-                  View Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/profile/dashboard" className="flex items-center" onClick={handleMobileNavClick}>
-                  <IconDashboard className="mr-2 h-4 w-4" />
-                  Dashboard
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/profile/messages" className="flex items-center" onClick={handleMobileNavClick}>
-                  <IconMessage className="mr-2 h-4 w-4" />
-                  Messages
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/profile/settings" className="flex items-center" onClick={handleMobileNavClick}>
-                  <IconSettings className="mr-2 h-4 w-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
-                <IconLogout className="mr-2 h-4 w-4" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+            {/* User info - clickable to go to profile */}
+            <Link 
+              href={`/profiles/${profile?.username}`} 
+              className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10"
+              onClick={handleMobileNavClick}
+            >
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                {avatarSrc ? (
+                  <img 
+                    src={avatarSrc} 
+                    alt="Avatar" 
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <IconUser className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex flex-col items-start text-sm group-data-[collapsible=icon]:hidden">
+                <span className="font-medium">{getDisplayName()}</span>
+                <span className="text-xs text-muted-foreground">
+                  {getProfessionalRole() || 'User'}
+                </span>
+              </div>
+            </Link>
+            
+            {/* Sign out button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="h-8 w-8 group-data-[collapsible=icon]:hidden"
+              title="Sign Out"
+            >
+              <IconLogout className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </SidebarFooter>
       <SidebarRail />

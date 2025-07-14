@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { generateIdenticon } from '@/lib/identicon'
 import Link from 'next/link'
 import { 
   Globe, 
@@ -124,7 +123,10 @@ export default async function UserProfilePage({
     profile_roles: { role: Role }[]
   }
 
-  const avatarSrc = profileWithRoles.avatar_url || generateIdenticon(profileWithRoles.user_id || '')
+  // Use a deterministic avatar service for server components
+  const avatarSrc = profileWithRoles.avatar_url && profileWithRoles.avatar_url.trim() !== '' 
+    ? profileWithRoles.avatar_url 
+    : `https://api.dicebear.com/7.x/identicon/svg?seed=${profileWithRoles.user_id}`
 
   const getDisplayName = () => {
     if (profileWithRoles.first_name && profileWithRoles.last_name) {

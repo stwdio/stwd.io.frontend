@@ -43,8 +43,10 @@ export default function ProfileDashboardPage() {
   // Admin always sees admin dashboard
   if (isAdmin) {
     return (
-      <div className="p-6">
-        <AdminDashboard />
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          <AdminDashboard />
+        </div>
       </div>
     )
   }
@@ -52,27 +54,31 @@ export default function ProfileDashboardPage() {
   // If user has studio owner role AND owns studios, show tabs
   if (isStudioOwner && hasStudios) {
     return (
-      <div className="p-6">
-        <Tabs defaultValue="creator" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="creator">Creator Dashboard</TabsTrigger>
-            <TabsTrigger value="owner">Studio Owner Dashboard</TabsTrigger>
-          </TabsList>
-          <TabsContent value="creator">
-            <CreatorDashboard />
-          </TabsContent>
-          <TabsContent value="owner">
-            <OwnerDashboard />
-          </TabsContent>
-        </Tabs>
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          <Tabs defaultValue="creator" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="creator">Creator Dashboard</TabsTrigger>
+              <TabsTrigger value="owner">Studio Owner Dashboard</TabsTrigger>
+            </TabsList>
+            <TabsContent value="creator">
+              <CreatorDashboard />
+            </TabsContent>
+            <TabsContent value="owner">
+              <OwnerDashboard />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     )
   }
 
   // Otherwise show creator dashboard
   return (
-    <div className="p-6">
-      <CreatorDashboard />
+    <div className="flex-1 overflow-y-auto">
+      <div className="p-6">
+        <CreatorDashboard />
+      </div>
     </div>
   )
 }

@@ -7,13 +7,14 @@ import { User, Bell, Shield, CreditCard, Briefcase } from "lucide-react"
 
 export default function SettingsPage() {
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
-      </div>
+    <div className="flex-1 overflow-y-auto">
+      <div className="p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences
+          </p>
+        </div>
       
       <div className="grid gap-6 max-w-4xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -81,6 +82,7 @@ export default function SettingsPage() {
             </CardHeader>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   )

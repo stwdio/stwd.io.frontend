@@ -91,23 +91,25 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ s
 
   return (
     <Suspense fallback={<StudioDetailPageSkeleton />}>
-      <div className="p-4 md:p-6">
-        {/* Back Button */}
-        <div className="mb-4 md:mb-6">
-          <Button variant="ghost" asChild className="mb-4">
-            <Link href="/browse">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Browse
-            </Link>
-          </Button>
-        </div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 md:p-6">
+          {/* Back Button */}
+          <div className="mb-4 md:mb-6">
+            <Button variant="ghost" asChild className="mb-4">
+              <Link href="/browse">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Browse
+              </Link>
+            </Button>
+          </div>
 
-        <StudioDetailContent 
-          studio={studio}
-          amenities={amenities}
-          reviews={reviews}
-          averageRating={averageRating}
-        />
+          <StudioDetailContent 
+            studio={studio}
+            amenities={amenities}
+            reviews={reviews}
+            averageRating={averageRating}
+          />
+        </div>
       </div>
     </Suspense>
   )

@@ -1073,4 +1073,34 @@ body {
 - [ ] Ensure main content scrolls independently
 - [ ] Confirm layout works with/without sidebar
 
+**Scrolling Fix for Content Pages**:
+To enable scrolling on individual pages while maintaining the white space fix:
+
+1. **Remove overflow-hidden from main container** in client-layout.tsx:
+```typescript
+// Changed from:
+<div className="@container/main flex flex-1 flex-col min-h-0 overflow-hidden">
+
+// To:
+<div className="@container/main flex flex-1 flex-col min-h-0">
+```
+
+2. **Wrap scrollable content** in pages that need scrolling:
+```typescript
+// For pages that need scrolling (e.g., studio detail, profile, settings)
+return (
+  <div className="flex-1 overflow-y-auto">
+    <div className="p-4 md:p-6">
+      {/* Page content */}
+    </div>
+  </div>
+)
+```
+
+3. **Keep overflow control** on pages that shouldn't have white space:
+- The browse page already has `overflow-hidden` on its main container
+- This prevents the white space issue while allowing other pages to scroll
+
+**Key Pattern**: Let individual pages control their overflow behavior rather than enforcing it globally.
+
 **Last Updated**: February 2025 

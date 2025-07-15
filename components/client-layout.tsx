@@ -73,7 +73,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <SidebarInset>
               <div className="flex flex-1 flex-col min-h-0">
                 <SiteHeader />
-                <div className="@container/main flex flex-1 flex-col min-h-0 overflow-hidden">
+                <div className="@container/main flex flex-1 flex-col min-h-0">
                   {children}
                 </div>
               </div>

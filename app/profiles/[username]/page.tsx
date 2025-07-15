@@ -140,7 +140,8 @@ export default async function UserProfilePage({
   const skills = profileWithRoles.skills || []
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-8">
+    <div className="flex-1 overflow-y-auto">
+      <div className="container max-w-4xl mx-auto px-4 py-8">
       {/* Profile Header */}
       <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
         <div className="h-32 w-32 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-black">
@@ -281,6 +282,7 @@ export default async function UserProfilePage({
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   )
 }

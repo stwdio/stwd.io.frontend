@@ -63,8 +63,8 @@ export default async function RootLayout({
   // 5. Pass the resolved data to the client-side AuthProvider
   // 6. Wrap with ReactQueryProvider for optimal caching
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="h-full">
+      <body className={`${inter.className} h-full`} suppressHydrationWarning>
         <ReactQueryProvider>
           <AuthProvider initialUser={user} initialProfile={profile} initialRoles={professionalRoles}>
             <RouteGuard>

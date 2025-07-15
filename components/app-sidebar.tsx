@@ -40,6 +40,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, profile, professionalRoles, loading, signOut } = useAuth()
   const router = useRouter()
   const { isMobile, setOpenMobile } = useSidebar()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSignOut = async () => {
     await signOut()
@@ -129,6 +134,42 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     professionalRole: getProfessionalRole(),
   })
 
+  // Show consistent content during SSR/hydration to prevent mismatch
+  // We show a minimal sidebar that works for both auth states
+  if (!mounted) {
+    return (
+      <Sidebar collapsible="icon" {...props}>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                className="data-[slot=sidebar-menu-button]:!p-1.5"
+              >
+                <a href="/browse">
+                  <IconBuilding className="!size-5" />
+                  <span className="text-base font-semibold">stwd.io</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        
+        <SidebarContent>
+          <div className="flex flex-col h-full">
+            <NavSection 
+              title="Discover" 
+              items={getDiscoverItems()} 
+              onItemClick={handleMobileNavClick}
+            />
+          </div>
+        </SidebarContent>
+        <SidebarRail />
+      </Sidebar>
+    )
+  }
+  
+  // Show loading skeleton only after mount if still loading
   if (loading) {
     return (
       <Sidebar collapsible="icon" {...props}>

@@ -154,7 +154,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   if (!user) {
-    // Show a minimal sidebar for non-authenticated users instead of redirecting
+    // Show the same layout as authenticated users
     return (
       <Sidebar collapsible="icon" {...props}>
         <SidebarHeader>
@@ -175,32 +175,74 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         
         <SidebarContent>
           <div className="flex flex-col h-full">
-            {/* Discover Section for guests */}
+            {/* Discover Section */}
             <NavSection 
               title="Discover" 
               items={getDiscoverItems()} 
               onItemClick={handleMobileNavClick}
             />
             
-            {/* Spacer */}
+            {/* Spacer to push profile section to bottom */}
             <div className="flex-1" />
             
-            {/* Sign in prompt at bottom - hidden when collapsed */}
-            <div className="p-4 space-y-3 group-data-[collapsible=icon]:hidden">
-              <div className="text-center">
-                <p className="text-muted-foreground text-sm mb-4">
-                  Sign in to access all features
-                </p>
-              </div>
-              <Button asChild className="w-full">
-                <a href="/auth/login" onClick={handleMobileNavClick}>Sign In</a>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <a href="/auth/login?signup=true" onClick={handleMobileNavClick}>Sign Up</a>
-              </Button>
+            {/* Profile Section - same as logged in users */}
+            <NavSection 
+              title="Profile" 
+              items={getProfileItems()} 
+              onItemClick={handleMobileNavClick}
+            />
+            
+            {/* Sign Out - only visible when collapsed (disabled for non-auth) */}
+            <div className="hidden group-data-[collapsible=icon]:block px-3 pb-2">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton disabled className="opacity-50 cursor-not-allowed">
+                    <IconLogout className="h-4 w-4" />
+                    <span className="sr-only">Sign Out</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
             </div>
           </div>
         </SidebarContent>
+        
+        <SidebarFooter>
+          <div className="p-2">
+            <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+              {/* Guest avatar - clickable to go to sign up */}
+              <a 
+                href="/auth/login?signup=true" 
+                className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:h-12"
+                onClick={handleMobileNavClick}
+              >
+                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 border border-black">
+                  <img 
+                    src="https://api.dicebear.com/9.x/thumbs/svg?seed=nouser&backgroundColor=ffffff&shapeColor=000000"
+                    alt="Guest" 
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-col items-start text-sm group-data-[collapsible=icon]:hidden">
+                  <span className="font-medium">Guest</span>
+                  <span className="text-xs text-muted-foreground">
+                    Sign up to continue
+                  </span>
+                </div>
+              </a>
+              
+              {/* Sign out button - disabled for non-auth users */}
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled
+                className="h-8 w-8 group-data-[collapsible=icon]:hidden opacity-50 cursor-not-allowed"
+                title="Sign Out"
+              >
+                <IconLogout className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </SidebarFooter>
         <SidebarRail />
       </Sidebar>
     )

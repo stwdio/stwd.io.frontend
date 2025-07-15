@@ -973,4 +973,104 @@ const { data } = await supabase.from("profiles").select("*")
 
 **Architecture Status**: ✅ **FOUNDATION COMPLETE** - Authentication, database integration, and user onboarding patterns are production-ready. Ready for core business feature development.
 
-**Last Updated**: June 22, 2025 
+### 12. ✅ **Layout Height Management Pattern - CRITICAL FIX** (Added February 2025)
+**Pattern**: Proper height management for sidebar layouts to prevent white space issues
+- ✅ **Root Cause**: Conflicting height constraints between viewport units and flex containers
+- ✅ **Solution**: Use flex-based height management throughout the component hierarchy
+- ✅ **Prevention**: Avoid mixing viewport units (vh) with flex layouts
+
+**White Space Issue Pattern**:
+```css
+/* ❌ WRONG: Causes white space on large screens (1920px+) */
+.main-container {
+  min-h-screen max-h-screen overflow-hidden;
+}
+.sticky-sidebar {
+  height: calc(100vh - 5rem);
+  top: 16px;
+}
+
+/* ✅ CORRECT: Proper flex-based height management */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+.layout-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sticky-sidebar {
+  height: 100%;
+  overflow-y: auto;
+}
+```
+
+**Layout Hierarchy Fix**:
+```typescript
+// globals.css - Set root height constraints
+html {
+  @apply h-full overflow-hidden;
+}
+body {
+  @apply bg-background text-foreground h-full overflow-hidden;
+}
+
+// layout.tsx - Pass height down
+<html lang="en" className="h-full">
+  <body className={`${inter.className} h-full`}>
+
+// client-layout.tsx - Maintain height chain
+<div className="h-full flex flex-col">
+  <SidebarProvider className="h-full">
+    <SidebarInset>
+      <div className="flex flex-1 flex-col min-h-0">
+        <SiteHeader />
+        <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+          {children}
+        </div>
+      </div>
+    </SidebarInset>
+  </SidebarProvider>
+</div>
+
+// browse-studios-content.tsx - Use flex properties
+<div className="flex flex-col flex-1 p-3 sm:p-4 md:p-6 overflow-hidden">
+  <div className="flex gap-4 flex-1 min-h-0">
+    {/* Filter sidebar */}
+    <div className="w-96 flex-shrink-0 h-full">
+      <div className="sticky top-0 h-full overflow-y-auto">
+        <Card className="shadow-sm h-full flex flex-col">
+    
+    {/* Studios grid */}
+    <div className="flex-1 min-w-0 overflow-y-auto">
+```
+
+**Key Principles**:
+1. **Height Chain**: Establish height constraints from html → body → all containers
+2. **Flex Over Viewport**: Use `flex-1`, `min-h-0` instead of `vh` units
+3. **Overflow Management**: Control overflow at appropriate container levels
+4. **Sticky Within Flex**: Ensure sticky elements work within flex containers
+5. **No Mixed Units**: Don't mix viewport units with flex layouts
+
+**Common Mistakes to Avoid**:
+- Using `min-h-screen` within flex containers
+- Mixing `vh` calculations with flex layouts
+- Not setting `min-h-0` on flex children
+- Missing overflow constraints on parent containers
+- Using padding/margins that affect total height calculations
+
+**Testing Checklist**:
+- [ ] Test on screens ≥1920px width
+- [ ] Verify no white space at bottom
+- [ ] Check sticky sidebar scrolls properly
+- [ ] Ensure main content scrolls independently
+- [ ] Confirm layout works with/without sidebar
+
+**Last Updated**: February 2025 

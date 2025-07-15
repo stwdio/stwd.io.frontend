@@ -622,8 +622,8 @@ export function BrowseStudiosContent() {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6">
-      <div className={`flex gap-4 max-w-full mx-auto ${isFullHDOrLarger ? 'flex-row' : 'flex-col'}`}>
+    <div className="flex flex-col flex-1 p-3 sm:p-4 md:p-6 overflow-hidden">
+      <div className={`flex gap-4 flex-1 min-h-0 ${isFullHDOrLarger ? 'flex-row' : 'flex-col'}`}>
         {/* Filter Button for screens below 1080p */}
         {!isFullHDOrLarger && (
         <div className="fixed top-14 right-4 z-40">
@@ -665,8 +665,8 @@ export function BrowseStudiosContent() {
 
         {/* Desktop Filters Sidebar - Only show on 1080p+ screens */}
         {isFullHDOrLarger && (
-        <div className="w-96 flex-shrink-0">
-          <div className="sticky top-16 h-[calc(100vh-5rem)] pb-4">
+        <div className="w-96 flex-shrink-0 h-full">
+          <div className="sticky top-0 h-full overflow-y-auto">
             <Card className="shadow-sm h-full flex flex-col">
               <CardContent className="p-4 lg:p-6 flex-1 flex flex-col min-h-0">
                 <div className="flex items-center justify-between mb-6 flex-shrink-0">
@@ -699,7 +699,7 @@ export function BrowseStudiosContent() {
         )}
 
         {/* Studios Grid */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-y-auto">
           {studiosError ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground mb-4">

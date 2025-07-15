@@ -56,43 +56,46 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       enableSystem={true}
       disableTransitionOnChange
     >
-      {shouldShowDesktopSidebar ? (
-        <SidebarProvider
-          defaultOpen={isLargeScreen}
-          style={
-            {
-              "--sidebar-width": "calc(var(--spacing) * 72)",
-              "--header-height": "calc(var(--spacing) * 12)",
-            } as React.CSSProperties
-          }
-        >
-          {/* Responsive Sidebar */}
-          <AppSidebar variant="inset" />
-          <SidebarInset>
-            <div className="flex flex-1 flex-col">
-              <SiteHeader />
-              <div className="@container/main flex flex-1 flex-col">
-                {children}
+      <div className="h-full flex flex-col">
+        {shouldShowDesktopSidebar ? (
+          <SidebarProvider
+            defaultOpen={isLargeScreen}
+            className="h-full"
+            style={
+              {
+                "--sidebar-width": "calc(var(--spacing) * 72)",
+                "--header-height": "calc(var(--spacing) * 12)",
+              } as React.CSSProperties
+            }
+          >
+            {/* Responsive Sidebar */}
+            <AppSidebar variant="inset" />
+            <SidebarInset>
+              <div className="flex flex-1 flex-col min-h-0">
+                <SiteHeader />
+                <div className="@container/main flex flex-1 flex-col min-h-0 overflow-hidden">
+                  {children}
+                </div>
               </div>
-            </div>
-          </SidebarInset>
-          <FloatingCartButton />
-        </SidebarProvider>
-      ) : (
-        <div className="min-h-screen">
-          {children}
-          {/* Show floating cart button on browse and lists pages */}
-          {(pathname.startsWith('/browse') || pathname.startsWith('/lists')) && (
+            </SidebarInset>
             <FloatingCartButton />
-          )}
-        </div>
-      )}
-      <AuthModal 
-        open={authModal.isOpen} 
-        onOpenChange={authModal.close}
-        title={authModal.title}
-        description={authModal.description}
-      />
+          </SidebarProvider>
+        ) : (
+          <div className="min-h-screen">
+            {children}
+            {/* Show floating cart button on browse and lists pages */}
+            {(pathname.startsWith('/browse') || pathname.startsWith('/lists')) && (
+              <FloatingCartButton />
+            )}
+          </div>
+        )}
+        <AuthModal 
+          open={authModal.isOpen} 
+          onOpenChange={authModal.close}
+          title={authModal.title}
+          description={authModal.description}
+        />
+      </div>
     </ThemeProvider>
   )
 } 

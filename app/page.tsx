@@ -81,13 +81,13 @@ export default function LandingPage() {
             Connect with top-tier facilities and bring your creative vision to life.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/login">
+            <Link href="/browse">
               <Button size="lg" className="text-lg px-8">
                 <IconSearch className="mr-2 h-5 w-5" />
                 Browse Studios
               </Button>
             </Link>
-            <Link href="/auth/login">
+            <Link href="/auth/login?signup=true">
               <Button size="lg" variant="outline" className="text-lg px-8">
                 <IconBuilding className="mr-2 h-5 w-5" />
                 List Your Studio
@@ -148,7 +148,7 @@ export default function LandingPage() {
           <p className="text-xl text-muted-foreground mb-8">
             Join thousands of musicians and studio owners on stwd.io
           </p>
-          <Link href="/auth/login">
+          <Link href="/auth/login?signup=true">
             <Button size="lg" className="text-lg px-8">
               Join stwd.io Today
             </Button>

@@ -185,8 +185,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {/* Spacer */}
             <div className="flex-1" />
             
-            {/* Sign in prompt at bottom */}
-            <div className="p-4 space-y-3">
+            {/* Sign in prompt at bottom - hidden when collapsed */}
+            <div className="p-4 space-y-3 group-data-[collapsible=icon]:hidden">
               <div className="text-center">
                 <p className="text-muted-foreground text-sm mb-4">
                   Sign in to access all features
@@ -242,6 +242,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             items={getProfileItems()} 
             onItemClick={handleMobileNavClick}
           />
+          
+          {/* Sign Out - only visible when collapsed */}
+          <div className="hidden group-data-[collapsible=icon]:block px-3 pb-2">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleSignOut}>
+                  <IconLogout className="h-4 w-4" />
+                  <span className="sr-only">Sign Out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </div>
         </div>
       </SidebarContent>
       
@@ -251,7 +263,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {/* User info - clickable to go to profile */}
             <Link 
               href={`/profiles/${profile?.username}`} 
-              className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10"
+              className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:h-12"
               onClick={handleMobileNavClick}
             >
               <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 border border-black">
@@ -273,7 +285,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </div>
             </Link>
             
-            {/* Sign out button */}
+            {/* Sign out button - only visible when expanded */}
             <Button
               variant="ghost"
               size="icon"

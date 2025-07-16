@@ -1,79 +1,47 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { StudioDraftForm } from "@/components/studio-draft-form"
+import { Suspense } from 'react'
+import { createServerComponentClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { StudioDraftForm } from '@/components/studio-draft-form'
 import { StudioFormSkeleton } from '@/components/skeletons'
 
-export default function NewStudioPage() {
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
-  const supabase = createClient()
-
-  useEffect(() => {
-    const initializePage = async () => {
-      try {
-        // Check authentication
-        const { data: { session } } = await supabase.auth.getSession()
-
-        if (!session) {
-          router.push("/auth/login")
-          return
-        }
-
-        // Get the user's profile
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .single()
-
-        if (!profileData) {
-          router.push("/auth/login")
-          return
-        }
-
-        if (profileData.role !== 'owner' && profileData.role !== 'admin') {
-          router.push("/browse")
-          return
-        }
-
-        setProfile(profileData)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error initializing page:', error)
-        setError("Failed to load page")
-        setLoading(false)
-      }
-    }
-
-    initializePage()
-  }, [router])
-
-  const handleSuccess = (studioId: number) => {
-    // The StudioDraftForm component will handle the redirect to edit page
-    // This callback can be used for any additional logic if needed
+// Async component to verify permissions
+async function NewStudioContent() {
+  const supabase = await createServerComponentClient()
+  
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/auth/login')
   }
-
-  if (loading) {
-    return <StudioFormSkeleton />
-  }
-
-  if (error) {
-    return (
-      <div className="text-center text-destructive p-6">{error}</div>
-    )
-  }
-
+  
+  // Get user profile and check permissions
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+    
   if (!profile) {
-    return (
-      <div className="text-center p-6">Access denied</div>
-    )
+    redirect('/onboarding')
   }
+  
+  // Check if user has professional role for studio owner
+  const { data: professionalRoles } = await supabase
+    .from('professional_roles')
+    .select('*, role:roles(*)')
+    .eq('profile_id', profile.id)
+    
+  const isStudioOwner = professionalRoles?.some(pr => pr.role?.slug === 'studio-owner')
+  const isAdmin = profile.system_role === 'admin'
+  
+  if (!isStudioOwner && !isAdmin) {
+    redirect('/browse')
+  }
+  
+  return <StudioDraftForm />
+}
 
+export default function NewStudioPage() {
   return (
     <div className="w-full p-6">
       <div className="mb-8">
@@ -81,7 +49,9 @@ export default function NewStudioPage() {
         <p className="text-muted-foreground mt-2">Create a new recording studio listing.</p>
       </div>
 
-      <StudioDraftForm onSuccess={handleSuccess} />
+      <Suspense fallback={<StudioFormSkeleton />}>
+        <NewStudioContent />
+      </Suspense>
     </div>
   )
-} 
+}

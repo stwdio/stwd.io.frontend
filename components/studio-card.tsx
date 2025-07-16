@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Star, MapPin } from 'lucide-react'
 import Link from 'next/link'
-import { StudioImage } from '@/components/studio-image-placeholder'
+import { StudioImageWithSkeleton } from '@/components/studio-image-with-skeleton'
 import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
 import { StudioCardActions } from '@/components/studio-card-actions'
 import { ReactNode } from 'react'
@@ -103,7 +103,7 @@ export function StudioCard({
     <Card className={`overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col ${className}`}>
       {/* Image */}
       <div className="aspect-video relative overflow-hidden rounded-t-lg">
-        <StudioImage
+        <StudioImageWithSkeleton
           src={getStudioPrimaryImageUrl(studio.photo_urls, 300)}
           alt={studio.name}
           fill

@@ -1,50 +1,19 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { createServerComponentClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
 import { IconBuilding, IconSearch, IconStar } from "@tabler/icons-react"
-import { MinimalAuthLoading } from '@/components/skeletons'
 
-export default function LandingPage() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-  const supabase = createClient()
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.user) {
-        // User is authenticated, redirect to browse
-        router.push('/browse')
-        return
-      }
-      
-      setUser(null)
-      setLoading(false)
-    }
-
-    checkAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
-      if (session?.user) {
-        router.push('/browse')
-      } else {
-        setUser(null)
-        setLoading(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [router, supabase])
-
-  if (loading) {
-    return <MinimalAuthLoading />
+export default async function LandingPage() {
+  const supabase = await createServerComponentClient()
+  
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (user) {
+    // User is authenticated, redirect to browse
+    redirect('/browse')
   }
 
   return (

@@ -1,221 +1,73 @@
-"use client"
+import { Suspense } from 'react'
+import { createServerComponentClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { OnboardingContent } from './_components/onboarding-content'
+import { OnboardingPageSkeleton } from './_components/onboarding-skeleton'
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Music, Mic, Radio, Briefcase, Wrench, Users, Building, ChevronRight } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/auth/auth-context"
-import { useRouter } from "next/navigation"
-import { useRoles } from "@/lib/hooks/queries/roles"
-
-const roleIcons = {
-  'musician': Music,
-  'podcaster': Mic,
-  'voice-actor': Radio,
-  'a-and-r': Briefcase,
-  'engineer': Wrench,
-  'manager': Users,
-  'studio-owner': Building,
-} as const
-
-export default function OnboardingPage() {
-  const [loading, setLoading] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<number | null>(null)
-  const { user, profile, refreshProfile } = useAuth()
-  const router = useRouter()
-  const { toast } = useToast()
-  const supabase = createClient()
+// Async component to fetch roles data
+async function OnboardingDataWrapper() {
+  const supabase = await createServerComponentClient()
+  
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/auth/login')
+  }
+  
+  // Get user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+    
+  if (!profile) {
+    // Profile should exist but if not, create one
+    const { data: newProfile } = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.full_name || null,
+      })
+      .select()
+      .single()
+      
+    if (!newProfile) {
+      throw new Error('Failed to create profile')
+    }
+  }
+  
+  // Check if user already has professional roles
+  const { data: existingRoles } = await supabase
+    .from('profile_roles')
+    .select('*, role:roles(*)')
+    .eq('profile_id', profile.id)
+    .limit(1)
+  
+  // If user already has a role, redirect to dashboard
+  if (existingRoles && existingRoles.length > 0) {
+    const isStudioOwner = existingRoles.some(pr => pr.role?.slug === 'studio-owner')
+    redirect(isStudioOwner ? '/profile/dashboard' : '/dashboard')
+  }
   
   // Fetch available roles
-  const { data: roles = [], isLoading: rolesLoading } = useRoles()
-
-  // Refresh profile on mount to ensure we have the latest data
-  useEffect(() => {
-    if (user && !profile) {
-      refreshProfile()
-    }
-  }, [user, profile, refreshProfile])
-
-  const handleRoleSelect = (roleId: number) => {
-    setSelectedRole(roleId)
-  }
-
-  const handleSubmit = async () => {
-    if (!user || !profile || !selectedRole) {
-      toast({
-        title: "Please select a role",
-        description: "Choose the role that best describes your professional identity.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setLoading(true)
+  const { data: roles } = await supabase
+    .from('roles')
+    .select('*')
+    .order('name')
     
-    try {
-      // Insert selected role
-      const { error: roleError } = await supabase
-        .from("profile_roles")
-        .insert({
-          profile_id: profile.id,
-          role_id: selectedRole,
-        })
-
-      if (roleError) {
-        console.error("Error setting role:", roleError)
-        toast({
-          title: "Error",
-          description: "Failed to set your role. Please try again.",
-          variant: "destructive",
-        })
-        setLoading(false)
-        return
-      }
-
-      // Update system_role to 'user' to mark onboarding complete
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ system_role: 'user' })
-        .eq('id', profile.id)
-
-      if (profileError) {
-        console.error("Error updating profile:", profileError)
-        toast({
-          title: "Error",
-          description: "Failed to complete onboarding. Please try again.",
-          variant: "destructive",
-        })
-        setLoading(false)
-        return
-      }
-
-      // Refresh the profile to get the updated role
-      await refreshProfile()
-
-      toast({
-        title: "Welcome to stwd.io!",
-        description: "Your professional role has been set.",
-      })
-
-      // Determine dashboard based on role
-      const selectedRoleData = roles.find(r => r.id === selectedRole)
-      const isStudioOwner = selectedRoleData?.slug === 'studio-owner'
-      
-      router.replace(isStudioOwner ? '/profile/dashboard' : '/dashboard')
-    } catch (err) {
-      console.error("Unexpected error:", err)
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
+  if (!roles || roles.length === 0) {
+    throw new Error('No roles available')
   }
+  
+  return <OnboardingContent roles={roles} profileId={profile?.id || user.id} />
+}
 
-  if (rolesLoading) {
-    return (
-      <div className="h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-medium text-muted-foreground">Loading roles...</h2>
-        </div>
-      </div>
-    )
-  }
-
+export default function OnboardingPage() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-      <div className="max-w-3xl w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            Welcome to stwd.io!
-          </h1>
-          <p className="text-muted-foreground text-lg mb-2">
-            Select the role that best describes your professional identity
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Choose your primary role to get started
-          </p>
-        </div>
-        
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle>Your Professional Role</CardTitle>
-            <CardDescription>
-              Choose the role that best represents your primary activity on stwd.io.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RadioGroup 
-              value={selectedRole?.toString() || ""} 
-              onValueChange={(value) => handleRoleSelect(parseInt(value))}
-              className="space-y-4"
-            >
-              {roles.map((role) => {
-                const Icon = roleIcons[role.slug as keyof typeof roleIcons] || Users
-                const isSelected = selectedRole === role.id
-                
-                return (
-                  <div
-                    key={role.id}
-                    className={`flex items-start space-x-3 p-4 rounded-lg border transition-all cursor-pointer ${
-                      isSelected 
-                        ? 'bg-primary/10 border-primary' 
-                        : 'hover:bg-muted/50 border-border'
-                    }`}
-                    onClick={() => handleRoleSelect(role.id)}
-                  >
-                    <RadioGroupItem
-                      value={role.id.toString()}
-                      id={`role-${role.id}`}
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <Label 
-                        htmlFor={`role-${role.id}`}
-                        className="flex items-center gap-3 cursor-pointer"
-                      >
-                        <Icon className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">{role.name}</div>
-                          {role.description && (
-                            <div className="text-sm text-muted-foreground">
-                              {role.description}
-                            </div>
-                          )}
-                        </div>
-                      </Label>
-                    </div>
-                  </div>
-                )
-              })}
-            </RadioGroup>
-
-            <div className="mt-8 flex justify-end">
-              <Button
-                onClick={handleSubmit}
-                disabled={loading || !selectedRole}
-                size="lg"
-                className="min-w-[200px]"
-              >
-                {loading ? (
-                  "Setting up..."
-                ) : (
-                  <>
-                    Continue
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <Suspense fallback={<OnboardingPageSkeleton />}>
+      <OnboardingDataWrapper />
+    </Suspense>
   )
 }

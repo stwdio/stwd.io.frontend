@@ -1,57 +1,72 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/lib/auth/auth-context'
-import { CreatorDashboard } from '@/components/creator-dashboard'
-import { OwnerDashboard } from '@/components/owner-dashboard'
-import { AdminDashboard } from '@/components/admin-dashboard'
-import { createClient } from '@/lib/supabase/client'
+import { Suspense } from 'react'
+import { createServerComponentClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { CreatorDashboardServer } from './_components/creator-dashboard-server'
+import { OwnerDashboardServer } from './_components/owner-dashboard-server'
+import { AdminDashboardServer } from './_components/admin-dashboard-server'
+import {
+  CreatorDashboardSkeleton,
+  OwnerDashboardSkeleton,
+  AdminDashboardSkeleton
+} from './_components/dashboard-skeletons'
 
-export default function ProfileDashboardPage() {
-  const { profile, professionalRoles } = useAuth()
-  const [ownedStudiosCount, setOwnedStudiosCount] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-
-  // Check if user actually owns any studios
-  useEffect(() => {
-    const checkStudioOwnership = async () => {
-      if (!profile?.id) return
-      
-      const { count } = await supabase
-        .from('studios')
-        .select('*', { count: 'exact', head: true })
-        .eq('owner_id', profile.id)
-      
-      setOwnedStudiosCount(count || 0)
-      setLoading(false)
-    }
-    
-    checkStudioOwnership()
-  }, [profile?.id])
-
-  const isStudioOwner = professionalRoles.some(pr => pr.role?.slug === 'studio-owner')
-  const isAdmin = profile?.system_role === 'admin'
-  const hasStudios = ownedStudiosCount > 0
-
-  // If loading, show loading state
-  if (loading) {
-    return <div className="p-6">Loading...</div>
+export default async function ProfileDashboardPage() {
+  const supabase = await createServerComponentClient()
+  
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/auth/login')
   }
-
-  // Admin always sees admin dashboard
+  
+  // Fetch profile first
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+  
+  if (!profile) {
+    redirect('/onboarding')
+  }
+  
+  // Then fetch professional roles using profile.id
+  const { data: professionalRoles } = await supabase
+    .from('profile_roles')
+    .select('*, role:roles(*)')
+    .eq('profile_id', profile.id)
+  
+  const roles = professionalRoles || []
+  
+  // Check user roles
+  const isStudioOwner = roles.some(pr => pr.role?.slug === 'studio-owner')
+  const isAdmin = profile.system_role === 'admin'
+  
+  // Check if user owns any studios (only if they have studio owner role)
+  let hasStudios = false
+  if (isStudioOwner) {
+    const { count } = await supabase
+      .from('studios')
+      .select('*', { count: 'exact', head: true })
+      .eq('owner_id', profile.id)
+    hasStudios = (count || 0) > 0
+  }
+  
+  // Admin dashboard
   if (isAdmin) {
     return (
       <div className="flex-1 overflow-y-auto">
         <div className="p-6">
-          <AdminDashboard />
+          <Suspense fallback={<AdminDashboardSkeleton />}>
+            <AdminDashboardServer />
+          </Suspense>
         </div>
       </div>
     )
   }
-
-  // If user has studio owner role AND owns studios, show tabs
+  
+  // Studio owner with studios - show tabs
   if (isStudioOwner && hasStudios) {
     return (
       <div className="flex-1 overflow-y-auto">
@@ -62,22 +77,28 @@ export default function ProfileDashboardPage() {
               <TabsTrigger value="owner">Studio Owner Dashboard</TabsTrigger>
             </TabsList>
             <TabsContent value="creator">
-              <CreatorDashboard />
+              <Suspense fallback={<CreatorDashboardSkeleton />}>
+                <CreatorDashboardServer />
+              </Suspense>
             </TabsContent>
             <TabsContent value="owner">
-              <OwnerDashboard />
+              <Suspense fallback={<OwnerDashboardSkeleton />}>
+                <OwnerDashboardServer />
+              </Suspense>
             </TabsContent>
           </Tabs>
         </div>
       </div>
     )
   }
-
-  // Otherwise show creator dashboard
+  
+  // Default - creator dashboard
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="p-6">
-        <CreatorDashboard />
+        <Suspense fallback={<CreatorDashboardSkeleton />}>
+          <CreatorDashboardServer />
+        </Suspense>
       </div>
     </div>
   )

@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { IconFilter, IconSearch } from '@tabler/icons-react'
 import { Badge } from '@/components/ui/badge'
-import { BrowseStudiosContent } from '@/components/browse-studios-content-simple'
+import { BrowseStudiosContent } from '@/components/browse-studios-content'
 import { ProfilesGrid } from '@/components/discover/profiles-grid'
 import { FilterPanel } from '@/components/discover/filter-panel'
 
@@ -17,6 +17,7 @@ type PeopleSubView = 'all' | 'artists' | 'engineers' | 'industry'
 export function DiscoverContent() {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   
   // Determine initial view from URL
   const getInitialView = (): { view: DiscoverView; subView?: PeopleSubView } => {
@@ -32,14 +33,20 @@ export function DiscoverContent() {
   const initial = getInitialView()
   const [activeView, setActiveView] = useState<DiscoverView>(initial.view)
   const [peopleSubView, setPeopleSubView] = useState<PeopleSubView>(initial.subView || 'all')
-  const [searchQuery, setSearchQuery] = useState('')
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
+  
+  // Initialize state from URL params
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchParams.get('q') || '')
   const [filters, setFilters] = useState({
-    location: '',
-    priceRange: [0, 1000] as [number, number],
-    selectedPriceTiers: [] as number[],
-    selectedAmenities: [] as string[],
-    selectedGear: [] as string[]
+    location: searchParams.get('location') || '',
+    priceRange: [
+      parseInt(searchParams.get('minPrice') || '0'),
+      parseInt(searchParams.get('maxPrice') || '1000')
+    ] as [number, number],
+    selectedPriceTiers: searchParams.get('tiers') ? searchParams.get('tiers')!.split(',').map(Number) : [],
+    selectedAmenities: searchParams.get('amenities') ? searchParams.get('amenities')!.split(',') : [],
+    selectedGear: searchParams.get('gear') ? searchParams.get('gear')!.split(',') : []
   })
   
   // Calculate active filter count
@@ -50,6 +57,60 @@ export function DiscoverContent() {
     filters.selectedGear.length,
     filters.priceRange[0] > 0 || filters.priceRange[1] < 1000
   ].filter(Boolean).length
+
+  // Update URL with current filters and search
+  const updateURL = useCallback(() => {
+    const params = new URLSearchParams()
+    
+    if (searchQuery) {
+      params.set('q', searchQuery)
+    }
+    
+    if (filters.location) {
+      params.set('location', filters.location)
+    }
+    
+    if (filters.priceRange[0] > 0) {
+      params.set('minPrice', filters.priceRange[0].toString())
+    }
+    
+    if (filters.priceRange[1] < 1000) {
+      params.set('maxPrice', filters.priceRange[1].toString())
+    }
+    
+    if (filters.selectedPriceTiers.length > 0) {
+      params.set('tiers', filters.selectedPriceTiers.join(','))
+    }
+    
+    if (filters.selectedAmenities.length > 0) {
+      params.set('amenities', filters.selectedAmenities.join(','))
+    }
+    
+    if (filters.selectedGear.length > 0) {
+      params.set('gear', filters.selectedGear.join(','))
+    }
+    
+    const url = `${pathname}${params.toString() ? '?' + params.toString() : ''}`
+    router.replace(url, { scroll: false })
+  }, [searchQuery, filters, pathname, router])
+
+  // Update URL when filters or search change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      updateURL()
+    }, 500) // Debounce to avoid too many URL updates
+
+    return () => clearTimeout(timeoutId)
+  }, [updateURL])
+
+  // Debounce search query for API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300) // 300ms debounce for search
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
   const handleViewChange = (view: DiscoverView) => {
     setActiveView(view)
@@ -70,52 +131,119 @@ export function DiscoverContent() {
   }
 
   return (
-    <div className="bg-background">
-      {/* Page Header */}
-      <div className="bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Large DISCOVER title */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-            DISCOVER
-          </h1>
-          
-          {/* View Toggle */}
-          <div className="flex items-center gap-6 text-lg sm:text-xl">
-            <button
-              onClick={() => handleViewChange('studios')}
-              className={cn(
-                "font-medium transition-all",
-                activeView === 'studios' 
-                  ? "text-foreground border-b-2 border-foreground" 
-                  : "text-muted-foreground hover:text-foreground"
+    <div className="h-full flex flex-col bg-background">
+      {/* Combined Navigation and Search Bar */}
+      <div className="flex-shrink-0 bg-background border-b">
+        <div className="px-4 sm:px-6 py-3 space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* View Toggle on the left */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 text-base">
+                <button
+                  onClick={() => handleViewChange('studios')}
+                  className={cn(
+                    "font-medium transition-all",
+                    activeView === 'studios' 
+                      ? "text-foreground border-b-2 border-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  STUDIOS
+                </button>
+                <span className="text-muted-foreground">|</span>
+                <button
+                  onClick={() => handleViewChange('people')}
+                  className={cn(
+                    "font-medium transition-all",
+                    activeView === 'people' 
+                      ? "text-foreground border-b-2 border-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  PEOPLE
+                </button>
+              </div>
+              
+              {/* People sub-navigation */}
+              {activeView === 'people' && (
+                <div className="hidden sm:flex items-center gap-3 text-sm text-muted-foreground">
+                  <span>·</span>
+                  <button
+                    onClick={() => handlePeopleSubViewChange('all')}
+                    className={cn(
+                      "transition-all hover:text-foreground",
+                      peopleSubView === 'all' && "text-foreground font-medium"
+                    )}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => handlePeopleSubViewChange('artists')}
+                    className={cn(
+                      "transition-all hover:text-foreground",
+                      peopleSubView === 'artists' && "text-foreground font-medium"
+                    )}
+                  >
+                    Artists
+                  </button>
+                  <button
+                    onClick={() => handlePeopleSubViewChange('engineers')}
+                    className={cn(
+                      "transition-all hover:text-foreground",
+                      peopleSubView === 'engineers' && "text-foreground font-medium"
+                    )}
+                  >
+                    Engineers
+                  </button>
+                  <button
+                    onClick={() => handlePeopleSubViewChange('industry')}
+                    className={cn(
+                      "transition-all hover:text-foreground",
+                      peopleSubView === 'industry' && "text-foreground font-medium"
+                    )}
+                  >
+                    Industry
+                  </button>
+                </div>
               )}
-            >
-              STUDIOS
-            </button>
-            <span className="text-muted-foreground">|</span>
-            <button
-              onClick={() => handleViewChange('people')}
-              className={cn(
-                "font-medium transition-all",
-                activeView === 'people' 
-                  ? "text-foreground border-b-2 border-foreground" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              PEOPLE
-            </button>
+            </div>
+            
+            {/* Search bar and filter button on the right */}
+            <div className="flex gap-2 flex-1 max-w-md">
+              <div className="relative w-full">
+                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  type="search"
+                  placeholder={activeView === 'studios' ? "Search studios..." : "Search people..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setFilterPanelOpen(true)}
+                className="relative"
+              >
+                <IconFilter className="h-4 w-4" />
+                {activeFilters > 0 && (
+                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
+                    {activeFilters}
+                  </Badge>
+                )}
+              </Button>
+            </div>
           </div>
           
-          {/* People sub-navigation */}
+          {/* People sub-navigation on mobile - separate row */}
           {activeView === 'people' && (
-            <div className="flex items-center gap-4 mt-4 text-sm">
+            <div className="flex sm:hidden items-center gap-3 text-sm overflow-x-auto">
               <button
                 onClick={() => handlePeopleSubViewChange('all')}
                 className={cn(
-                  "font-medium transition-all",
-                  peopleSubView === 'all' 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
+                  "transition-all hover:text-foreground whitespace-nowrap",
+                  peopleSubView === 'all' && "text-foreground font-medium"
                 )}
               >
                 All
@@ -123,10 +251,8 @@ export function DiscoverContent() {
               <button
                 onClick={() => handlePeopleSubViewChange('artists')}
                 className={cn(
-                  "font-medium transition-all",
-                  peopleSubView === 'artists' 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
+                  "transition-all hover:text-foreground whitespace-nowrap",
+                  peopleSubView === 'artists' && "text-foreground font-medium"
                 )}
               >
                 Artists
@@ -134,10 +260,8 @@ export function DiscoverContent() {
               <button
                 onClick={() => handlePeopleSubViewChange('engineers')}
                 className={cn(
-                  "font-medium transition-all",
-                  peopleSubView === 'engineers' 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
+                  "transition-all hover:text-foreground whitespace-nowrap",
+                  peopleSubView === 'engineers' && "text-foreground font-medium"
                 )}
               >
                 Engineers
@@ -145,10 +269,8 @@ export function DiscoverContent() {
               <button
                 onClick={() => handlePeopleSubViewChange('industry')}
                 className={cn(
-                  "font-medium transition-all",
-                  peopleSubView === 'industry' 
-                    ? "text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
+                  "transition-all hover:text-foreground whitespace-nowrap",
+                  peopleSubView === 'industry' && "text-foreground font-medium"
                 )}
               >
                 Industry
@@ -158,44 +280,17 @@ export function DiscoverContent() {
         </div>
       </div>
 
-      {/* Search Bar and Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Search bar and filter button aligned to the right */}
-        <div className="flex justify-end gap-2 mb-6">
-          <div className="relative w-full max-w-md">
-            <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              type="search"
-              placeholder={activeView === 'studios' ? "Search studios..." : "Search people..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4"
-            />
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setFilterPanelOpen(true)}
-            className="relative"
-          >
-            <IconFilter className="h-4 w-4" />
-            {activeFilters > 0 && (
-              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
-                {activeFilters}
-              </Badge>
-            )}
-          </Button>
-        </div>
-
-        {/* Content Area */}
+      {/* Scrollable Content Area */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {activeView === 'studios' ? (
-          <div className="studios-grid-wrapper">
-            <BrowseStudiosContent />
-          </div>
+          <BrowseStudiosContent 
+            filters={filters}
+            searchQuery={debouncedSearchQuery}
+          />
         ) : (
           <ProfilesGrid 
             subView={peopleSubView}
-            searchQuery={searchQuery}
+            searchQuery={debouncedSearchQuery}
           />
         )}
       </div>
@@ -208,8 +303,8 @@ export function DiscoverContent() {
         filters={filters}
         onFiltersChange={setFilters}
         onApply={() => {
-          // Filters will be applied automatically through state
-          console.log('Filters applied:', filters)
+          // Close the panel when filters are applied
+          setFilterPanelOpen(false)
         }}
         type={activeView}
       />

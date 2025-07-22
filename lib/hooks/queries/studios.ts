@@ -117,6 +117,7 @@ export function useStudio(studioId: number | null) {
  */
 export function useStudiosInfinite(filters?: {
   location?: string
+  search?: string
   minRate?: number
   maxRate?: number
   priceTiers?: number[]
@@ -156,6 +157,10 @@ export function useStudiosInfinite(filters?: {
       // Apply filters dynamically
       if (filters?.location) {
         query = query.ilike('location', `%${filters.location}%`)
+      }
+      
+      if (filters?.search) {
+        query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
       }
       
       if (filters?.minRate) {

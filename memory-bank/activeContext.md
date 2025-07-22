@@ -2,9 +2,87 @@
 
 ## Current Work Session
 **Date**: January 31, 2025
-**Focus**: Unified "Discover Hub" Refactor - Removing Sidebar Navigation
+**Focus**: Search and Filter Functionality Fix
 
 ## Recent Completions
+
+### ✅ Search and Filter Functionality Fix - COMPLETED (January 31, 2025)
+- **Status**: ✅ **COMPLETED** - Fixed search and filter functionality with URL persistence
+- **Issues Fixed**:
+  - Search wasn't being passed to the studios query
+  - Filters weren't being properly connected between components
+  - Filter state wasn't being applied to the API calls
+  - URL parameters weren't being saved/restored
+- **Changes Made**:
+  - Added `search` parameter to `useStudiosInfinite` hook
+  - Implemented search query logic in the database query (searches name and description)
+  - Updated `BrowseStudiosContent` to accept filters and searchQuery as props
+  - Connected filter state from `DiscoverContent` to `BrowseStudiosContent`
+  - Properly mapped filter fields to API parameters (location, price range, tiers, gear)
+  - Fixed filter panel to close when filters are applied
+  - Added URL persistence for all search and filter parameters
+  - Initialize state from URL parameters on page load
+  - Update URL when filters/search change (with debouncing)
+  - Removed "You've reached the end!" message from grid component
+- **Files Modified**:
+  - `lib/hooks/queries/studios.ts` - Added search parameter and logic
+  - `components/browse-studios-content.tsx` - Added props for filters and search
+  - `components/discover/discover-content.tsx` - Added URL persistence
+  - `components/discover/generic-grid.tsx` - Removed end message
+- **Result**: Search and filters work with full URL persistence for shareable links
+
+### ✅ Component Consolidation & Header Optimization - COMPLETED (January 31, 2025)
+- **Status**: ✅ **COMPLETED** - Consolidated components and optimized header space
+- **Changes Made**:
+  - Created a generic reusable `GenericGrid` component for both studios and people
+  - Consolidated `browse-studios-content.tsx` and `browse-studios-content-simple.tsx` into one
+  - Updated `ProfilesGrid` to use the same `GenericGrid` component
+  - Removed container wrappers to use full screen width for both views
+  - Moved DISCOVER title to site header (same row as user profile)
+  - Moved Studios|People toggle to same row as search bar
+  - Added people sub-navigation (All, Artists, Engineers, Industry) inline on desktop
+  - Significantly reduced top section height to maximize card display area
+- **Files Modified/Created**:
+  - `components/discover/generic-grid.tsx` - New generic grid component
+  - `components/browse-studios-content.tsx` - Simplified version using GenericGrid
+  - `components/discover/profiles-grid.tsx` - Updated to use GenericGrid
+  - `components/discover/discover-content.tsx` - Removed header, combined nav with search
+  - `components/site-header.tsx` - Added DISCOVER title when on discover page
+- **Result**: Maximum vertical space for cards with streamlined navigation
+
+### ✅ Browse Page Layout Update - COMPLETED (January 31, 2025)
+- **Status**: ✅ **COMPLETED** - Updated layout to display 4 cards per row with full screen width
+- **Changes Made**:
+  - Updated grid to display 4 columns on XL screens (xl:grid-cols-4)
+  - Reduced padding in main container from p-3/4/6 to px-4 py-3 with proper responsive scaling
+  - Ensured horizontal margins push cards away from screen edges
+  - Updated infinite scroll loader to show 4 skeleton cards
+  - Applied consistent layout to both browse-studios-content.tsx and browse-studios-content-simple.tsx
+  - Wrapped all states (loading, error, empty) in consistent padding container
+  - Removed container wrapper from discover page to use full horizontal space
+- **Files Modified**:
+  - `components/browse-studios-content.tsx` - Updated grid and spacing
+  - `components/browse-studios-content-simple.tsx` - Matching layout updates
+  - `components/discover/discover-content.tsx` - Removed container wrapper for studios view
+- **Result**: Cards now display 4 per row using full screen width without yellow side margins
+
+### ✅ Studio Card Layout Optimization - COMPLETED (January 31, 2025)
+- **Status**: ✅ **COMPLETED** - Made studio cards bigger to better utilize whitespace
+- **Changes Made**:
+  - Reduced grid columns from 4 to 3 maximum (grid-cols-1 md:grid-cols-2 xl:grid-cols-3)
+  - Increased gap between cards from gap-4/6 to gap-6/8
+  - Increased card padding from p-4 to p-5
+  - Enlarged typography: title from text-lg to text-xl, price from text-lg to text-xl
+  - Enhanced location text from text-sm to text-base
+  - Increased description from 2 lines to 3 lines (line-clamp-3)
+  - Made amenity badges larger with more padding (text-sm, px-3 py-1)
+  - Increased avatar sizes in "Followed by" section from h-6 w-6 to h-8 w-8
+  - Changed action buttons from size "sm" to "default" with larger icons
+  - Increased spacing between sections for better visual hierarchy
+- **Files Modified**:
+  - `components/browse-studios-content-simple.tsx` - Updated grid layout
+  - `components/studio-card.tsx` - Enhanced card sizing and spacing
+- **Result**: Cards now better utilize available space with improved readability
 
 ### ✅ Unified "Discover Hub" Refactor - COMPLETED (January 31, 2025)
 - **Status**: ✅ **COMPLETED** - Transformed app from sidebar-based to header-only navigation

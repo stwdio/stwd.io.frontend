@@ -30,12 +30,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       enableSystem={true}
       disableTransitionOnChange
     >
-      <div className="min-h-screen">
+      <div className="h-screen flex flex-col">
         {/* Minimalist header with user profile dropdown */}
         {shouldShowHeader && <SiteHeader />}
         
         {/* Main content area - full width */}
-        <main>
+        <main className="flex-1 min-h-0">
           {children}
         </main>
         

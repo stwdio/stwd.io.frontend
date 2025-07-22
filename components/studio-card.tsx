@@ -167,10 +167,10 @@ export function StudioCard({
         />
       </div>
       
-      <CardContent className="p-4 flex flex-col flex-1">
+      <CardContent className="p-5 flex flex-col flex-1">
         {/* Header with title and price */}
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg truncate flex-1">{studio.name}</h3>
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-semibold text-xl truncate flex-1">{studio.name}</h3>
           <div className="flex items-start gap-3">
             {studio.price_tier && (
               <div className="text-center">
@@ -179,7 +179,7 @@ export function StudioCard({
             )}
             {studio.daily_rate && (
               <div className="text-right">
-                <p className="font-bold text-lg">{formatPrice(studio.daily_rate, studio.currency || 'USD')}</p>
+                <p className="font-bold text-xl">{formatPrice(studio.daily_rate, studio.currency || 'USD')}</p>
                 <p className="text-sm text-muted-foreground">per day</p>
               </div>
             )}
@@ -187,13 +187,13 @@ export function StudioCard({
         </div>
         
         {/* Location */}
-        <div className="flex items-center mb-2">
-          <MapPin className="h-4 w-4 text-muted-foreground mr-1" />
-          <span className="text-sm text-muted-foreground">{studio.location}</span>
+        <div className="flex items-center mb-3">
+          <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
+          <span className="text-base text-muted-foreground">{studio.location}</span>
         </div>
 
         {/* Rating */}
-        <div className="flex items-center mb-3">
+        <div className="flex items-center mb-4">
           <div className="flex">{renderStars(studio.average_rating || 0)}</div>
           <span className="text-sm text-muted-foreground ml-2">
             ({studio.review_count || 0} reviews)
@@ -201,7 +201,7 @@ export function StudioCard({
         </div>
 
         {/* Description */}
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">
+        <p className="text-base text-muted-foreground mb-4 line-clamp-3 flex-1">
           {studio.description}
         </p>
 
@@ -216,34 +216,34 @@ export function StudioCard({
         {/* List membership indicators */}
         <StudioListMembershipIndicators 
           studioId={studio.id.toString()} 
-          className="mb-3"
-          maxVisible={2}
+          className="mb-4"
+          maxVisible={3}
           memberships={memberships}
           isLoading={profileLoading}
         />
 
         {/* Amenities */}
         {showAmenities && (
-          <div className="flex flex-wrap gap-1 mb-4 min-h-[24px]">
-            {studio.amenities?.slice(0, 3).map((amenity, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
+          <div className="flex flex-wrap gap-2 mb-4 min-h-[28px]">
+            {studio.amenities?.slice(0, 4).map((amenity, index) => (
+              <Badge key={index} variant="secondary" className="text-sm px-3 py-1">
                 {typeof amenity === 'string' ? amenity : amenity.name}
               </Badge>
             ))}
-            {studio.amenities && studio.amenities.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{studio.amenities.length - 3} more
+            {studio.amenities && studio.amenities.length > 4 && (
+              <Badge variant="secondary" className="text-sm px-3 py-1">
+                +{studio.amenities.length - 4} more
               </Badge>
             )}
           </div>
         )}
 
         {/* New: Followed by section */}
-        <div className="flex items-center gap-2 mb-4 pt-2 border-t">
-          <span className="text-xs text-muted-foreground">Followed by</span>
+        <div className="flex items-center gap-3 mb-4 pt-3 border-t">
+          <span className="text-sm text-muted-foreground">Followed by</span>
           <div className="flex -space-x-2">
             {mockFollowers.slice(0, 3).map((follower) => (
-              <Avatar key={follower.id} className="h-6 w-6 border-2 border-background">
+              <Avatar key={follower.id} className="h-8 w-8 border-2 border-background">
                 <AvatarImage 
                   src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${follower.avatar}&backgroundColor=ffffff&shapeColor=000000`} 
                   alt={follower.name} 
@@ -254,7 +254,7 @@ export function StudioCard({
               </Avatar>
             ))}
             {mockFollowers.length > 3 && (
-              <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
                 <span className="text-xs text-muted-foreground">+{mockFollowers.length - 3}</span>
               </div>
             )}
@@ -262,25 +262,25 @@ export function StudioCard({
         </div>
 
         {/* New: Action buttons */}
-        <div className="mt-auto flex gap-2">
+        <div className="mt-auto flex gap-3">
           {customActions || (
             <>
               <Button 
                 variant="outline" 
-                size="sm" 
+                size="default" 
                 className="flex-1"
                 onClick={handleMessage}
               >
-                <IconMessage className="h-4 w-4 mr-1" />
+                <IconMessage className="h-5 w-5 mr-2" />
                 Message
               </Button>
               <Button 
                 variant={isInBasket ? "default" : "outline"} 
-                size="sm"
+                size="default"
                 onClick={handleQuote}
                 disabled={isInBasket}
               >
-                <IconPlus className="h-4 w-4" />
+                <IconPlus className="h-5 w-5" />
               </Button>
             </>
           )}

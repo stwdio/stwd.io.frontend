@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/lib/auth/auth-context"
 import { IconBuilding, IconLogout, IconMessage, IconSettings, IconUser, IconList, IconDashboard } from "@tabler/icons-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 interface SiteHeaderProps {
@@ -22,6 +22,7 @@ interface SiteHeaderProps {
 export function SiteHeader({ className }: SiteHeaderProps) {
   const { user, profile, professionalRoles, signOut } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   const isAuthenticated = !!user
 
   const handleSignOut = async () => {
@@ -47,12 +48,16 @@ export function SiteHeader({ className }: SiteHeaderProps) {
 
   return (
     <header className={cn(
-      "flex h-14 shrink-0 items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40",
+      "flex h-16 lg:h-20 shrink-0 items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40",
       className
     )}>
-      <div className="flex w-full items-center justify-between px-6">
-        {/* Empty space on the left */}
-        <div />
+      <div className="flex w-full items-center justify-between px-4 sm:px-6">
+        {/* DISCOVER title on the left when on discover page */}
+        {pathname?.includes('/discover') ? (
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">DISCOVER</h1>
+        ) : (
+          <div />
+        )}
 
         {/* User profile section on the right */}
         {isAuthenticated && profile ? (

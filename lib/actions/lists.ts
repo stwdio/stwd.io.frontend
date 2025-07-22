@@ -194,7 +194,7 @@ export async function addStudioToList(
 
     revalidatePath('/lists')
     revalidatePath(`/lists/${listId}`)
-    revalidatePath('/browse')
+    revalidatePath('/discover')
     
     return { success: true }
   } catch (error) {
@@ -230,7 +230,7 @@ export async function removeStudioFromList(
 
     revalidatePath('/lists')
     revalidatePath(`/lists/${listId}`)
-    revalidatePath('/browse')
+    revalidatePath('/discover')
     
     return { success: true }
   } catch (error) {

@@ -225,6 +225,7 @@ export const isPublicRoute = (pathname: string): boolean => {
     '/auth/callback',
     '/auth/signup', 
     '/browse',
+    '/discover',
     '/studios',
     '/profiles',
   ]
@@ -239,12 +240,12 @@ export const isPublicRoute = (pathname: string): boolean => {
 export const getDefaultDashboard = (role: string): string => {
   switch (role) {
     case 'creator':
-      return '/browse'
+      return '/discover'
     case 'owner':
       return '/profile/dashboard'
     case 'admin':
       return '/profile/dashboard'
     default:
-      return '/browse'
+      return '/discover'
   }
 }

@@ -2,34 +2,17 @@
 
 import { ThemeProvider } from "next-themes"
 import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { FloatingCartButton } from "@/components/floating-cart-button"
 import { SiteHeader } from "@/components/site-header"
-import { useAuth } from "@/lib/auth/auth-context"
 import { AuthModal } from "@/components/auth/auth-modal"
 import { useAuthModal } from "@/lib/hooks/use-auth-modal"
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, profile } = useAuth()
   const authModal = useAuthModal()
-  const [isLargeScreen, setIsLargeScreen] = useState(false)
   
-  // Check if screen is 1080p (1920px) or larger for sidebar
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsLargeScreen(window.innerWidth >= 1920)
-    }
-    
-    checkScreenSize()
-    window.addEventListener('resize', checkScreenSize)
-    return () => window.removeEventListener('resize', checkScreenSize)
-  }, [])
-  
-  // Pages that should NOT have ANY navigation (including mobile)
-  const noNavigationRoutes = [
+  // Pages that should NOT have the header
+  const noHeaderRoutes = [
     '/', // Landing page
     '/auth/login', // Authentication pages
     '/auth/callback',
@@ -37,17 +20,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     '/onboarding', // Onboarding flow
   ]
   
-  // Pages that should have mobile navigation but not desktop sidebar
-  const mobileOnlyRoutes = [
-    '/browse',
-    '/lists',
-    '/dashboard',
-    '/profile',
-    '/studios'
-  ]
-  
-  const shouldShowNavigation = !noNavigationRoutes.includes(pathname)
-  const shouldShowDesktopSidebar = shouldShowNavigation && !noNavigationRoutes.includes(pathname)
+  const shouldShowHeader = !noHeaderRoutes.includes(pathname)
+  const shouldShowCartButton = pathname.startsWith('/discover') || pathname.startsWith('/lists')
 
   return (
     <ThemeProvider 
@@ -56,39 +30,19 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       enableSystem={true}
       disableTransitionOnChange
     >
-      <div className="h-full flex flex-col">
-        {shouldShowDesktopSidebar ? (
-          <SidebarProvider
-            defaultOpen={isLargeScreen}
-            className="h-full"
-            style={
-              {
-                "--sidebar-width": "calc(var(--spacing) * 72)",
-                "--header-height": "calc(var(--spacing) * 12)",
-              } as React.CSSProperties
-            }
-          >
-            {/* Responsive Sidebar */}
-            <AppSidebar variant="inset" />
-            <SidebarInset>
-              <div className="flex flex-1 flex-col min-h-0">
-                <SiteHeader />
-                <div className="@container/main flex flex-1 flex-col min-h-0">
-                  {children}
-                </div>
-              </div>
-            </SidebarInset>
-            <FloatingCartButton />
-          </SidebarProvider>
-        ) : (
-          <div className="min-h-screen">
-            {children}
-            {/* Show floating cart button on browse and lists pages */}
-            {(pathname.startsWith('/browse') || pathname.startsWith('/lists')) && (
-              <FloatingCartButton />
-            )}
-          </div>
-        )}
+      <div className="min-h-screen">
+        {/* Minimalist header with user profile dropdown */}
+        {shouldShowHeader && <SiteHeader />}
+        
+        {/* Main content area - full width */}
+        <main>
+          {children}
+        </main>
+        
+        {/* Floating cart button for relevant pages */}
+        {shouldShowCartButton && <FloatingCartButton />}
+        
+        {/* Auth modal for guest users */}
         <AuthModal 
           open={authModal.isOpen} 
           onOpenChange={authModal.close}

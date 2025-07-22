@@ -46,9 +46,9 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ s
         {/* Back Button - Instantly rendered */}
         <div className="mb-4 md:mb-6">
           <Button variant="ghost" asChild className="mb-4">
-            <Link href="/browse">
+            <Link href="/discover">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Browse
+              Back to Discover
             </Link>
           </Button>
         </div>

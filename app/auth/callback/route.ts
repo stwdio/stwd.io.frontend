@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next = searchParams.get('next') ?? '/browse'
+  const next = searchParams.get('next') ?? '/discover'
   const code = searchParams.get('code')
 
   if (token_hash && type) {
@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerActionClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // redirect user to browse page - OnboardingGate will handle routing
-      redirect('/browse')
+      // redirect user to discover page - OnboardingGate will handle routing
+      redirect('/discover')
     }
   }
 

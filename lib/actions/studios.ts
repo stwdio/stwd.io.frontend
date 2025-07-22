@@ -184,7 +184,7 @@ export async function uploadStudioImage(
 
     revalidatePath(`/dashboard/studios/${studioId}/edit`)
     revalidatePath('/profile/dashboard')
-    revalidatePath('/browse')
+    revalidatePath('/discover')
     
     return { success: true, data: publicUrl }
   } catch (error) {
@@ -274,7 +274,7 @@ export async function deleteStudioImage(
 
     revalidatePath(`/dashboard/studios/${studioId}/edit`)
     revalidatePath('/profile/dashboard')
-    revalidatePath('/browse')
+    revalidatePath('/discover')
     
     return { success: true }
   } catch (error) {

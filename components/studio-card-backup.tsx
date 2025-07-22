@@ -2,20 +2,14 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Star, MapPin } from 'lucide-react'
-import { IconMessage, IconPlus } from '@tabler/icons-react'
 import Link from 'next/link'
 import { StudioImageWithSkeleton } from '@/components/studio-image-with-skeleton'
 import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
+import { StudioCardActions } from '@/components/studio-card-actions'
 import { ReactNode } from 'react'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
 import { formatPrice, getPriceTierSymbol } from '@/lib/constants/currencies'
-import { useAuthModal } from '@/lib/hooks/use-auth-modal'
-import { useAuth } from '@/lib/auth/auth-context'
-import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { useRouter } from 'next/navigation'
 
 interface Studio {
   id: number
@@ -92,13 +86,6 @@ export function StudioCard({
   className = '',
   priority = false
 }: StudioCardProps) {
-  const { user } = useAuth()
-  const authModal = useAuthModal()
-  const isAuthenticated = !!user
-  const router = useRouter()
-  const { addStudio, isStudioInBasket } = useQuoteBasket()
-  const isInBasket = isStudioInBasket(studio.id)
-
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
@@ -111,46 +98,6 @@ export function StudioCard({
       />
     ))
   }
-
-  const handleMessage = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (!isAuthenticated) {
-      authModal.open(
-        'Sign in to message studios',
-        'Create an account or sign in to start messaging studio owners.'
-      )
-      return
-    }
-    
-    // Navigate to messages with studio context
-    router.push(`/profile/messages?studio=${studio.id}`)
-  }
-
-  const handleQuote = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (!isAuthenticated) {
-      authModal.open(
-        'Sign in to request quotes',
-        'Create an account or sign in to request quotes from studios.'
-      )
-      return
-    }
-    
-    // Add to quote basket
-    addStudio(studio)
-  }
-
-  // Mock data for "followed by" - to be replaced with real data later
-  const mockFollowers = [
-    { id: 1, name: 'John Doe', avatar: 'user1' },
-    { id: 2, name: 'Jane Smith', avatar: 'user2' },
-    { id: 3, name: 'Mike Johnson', avatar: 'user3' },
-    { id: 4, name: 'Sarah Wilson', avatar: 'user4' },
-  ]
 
   const cardContent = (
     <Card className={`overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col ${className}`}>
@@ -238,51 +185,19 @@ export function StudioCard({
           </div>
         )}
 
-        {/* New: Followed by section */}
-        <div className="flex items-center gap-2 mb-4 pt-2 border-t">
-          <span className="text-xs text-muted-foreground">Followed by</span>
-          <div className="flex -space-x-2">
-            {mockFollowers.slice(0, 3).map((follower) => (
-              <Avatar key={follower.id} className="h-6 w-6 border-2 border-background">
-                <AvatarImage 
-                  src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${follower.avatar}&backgroundColor=ffffff&shapeColor=000000`} 
-                  alt={follower.name} 
-                />
-                <AvatarFallback className="text-xs">
-                  {follower.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {mockFollowers.length > 3 && (
-              <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">+{mockFollowers.length - 3}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* New: Action buttons */}
-        <div className="mt-auto flex gap-2">
+        {/* Actions */}
+        <div className="mt-auto">
           {customActions || (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1"
-                onClick={handleMessage}
-              >
-                <IconMessage className="h-4 w-4 mr-1" />
-                Message
-              </Button>
-              <Button 
-                variant={isInBasket ? "default" : "outline"} 
-                size="sm"
-                onClick={handleQuote}
-                disabled={isInBasket}
-              >
-                <IconPlus className="h-4 w-4" />
-              </Button>
-            </>
+            <StudioCardActions 
+              studio={studio}
+              memberships={memberships}
+              sharedProfile={sharedProfile}
+              profileLoading={profileLoading}
+              sharedProfessionalRoles={sharedProfessionalRoles}
+              sharedLists={sharedLists}
+              listsLoading={listsLoading}
+              onListsChange={onListsChange}
+            />
           )}
         </div>
       </CardContent>
@@ -299,4 +214,4 @@ export function StudioCard({
   }
 
   return cardContent
-}
+} 

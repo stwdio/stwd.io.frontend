@@ -1103,4 +1103,104 @@ return (
 
 **Key Pattern**: Let individual pages control their overflow behavior rather than enforcing it globally.
 
+### 13. ✅ **Unified Card System Pattern - CRITICAL UI CONSISTENCY** (Added February 2025)
+**Pattern**: Single generic card component with matching skeleton for consistent UI across all card types
+- ✅ **Single Source of Truth**: One GenericCard component for studios, profiles, and future card types
+- ✅ **Perfect Skeleton Match**: GenericCardSkeleton exactly mirrors loaded card structure
+- ✅ **Fixed Layout Heights**: All sections have min-heights to prevent layout shifts
+- ✅ **Consistent Loading States**: Eliminates jarring transitions between skeleton and loaded states
+
+**Card Structure Pattern**:
+```typescript
+// ✅ CORRECT: GenericCard with fixed layout
+<Card className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col">
+  {/* Image - fixed aspect ratio */}
+  <div className="aspect-video relative overflow-hidden rounded-t-lg bg-muted">
+    <Image fill className="object-cover" />
+  </div>
+  
+  <CardContent className="p-5 flex flex-col flex-1">
+    {/* Header - fixed height for subtitle */}
+    <div className="flex justify-between items-start mb-3">
+      <div className="flex-1">
+        <h3 className="font-semibold text-xl truncate">{title}</h3>
+        <div className="h-5 mt-1"> {/* Fixed height container */}
+          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+        </div>
+      </div>
+      <div className="text-lg text-muted-foreground">{priceTier || ''}</div>
+    </div>
+    
+    {/* All sections with min-heights */}
+    <div className="flex items-center mb-3 min-h-[24px]">{/* Location */}</div>
+    <div className="flex items-center mb-4 min-h-[24px]">{/* Rating */}</div>
+    <div className="mb-4 flex-1 min-h-[72px]">{/* Description */}</div>
+    <div className="mb-4 min-h-[24px]">{/* Additional content */}</div>
+    <div className="flex flex-wrap gap-2 mb-4 min-h-[32px]">{/* Tags */}</div>
+    <div className="flex items-center gap-3 mb-4 min-h-[40px]">{/* Followed by */}</div>
+    
+    {/* Actions always at bottom */}
+    <div className="mt-auto flex gap-3">{/* Buttons */}</div>
+  </CardContent>
+</Card>
+```
+
+**Skeleton Matching Pattern**:
+```typescript
+// ✅ CRITICAL: Skeleton must exactly match GenericCard structure
+export function GenericCardSkeleton() {
+  return (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow p-0 gap-0 cursor-pointer h-full flex flex-col">
+      {/* Exact same structure as GenericCard */}
+      <div className="aspect-video relative overflow-hidden rounded-t-lg bg-muted">
+        <Skeleton className="w-full h-full" />
+      </div>
+      
+      <CardContent className="p-5 flex flex-col flex-1">
+        {/* All sections match exactly with same heights and spacing */}
+        {/* CRITICAL: Use same min-heights as GenericCard */}
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+**Implementation Principles**:
+1. **Fixed Heights Over Dynamic**: Use min-heights on all sections to prevent layout shifts
+2. **Skeleton Precision**: Every class, spacing, and container must match exactly
+3. **No Conditional Heights**: Card height remains constant whether content exists or not
+4. **Consistent Spacing**: Use exact same margins/padding in skeleton and loaded state
+5. **Single Component**: All card types use GenericCard - no separate studio/profile cards
+
+**Common Mistakes to Avoid**:
+- ❌ Creating separate card components for different types
+- ❌ Omitting sections in skeleton that might be empty in loaded state
+- ❌ Using different heights or spacing between skeleton and loaded card
+- ❌ Allowing card height to change based on content presence
+- ❌ Having multiple skeleton components for different card types
+
+**Hydration Error Prevention**:
+```typescript
+// ❌ WRONG: Different min-heights cause hydration errors
+// Server: min-h-[28px]
+// Client: min-h-[32px]
+
+// ✅ CORRECT: Ensure all components use same values
+// Both skeleton and card: min-h-[32px]
+```
+
+**Benefits of Unified Card System**:
+- **Consistency**: All cards look and behave identically
+- **Maintainability**: Single component to update and test
+- **Performance**: No layout shifts or flashing during load
+- **User Experience**: Smooth transitions between loading and loaded states
+- **Developer Experience**: Clear pattern for adding new card types
+
+**Testing Checklist**:
+- [ ] Skeleton and loaded card have identical heights
+- [ ] No layout shift when transitioning from skeleton to loaded
+- [ ] All card types (studio, profile, etc.) use GenericCard
+- [ ] Min-heights prevent content from changing card size
+- [ ] Hydration errors resolved (server/client render match)
+
 **Last Updated**: February 2025 

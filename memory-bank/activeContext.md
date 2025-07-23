@@ -336,3 +336,44 @@ All 8 implementation plans have been created in `/implementation-plans/to-do/`:
 - Fixed profile creation trigger column name mismatch (role → system_role)
 - Fixed onboarding page profile refresh issue
 - Enforced single role per user (changed from multi-role to single role selection)
+
+## Recent Work Session (February 2025)
+
+### ✅ Chat-Centric UI Redesign - COMPLETED (February 2025)
+- **Status**: ✅ **COMPLETED** - Implemented new DISCOVER | CONNECT navigation design
+- **Major Changes**:
+  - Replaced stwd.io logo with "DISCOVER | CONNECT" text in header for discover/chat routes
+  - Made header navigation interactive with bold/underline for active sections
+  - Created unified section navigation component for seamless transitions
+  - Implemented sub-navigation: STUDIOS | PEOPLE for DISCOVER, CHAT | QUOTES | PROFILE for CONNECT
+  - Fixed navigation header shifting issue using layout groups
+  - Updated UI to match provided mockup with proper alignment and styling
+- **Files Modified**:
+  - `/components/site-header.tsx` - Added conditional DISCOVER | CONNECT display
+  - `/components/discover/section-navigation.tsx` - Unified navigation component
+  - `/app/(discover)/layout.tsx` - Layout group for persistent navigation
+  - `/components/discover/discover-page-content.tsx` - Updated search and filter placement
+- **Result**: Clean, modern navigation with seamless transitions between sections
+
+### ✅ Unified Card System Implementation - COMPLETED (February 2025)
+- **Status**: ✅ **COMPLETED** - Created single card system for all content types
+- **Major Changes**:
+  - Created GenericCard component used by both studio and profile cards
+  - Implemented GenericCardSkeleton that exactly matches loaded card structure
+  - Fixed layout shifts by adding min-heights to all card sections
+  - Resolved hydration errors by ensuring consistent heights
+  - Updated profile cards to use video aspect ratio matching studio cards
+  - Removed separate skeleton components in favor of unified skeleton
+- **Implementation Details**:
+  - All card sections have fixed min-heights to prevent content-based resizing
+  - Skeleton exactly mirrors card structure including all spacing and containers
+  - Profile avatars now fill entire image area like studio images
+  - Consistent padding and margins across all card states
+- **Files Modified**:
+  - `/components/generic-card.tsx` - Added min-heights to all sections
+  - `/components/skeletons/generic-card-skeleton.tsx` - Created unified skeleton
+  - `/components/profile-card.tsx` - Updated to use video aspect ratio
+  - `/components/browse-studios-content.tsx` - Using GenericCardSkeleton
+  - `/components/discover/profiles-grid.tsx` - Using GenericCardSkeleton
+- **Result**: Consistent card heights with no layout shifts during loading
+- **Memory Bank Updated**: Added comprehensive documentation in systemPatterns.md section 13

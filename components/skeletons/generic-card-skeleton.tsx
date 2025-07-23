@@ -15,27 +15,29 @@ export function GenericCardSkeleton({
         <Skeleton className="w-full h-full" />
       </div>
       
-      <CardContent className="p-5 flex flex-col flex-1">
+      <CardContent className="p-4 flex flex-col flex-1">
         {/* Header with title and price - exactly matching GenericCard */}
-        <div className="flex justify-between items-start mb-3">
+        <div className="flex justify-between items-start mb-2">
           <div className="flex-1">
-            <Skeleton className="h-6 w-32" /> {/* title with text-xl height */}
-            <div className="h-5 mt-1"> {/* Fixed height container for subtitle */}
-              <Skeleton className="h-4 w-24" />
+            <div className="h-[1.75rem]"> {/* Exact height for text-lg line-height */}
+              <Skeleton className="h-5 w-32" />
+            </div>
+            <div className="h-4 mt-0.5"> {/* Fixed height container for subtitle */}
+              <Skeleton className="h-3 w-24" />
             </div>
           </div>
-          <div className="text-lg text-muted-foreground">
+          <div className="h-[1.75rem]"> {/* Match text-lg container */}
             <Skeleton className="h-5 w-8" />
           </div>
         </div>
         
         {/* Location - exactly matching GenericCard */}
-        <div className="flex items-center mb-3 min-h-[24px]">
+        <div className="flex items-center mb-2 min-h-[20px]">
           <Skeleton className="h-4 w-32" />
         </div>
 
         {/* Rating - exactly matching GenericCard */}
-        <div className="flex items-center mb-4 min-h-[24px]">
+        <div className="flex items-center mb-3 min-h-[20px]">
           <div className="flex">
             {Array.from({ length: 5 }, (_, i) => (
               <Skeleton key={i} className="h-4 w-4 mr-0.5" />
@@ -45,31 +47,30 @@ export function GenericCardSkeleton({
         </div>
 
         {/* Description - exactly matching GenericCard */}
-        <div className="mb-4 flex-1 min-h-[72px]">
-          <Skeleton className="h-4 w-full mb-1" />
-          <Skeleton className="h-4 w-full mb-1" />
+        <div className="mb-3 flex-1 min-h-[48px]">
+          <Skeleton className="h-4 w-full mb-1.5" />
           <Skeleton className="h-4 w-3/4" />
         </div>
 
         {/* Notes section would go here if visible - skipping as it's conditional */}
 
         {/* Additional content slot - exactly matching GenericCard */}
-        <div className="mb-4 min-h-[24px]">
+        <div className="mb-3 min-h-[20px]">
           {/* Empty - additionalContent is optional */}
         </div>
 
         {/* Tags - exactly matching GenericCard */}
-        <div className="flex flex-wrap gap-2 mb-4 min-h-[32px]">
-          <Skeleton className="h-6 w-16 rounded-full" />
-          <Skeleton className="h-6 w-20 rounded-full" />
+        <div className="flex flex-wrap gap-2 mb-3 min-h-[28px]">
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-20 rounded-full" />
         </div>
 
         {/* Followed by section - exactly matching GenericCard */}
-        <div className="flex items-center gap-3 mb-4 min-h-[40px]">
+        <div className="flex items-center gap-2 mb-3 min-h-[32px]">
           <Skeleton className="h-4 w-20" />
           <div className="flex -space-x-2">
             {Array.from({ length: 3 }, (_, i) => (
-              <Skeleton key={i} className="h-8 w-8 rounded-full border-2 border-background" />
+              <Skeleton key={i} className="h-6 w-6 rounded-full border-2 border-background" />
             ))}
           </div>
           <Skeleton className="h-4 w-6" />
@@ -77,8 +78,8 @@ export function GenericCardSkeleton({
 
         {/* Action buttons - exactly matching GenericCard */}
         <div className="mt-auto flex gap-3">
-          <Skeleton className="h-10 flex-1 rounded-md" />
-          <Skeleton className="h-10 flex-1 rounded-md" />
+          <Skeleton className="h-9 flex-1 rounded-md" />
+          <Skeleton className="h-9 flex-1 rounded-md" />
         </div>
       </CardContent>
     </Card>

@@ -137,34 +137,36 @@ export function GenericCard({
         )}
       </div>
       
-      <CardContent className="p-5 flex flex-col flex-1">
+      <CardContent className="p-4 flex flex-col flex-1">
         {/* Header with title and price */}
-        <div className="flex justify-between items-start mb-3">
+        <div className="flex justify-between items-start mb-2">
           <div className="flex-1">
-            <h3 className="font-semibold text-xl truncate">{title}</h3>
-            <div className="h-5 mt-1">
+            <div className="h-[1.75rem]"> {/* Fixed height for title */}
+              <h3 className="font-semibold text-lg truncate">{title}</h3>
+            </div>
+            <div className="h-4 mt-0.5">
               {subtitle && (
                 <p className="text-sm text-muted-foreground">{subtitle}</p>
               )}
             </div>
           </div>
-          <div className="text-lg text-muted-foreground">
-            {priceTier || ''}
+          <div className="h-[1.75rem]"> {/* Fixed height for price */}
+            <div className="text-lg text-muted-foreground">{priceTier || ''}</div>
           </div>
         </div>
         
         {/* Location */}
-        <div className="flex items-center mb-3 min-h-[24px]">
+        <div className="flex items-center mb-2 min-h-[20px]">
           {location && (
             <>
               <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
-              <span className="text-base text-muted-foreground">{location}</span>
+              <span className="text-sm text-muted-foreground">{location}</span>
             </>
           )}
         </div>
 
         {/* Rating */}
-        <div className="flex items-center mb-4 min-h-[24px]">
+        <div className="flex items-center mb-3 min-h-[20px]">
           {rating !== undefined && (
             <>
               <div className="flex">{renderStars(rating)}</div>
@@ -176,9 +178,9 @@ export function GenericCard({
         </div>
 
         {/* Description */}
-        <div className="mb-4 flex-1 min-h-[72px]">
+        <div className="mb-3 flex-1 min-h-[48px]">
           {description && (
-            <p className="text-base text-muted-foreground line-clamp-3">
+            <p className="text-sm text-muted-foreground line-clamp-2">
               {description}
             </p>
           )}
@@ -193,21 +195,21 @@ export function GenericCard({
         )}
 
         {/* Additional content slot */}
-        <div className="mb-4 min-h-[24px]">
+        <div className="mb-3 min-h-[20px]">
           {additionalContent}
         </div>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-2 mb-4 min-h-[32px]">
+        <div className="flex flex-wrap gap-2 mb-3 min-h-[28px]">
           {tags.length > 0 && (
             <>
               {tags.slice(0, maxTags).map((tag, index) => (
-                <Badge key={index} variant="secondary" className="text-sm px-3 py-1">
+                <Badge key={index} variant="secondary" className="text-xs px-2 py-0.5">
                   {tag}
                 </Badge>
               ))}
               {tags.length > maxTags && (
-                <Badge variant="secondary" className="text-sm px-3 py-1">
+                <Badge variant="secondary" className="text-xs px-2 py-0.5">
                   +{tags.length - maxTags} more
                 </Badge>
               )}
@@ -216,13 +218,13 @@ export function GenericCard({
         </div>
 
         {/* Followed by section */}
-        <div className="flex items-center gap-3 mb-4 min-h-[40px]">
+        <div className="flex items-center gap-2 mb-3 min-h-[32px]">
           {followedBy.length > 0 && (
             <>
               <span className="text-sm text-muted-foreground">Followed by</span>
               <div className="flex -space-x-2">
                 {followedBy.slice(0, 3).map((follower) => (
-                  <Avatar key={follower.id} className="h-8 w-8 border-2 border-background">
+                  <Avatar key={follower.id} className="h-6 w-6 border-2 border-background">
                     <AvatarImage 
                       src={follower.avatar} 
                       alt={follower.name} 
@@ -233,7 +235,7 @@ export function GenericCard({
                   </Avatar>
                 ))}
                 {followedBy.length > 3 && (
-                  <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                  <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
                     <span className="text-xs text-muted-foreground">+{followedBy.length - 3}</span>
                   </div>
                 )}

@@ -33,6 +33,7 @@ import {
   IconChevronDown
 } from '@tabler/icons-react'
 import { MobileStudioCard, MobileInquiryCard } from '@/components/mobile-studio-card'
+import { getPriceTierSymbol } from '@/lib/constants/currencies'
 
 interface Studio {
   id: number
@@ -40,6 +41,7 @@ interface Studio {
   description: string
   location: string
   hourly_rate: number
+  price_tier?: number
   published: boolean
   verification_status: string
   created_at: string
@@ -96,7 +98,7 @@ interface Profile {
   role: string
 }
 
-type SortField = 'name' | 'location' | 'hourly_rate' | 'published' | 'verification_status' | 'created_at'
+type SortField = 'name' | 'location' | 'price_tier' | 'published' | 'verification_status' | 'created_at'
 type SortDirection = 'asc' | 'desc'
 
 export function OwnerDashboard() {
@@ -141,9 +143,9 @@ export function OwnerDashboard() {
           aValue = aValue?.toLowerCase() || ''
           bValue = bValue?.toLowerCase() || ''
           break
-        case 'hourly_rate':
-          aValue = Number(aValue) || 0
-          bValue = Number(bValue) || 0
+        case 'price_tier':
+          aValue = Number(aValue) || 1
+          bValue = Number(bValue) || 1
           break
         case 'published':
           aValue = aValue ? 1 : 0
@@ -510,11 +512,11 @@ export function OwnerDashboard() {
                         </TableHead>
                         <TableHead 
                           className="cursor-pointer hover:bg-muted/50 select-none"
-                          onClick={() => handleSort('hourly_rate')}
+                          onClick={() => handleSort('price_tier')}
                         >
                           <div className="flex items-center gap-2">
-                            Rate/Hour
-                            {getSortIcon('hourly_rate')}
+                            Price
+                            {getSortIcon('price_tier')}
                           </div>
                         </TableHead>
                         <TableHead 
@@ -564,7 +566,7 @@ export function OwnerDashboard() {
                             </div>
                           </TableCell>
                           <TableCell>{studio.location}</TableCell>
-                          <TableCell>${studio.hourly_rate}</TableCell>
+                          <TableCell>{getPriceTierSymbol(studio.price_tier || 1)}</TableCell>
                           <TableCell>
                             <Badge variant={studio.published ? "default" : "secondary"}>
                               {studio.published ? "Published" : "Draft"}

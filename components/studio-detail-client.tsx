@@ -153,7 +153,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
           onClick={() => authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add to Quote
+          Quote
         </Button>
       </>
     )
@@ -173,7 +173,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
     )
   }
 
-  // For creators - show contact and either "View Inquiry" or "Add to Quote"
+  // For creators - show contact and either "View Inquiry" or "Quote"
   return (
     <>
       <Button className="w-full" size="lg">
@@ -198,7 +198,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
           disabled={isInBasket}
         >
           <Plus className="h-4 w-4 mr-2" />
-          {isInBasket ? 'In Quote Basket' : 'Add to Quote'}
+          {isInBasket ? 'In Quote Basket' : 'Quote'}
         </Button>
       )}
     </>

@@ -208,7 +208,7 @@ export function DiscoverPageContent() {
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 overflow-hidden px-4 py-3 sm:px-6 sm:py-4">
+      <div className="flex-1 overflow-auto px-4 py-3 sm:px-6 sm:py-4">
         {activeView === 'studios' ? (
           <BrowseStudiosContent 
             filters={filters}

@@ -15,6 +15,7 @@ import {
   IconCurrencyDollar,
   IconCalendar
 } from '@tabler/icons-react'
+import { getPriceTierSymbol } from '@/lib/constants/currencies'
 
 interface Studio {
   id: number
@@ -22,6 +23,7 @@ interface Studio {
   description: string
   location: string
   hourly_rate: number
+  price_tier?: number
   published: boolean
   verification_status: string
   created_at: string
@@ -130,7 +132,7 @@ export function MobileStudioCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 text-sm font-medium">
             <IconCurrencyDollar className="h-3 w-3 text-muted-foreground" />
-            <span>${studio.hourly_rate}/hr</span>
+            <span>{getPriceTierSymbol(studio.price_tier || 1)}</span>
           </div>
           
           <div className="flex items-center gap-2">

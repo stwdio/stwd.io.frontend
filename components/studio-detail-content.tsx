@@ -11,6 +11,7 @@ import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioDetailActions } from "@/components/studio-detail-client"
 import { StudioReviews } from "@/components/studio-reviews"
 import { getStudioPrimaryImageUrl, getTransformedImageUrl } from "@/lib/utils"
+import { getPriceTierSymbol } from "@/lib/constants/currencies"
 
 interface Studio {
   id: number
@@ -18,6 +19,7 @@ interface Studio {
   description: string
   location: string
   hourly_rate: number
+  price_tier?: number
   gear: any
   owner_id: number
   created_at: string
@@ -166,9 +168,8 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating 
               <CardContent className="p-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xl font-bold">${studio.hourly_rate}</div>
-                      <div className="text-xs text-muted-foreground">per hour</div>
+                    <div className="text-xl font-bold">
+                      {getPriceTierSymbol(studio.price_tier || 1)}
                     </div>
                     <div className="flex gap-2">
                       <Badge variant={studio.published ? "default" : "secondary"} className="text-xs">
@@ -245,8 +246,9 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating 
             <CardContent className="p-4 md:p-6">
               <div className="space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold">${studio.hourly_rate}</div>
-                  <div className="text-sm text-muted-foreground">per hour</div>
+                  <div className="text-2xl md:text-3xl font-bold">
+                    {getPriceTierSymbol(studio.price_tier || 1)}
+                  </div>
                 </div>
                 
                 <div className="space-y-2">

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Plus, Edit, BarChart3, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { getPriceTierSymbol } from '@/lib/constants/currencies'
 
 interface WorkspaceStudiosProps {
   userId: string
@@ -49,7 +50,7 @@ export async function WorkspaceStudios({ userId }: WorkspaceStudiosProps) {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                  <span>{studio.currency} {studio.daily_rate || studio.hourly_rate * 8}/day</span>
+                  <span>{getPriceTierSymbol(studio.price_tier || 1)}</span>
                   <span className={cn(
                     "px-2 py-1 rounded-full text-xs",
                     studio.published 

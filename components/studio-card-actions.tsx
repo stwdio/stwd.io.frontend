@@ -192,7 +192,7 @@ export function StudioCardActions({
     return null
   }
 
-  // For creators - show list, and either "View Conversation" or "Add to Quote" (two buttons)
+  // For creators - show list, and either "View Conversation" or "Quote" (two buttons)
   return (
     <div className="flex gap-1 h-8">
       <AddToListDropdown

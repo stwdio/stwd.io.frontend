@@ -26,6 +26,7 @@ import {
   IconPlus,
   IconBuilding
 } from '@tabler/icons-react'
+import { getPriceTierSymbol } from '@/lib/constants/currencies'
 
 interface Studio {
   id: number
@@ -44,6 +45,7 @@ interface Studio {
     username: string
   }
   hourly_rate?: number
+  price_tier?: number
   photo_urls?: string[]
 }
 
@@ -309,7 +311,7 @@ export function AdminDashboard() {
                         />
                       </TableCell>
                       <TableCell>
-                        {studio.hourly_rate ? `$${studio.hourly_rate}` : 'Not set'}
+                        {getPriceTierSymbol(studio.price_tier || 1)}
                       </TableCell>
                       <TableCell>
                         {new Date(studio.created_at).toLocaleDateString()}

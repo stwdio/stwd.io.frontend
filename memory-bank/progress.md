@@ -214,7 +214,7 @@
   - Admins have same permissions as owners across all studios
   - "Edit Studio" button shown instead of "Contact Studio" for owned studios
 - **✅ Creator UI Logic**: Full quote basket and contact functionality
-  - "Add to Quote" button for studios they don't own
+  - "Quote" button for studios they don't own
   - "Contact Studio" option available
   - Quote basket functionality preserved
 - **✅ Authentication States**: Proper fallback handling
@@ -641,7 +641,7 @@ The platform now has an enterprise-grade foundation with comprehensive security 
   - Modal integrated into root `ClientLayout` for app-wide availability
 - **✅ Guest-Friendly UI**: Conditional rendering based on auth status
   - `StudioCardActions` shows auth prompts instead of disabled buttons for guests
-  - `StudioDetailActions` triggers auth modal for "Contact Studio" and "Add to Quote"
+  - `StudioDetailActions` triggers auth modal for "Contact Studio" and "Quote"
   - Navigation sidebar shows "Sign In" and "Sign Up" buttons for guests
   - "Browse Studios" navigation available to all users
 - **✅ Smart Redirect System**: Return users to original page after authentication

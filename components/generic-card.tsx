@@ -52,6 +52,8 @@ export interface GenericCardProps {
     label: string
     icon?: ReactNode
     onClick: (e: React.MouseEvent) => void
+    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+    disabled?: boolean
   }
   customActions?: ReactNode
   
@@ -148,21 +150,9 @@ export function GenericCard({
               <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
             )}
           </div>
-          {(priceTier || price) && (
-            <div className="flex items-start gap-3">
-              {priceTier && (
-                <div className="text-center">
-                  <p className="text-lg text-muted-foreground">{priceTier}</p>
-                </div>
-              )}
-              {price && (
-                <div className="text-right">
-                  <p className="font-bold text-xl">{price}</p>
-                  {priceLabel && (
-                    <p className="text-sm text-muted-foreground">{priceLabel}</p>
-                  )}
-                </div>
-              )}
+          {priceTier && (
+            <div className="text-lg text-muted-foreground">
+              {priceTier}
             </div>
           )}
         </div>
@@ -262,10 +252,11 @@ export function GenericCard({
                 )}
                 {secondaryAction && (
                   <Button 
-                    variant="outline" 
+                    variant={secondaryAction.variant || "outline"} 
                     size="default"
                     onClick={secondaryAction.onClick}
-                    className={primaryAction ? '' : 'flex-1'}
+                    className="flex-1"
+                    disabled={secondaryAction.disabled}
                   >
                     {secondaryAction.icon}
                     {secondaryAction.label}

@@ -137,10 +137,6 @@ export function StudioCardNew({
     ? studio.amenities.map(amenity => typeof amenity === 'string' ? amenity : amenity.name)
     : []
 
-  const price = studio.daily_rate 
-    ? formatPrice(studio.daily_rate, studio.currency || 'USD')
-    : undefined
-
   const additionalContent = (
     <StudioListMembershipIndicators 
       studioId={studio.id.toString()} 
@@ -161,9 +157,7 @@ export function StudioCardNew({
       location={studio.location}
       rating={studio.average_rating}
       reviewCount={studio.review_count}
-      price={price}
-      priceLabel={price ? 'per day' : undefined}
-      priceTier={studio.price_tier ? getPriceTierSymbol(studio.price_tier) : undefined}
+      priceTier={studio.price_tier ? getPriceTierSymbol(studio.price_tier) : '$'}
       tags={amenityTags}
       followedBy={mockFollowers}
       notes={showNotes ? studio.notes : undefined}
@@ -177,9 +171,11 @@ export function StudioCardNew({
         onClick: handleMessage
       }}
       secondaryAction={customActions ? undefined : {
-        label: '',
-        icon: <IconPlus className="h-5 w-5" />,
-        onClick: handleQuote
+        label: isInBasket ? 'In Quote Basket' : 'Quote',
+        icon: <IconPlus className="h-5 w-5 mr-2" />,
+        onClick: isInBasket ? (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); } : handleQuote,
+        variant: isInBasket ? 'secondary' : 'default',
+        disabled: isInBasket
       }}
     />
   )

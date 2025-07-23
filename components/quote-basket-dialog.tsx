@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { X, MapPin, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { getPriceTierSymbol } from '@/lib/constants/currencies'
 
 export function QuoteBasketDialog() {
   const { studios, isOpen, toggleBasket, removeStudio, clearBasket, submitInquiry } = useQuoteBasket()
@@ -131,7 +132,7 @@ export function QuoteBasketDialog() {
                             </div>
                             <div className="flex items-center gap-1">
                               <DollarSign className="h-3 w-3" />
-                              ${studio.hourly_rate}/hr
+                              {getPriceTierSymbol(studio.price_tier || 1)}
                             </div>
                           </div>
                           <Badge variant="default" className="mt-2">

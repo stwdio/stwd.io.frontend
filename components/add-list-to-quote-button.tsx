@@ -50,8 +50,8 @@ export function AddListToQuoteButton({ studios }: AddListToQuoteButtonProps) {
   return (
     <Button onClick={handleAddToQuote} size="sm" className="gap-2 md:h-10 md:px-4 md:py-2">
       <Quote className="h-4 w-4" />
-      <span className="hidden sm:inline">Add To Quote Basket</span>
-      <span className="sm:hidden">Add To Quote Basket</span>
+      <span className="hidden sm:inline">Quote Basket</span>
+      <span className="sm:hidden">Quote Basket</span>
     </Button>
   )
 } 

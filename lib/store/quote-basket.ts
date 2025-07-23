@@ -9,6 +9,7 @@ interface Studio {
   description: string
   location: string
   hourly_rate: number
+  price_tier?: number
   verification_status: string
   photo_urls?: string[]
 }

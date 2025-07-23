@@ -32,7 +32,7 @@ export default async function StudioDetailPage({ params }: { params: Promise<{ s
       .single()
     
     if (studioData?.slug) {
-      redirect(`/studios/${studioData.slug}`)
+      redirect(`/discover/studios/${studioData.slug}`)
     }
     notFound()
   }

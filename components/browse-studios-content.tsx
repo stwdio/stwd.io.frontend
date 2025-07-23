@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo } from "react"
-import { StudioCard } from "@/components/studio-card"
+import { StudioCardNew as StudioCard } from "@/components/studio-card-new"
 import { StudioCardSkeleton } from "@/components/skeletons"
 import { useAuth } from "@/lib/auth/auth-context"
 import { GenericGrid } from "@/components/discover/generic-grid"

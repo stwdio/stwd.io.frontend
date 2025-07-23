@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { createServerComponentClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
-import { ProfileContent } from './_components/profile-content'
+import { ProfileWithLayout } from './_components/profile-with-layout'
 import { PublicProfileSkeleton } from './_components/profile-skeleton'
 import type { Database } from '@/lib/types/database'
 
@@ -73,10 +73,10 @@ async function ProfileDataWrapper({ username }: { username: string }) {
 
   // Type assertion for the profile with roles
   const profileWithRoles = profile as Profile & {
-    profile_roles: { role: Role }[]
+    profile_roles?: { role: Role }[]
   }
 
-  return <ProfileContent profile={profileWithRoles} />
+  return <ProfileWithLayout profile={profileWithRoles} />
 }
 
 export default async function UserProfilePage({

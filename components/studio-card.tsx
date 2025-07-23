@@ -292,7 +292,7 @@ export function StudioCard({
   // Wrap with link if linkToStudio is true
   if (linkToStudio) {
     return (
-      <Link href={`/studios/${studio.slug || studio.id}`} className="block">
+      <Link href={`/discover/studios/${studio.slug || studio.id}`} className="block">
         {cardContent}
       </Link>
     )

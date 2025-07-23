@@ -188,7 +188,7 @@ export function useStudiosInfinite(filters?: {
         if (amenityError) {
           throw amenityError
         } else if (studioIds && studioIds.length > 0) {
-          const ids = studioIds.map(row => row.studio_id)
+          const ids = studioIds.map((row: { studio_id: number }) => row.studio_id)
           query = query.filter('id', 'in', `(${ids.join(',')})`)
         } else {
           // No studios match the amenity criteria - return empty result
@@ -205,7 +205,7 @@ export function useStudiosInfinite(filters?: {
         if (gearError) {
           throw gearError
         } else if (studioIds && studioIds.length > 0) {
-          const ids = studioIds.map(row => row.studio_id)
+          const ids = studioIds.map((row: { studio_id: number }) => row.studio_id)
           query = query.filter('id', 'in', `(${ids.join(',')})`)
         } else {
           // No studios match the gear criteria - return empty result

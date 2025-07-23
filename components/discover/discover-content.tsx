@@ -162,12 +162,10 @@ export function DiscoverContent() {
                 >
                   PEOPLE
                 </button>
-              </div>
-              
-              {/* People sub-navigation */}
-              {activeView === 'people' && (
-                <div className="hidden sm:flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>·</span>
+                
+                {/* People sub-navigation - directly after PEOPLE */}
+                {activeView === 'people' && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground ml-3">
                   <button
                     onClick={() => handlePeopleSubViewChange('all')}
                     className={cn(
@@ -204,9 +202,17 @@ export function DiscoverContent() {
                   >
                     Industry
                   </button>
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+                
+                <span className="text-muted-foreground mx-3">|</span>
+                <a
+                  href="/chat"
+                  className="font-medium text-muted-foreground hover:text-foreground transition-all"
+                >
+                  CHAT
+                </a>
+              </div>
             
             {/* Search bar and filter button on the right */}
             <div className="flex gap-2 flex-1 max-w-md">
@@ -289,7 +295,7 @@ export function DiscoverContent() {
           />
         ) : (
           <ProfilesGrid 
-            subView={peopleSubView}
+            category={peopleSubView}
             searchQuery={debouncedSearchQuery}
           />
         )}

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/lib/auth/auth-context"
-import { IconBuilding, IconLogout, IconMessage, IconSettings, IconUser, IconList, IconDashboard } from "@tabler/icons-react"
+import { IconBriefcase, IconHome, IconLogout, IconMessage, IconSearch, IconSettings, IconUser } from "@tabler/icons-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -43,8 +43,8 @@ export function SiteHeader({ className }: SiteHeaderProps) {
     `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
     : null)
 
-  // Check if user is a studio owner
-  const isStudioOwner = profile?.system_role === 'owner' || profile?.system_role === 'admin'
+  // Check if user is a studio owner or admin
+  const isOwnerOrAdmin = profile?.system_role === 'owner' || profile?.system_role === 'admin'
 
   return (
     <header className={cn(
@@ -52,12 +52,10 @@ export function SiteHeader({ className }: SiteHeaderProps) {
       className
     )}>
       <div className="flex w-full items-center justify-between px-4 sm:px-6">
-        {/* DISCOVER title on the left when on discover page */}
-        {pathname?.includes('/discover') ? (
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">DISCOVER</h1>
-        ) : (
-          <div />
-        )}
+        {/* Logo only */}
+        <Link href="/" className="text-xl font-bold">
+          stwd.io
+        </Link>
 
         {/* User profile section on the right */}
         {isAuthenticated && profile ? (
@@ -96,30 +94,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
               </div>
               <DropdownMenuSeparator className="sm:hidden" />
               
-              {/* Menu items in alphabetical order */}
-              {isStudioOwner && (
-                <DropdownMenuItem asChild>
-                  <Link href="/profile/dashboard" className="cursor-pointer">
-                    <IconDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              
-              <DropdownMenuItem asChild>
-                <Link href="/lists" className="cursor-pointer">
-                  <IconList className="mr-2 h-4 w-4" />
-                  Lists
-                </Link>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem asChild>
-                <Link href="/profile/messages" className="cursor-pointer">
-                  <IconMessage className="mr-2 h-4 w-4" />
-                  Messages
-                </Link>
-              </DropdownMenuItem>
-              
+              {/* Menu items */}
               <DropdownMenuItem asChild>
                 <Link href={`/profiles/${profile.username}`} className="cursor-pointer">
                   <IconUser className="mr-2 h-4 w-4" />
@@ -128,11 +103,20 @@ export function SiteHeader({ className }: SiteHeaderProps) {
               </DropdownMenuItem>
               
               <DropdownMenuItem asChild>
-                <Link href="/profile/settings" className="cursor-pointer">
+                <Link href="/settings/account" className="cursor-pointer">
                   <IconSettings className="mr-2 h-4 w-4" />
                   Settings
                 </Link>
               </DropdownMenuItem>
+              
+              {isOwnerOrAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link href="/workspace" className="cursor-pointer">
+                    <IconBriefcase className="mr-2 h-4 w-4" />
+                    Workspace
+                  </Link>
+                </DropdownMenuItem>
+              )}
               
               <DropdownMenuSeparator />
               

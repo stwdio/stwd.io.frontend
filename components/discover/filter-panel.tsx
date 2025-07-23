@@ -56,8 +56,8 @@ export function FilterPanel({
 
   // Filter amenities based on search
   const filteredAmenities = useMemo(() => {
-    if (!amenitySearch) return amenities
-    return amenities.filter(amenity =>
+    if (!amenitySearch) return amenities || []
+    return (amenities || []).filter(amenity =>
       amenity.name.toLowerCase().includes(amenitySearch.toLowerCase())
     )
   }, [amenities, amenitySearch])

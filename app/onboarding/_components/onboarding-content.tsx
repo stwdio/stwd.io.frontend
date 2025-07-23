@@ -97,12 +97,9 @@ export function OnboardingContent({ roles, profileId }: OnboardingContentProps) 
         description: "Your professional role has been set.",
       })
 
-      // Determine dashboard based on role
-      const selectedRoleData = roles.find(r => r.id === selectedRole)
-      const isStudioOwner = selectedRoleData?.slug === 'studio-owner'
-      
+      // Redirect to chat hub after onboarding
       // Force a hard navigation to refresh auth context
-      window.location.href = isStudioOwner ? '/profile/dashboard' : '/dashboard'
+      window.location.href = '/chat'
     } catch (err) {
       console.error("Unexpected error:", err)
       toast({

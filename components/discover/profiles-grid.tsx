@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ProfileCard } from '@/components/profile-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { createClient } from '@/lib/supabase/client'
-import { Database } from '@/types/supabase'
+import { Database } from '@/lib/types/database'
 import { GenericGrid } from '@/components/discover/generic-grid'
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
@@ -20,11 +20,11 @@ type Profile = Database['public']['Tables']['profiles']['Row'] & {
 type PeopleSubView = 'all' | 'artists' | 'engineers' | 'industry'
 
 interface ProfilesGridProps {
-  subView: PeopleSubView
+  category: PeopleSubView
   searchQuery?: string
 }
 
-export function ProfilesGrid({ subView, searchQuery }: ProfilesGridProps) {
+export function ProfilesGrid({ category, searchQuery }: ProfilesGridProps) {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<any>(null)
@@ -62,16 +62,17 @@ export function ProfilesGrid({ subView, searchQuery }: ProfilesGridProps) {
       // Client-side filtering by role
       let filteredData = data || []
       
-      if (subView !== 'all' && filteredData.length > 0) {
+      if (category !== 'all' && filteredData.length > 0) {
         const roleFilters: Record<string, string[]> = {
           'artists': ['musician', 'podcaster', 'voice-actor'],
           'engineers': ['engineer', 'producer'],
           'industry': ['record-label', 'other']
         }
         
-        const allowedRoles = roleFilters[subView] || []
+        const allowedRoles = roleFilters[category] || []
         filteredData = filteredData.filter(profile => 
-          profile.profile_roles?.some((pr: any) => 
+          Array.isArray(profile.profile_roles) && 
+          profile.profile_roles.some((pr: any) => 
             allowedRoles.includes(pr.role?.slug || '')
           )
         )
@@ -81,14 +82,14 @@ export function ProfilesGrid({ subView, searchQuery }: ProfilesGridProps) {
     }
     
     setLoading(false)
-  }, [subView, searchQuery, supabase])
+  }, [category, searchQuery, supabase])
 
   useEffect(() => {
     fetchProfiles()
   }, [fetchProfiles])
 
-  const renderProfile = useCallback((profile: Profile) => (
-    <ProfileCard key={profile.id} profile={profile} />
+  const renderProfile = useCallback((profile: Profile, index: number) => (
+    <ProfileCard key={profile.id} profile={profile} priority={index < 4} />
   ), [])
 
   const renderSkeleton = useCallback(() => (
@@ -103,7 +104,7 @@ export function ProfilesGrid({ subView, searchQuery }: ProfilesGridProps) {
       error={error}
       onRefresh={fetchProfiles}
       renderSkeleton={renderSkeleton}
-      emptyStateTitle={`No ${subView === 'all' ? 'people' : subView} found`}
+      emptyStateTitle={`No ${category === 'all' ? 'people' : category} found`}
       emptyStateMessage={searchQuery ? `No results matching "${searchQuery}"` : "Check back later for new profiles"}
       errorMessage="Failed to load profiles. Please try again."
       skeletonCount={8}

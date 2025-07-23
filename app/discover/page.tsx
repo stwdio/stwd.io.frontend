@@ -1,5 +1,5 @@
-import { DiscoverContent } from "@/components/discover/discover-content"
+import { DiscoverPageContent } from "@/components/discover/discover-page-content"
 
 export default function DiscoverPage() {
-  return <DiscoverContent />
+  return <DiscoverPageContent />
 }

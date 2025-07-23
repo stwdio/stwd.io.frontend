@@ -11,9 +11,11 @@ interface UnifiedLayoutProps {
   secondaryNav?: ReactNode
   // Optional action content for the right side of the nav (search, filters, etc)
   navActions?: ReactNode
+  // Optional flag to use full height without padding
+  fullHeight?: boolean
 }
 
-export function UnifiedLayout({ children, secondaryNav, navActions }: UnifiedLayoutProps) {
+export function UnifiedLayout({ children, secondaryNav, navActions, fullHeight = false }: UnifiedLayoutProps) {
   const pathname = usePathname()
   
   // Determine which main navigation to show
@@ -108,11 +110,17 @@ export function UnifiedLayout({ children, secondaryNav, navActions }: UnifiedLay
       </div>
       
       {/* Dynamic content area with consistent padding */}
-      <div className="flex-1 overflow-auto">
-        <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      {fullHeight ? (
+        <div className="flex-1 min-h-0">
           {children}
         </div>
-      </div>
+      ) : (
+        <div className="flex-1 overflow-auto">
+          <div className="w-full h-full px-4 py-3 sm:px-6 sm:py-4">
+            {children}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

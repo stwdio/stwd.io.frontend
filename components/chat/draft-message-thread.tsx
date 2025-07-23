@@ -150,7 +150,7 @@ export function DraftMessageThread({
   const getDisplayName = (profile: Profile) => {
     return profile.first_name && profile.last_name
       ? `${profile.first_name} ${profile.last_name}`
-      : profile.username
+      : profile.username || 'Unknown User'
   }
 
   const getAvatarUrl = (profile: Profile) => {
@@ -183,7 +183,7 @@ export function DraftMessageThread({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="border-b p-4 flex items-center gap-3">
+      <div className="h-[73px] border-b p-4 flex items-center gap-3">
         <Avatar className="h-10 w-10">
           <AvatarImage src={getAvatarUrl(targetProfile)} alt={getDisplayName(targetProfile)} />
           <AvatarFallback>{getDisplayName(targetProfile).charAt(0).toUpperCase()}</AvatarFallback>

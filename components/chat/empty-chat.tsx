@@ -9,7 +9,7 @@ interface EmptyChatProps {
 
 export function EmptyChat({ onNewChat }: EmptyChatProps) {
   return (
-    <div className="flex-1 flex items-center justify-center p-8">
+    <div className="h-full flex items-center justify-center p-8">
       <div className="text-center max-w-md">
         <IconMessage className="h-16 w-16 mx-auto text-muted-foreground mb-6" />
         

@@ -140,11 +140,13 @@ export function MessageThread({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="h-[73px] p-4 border-b flex items-center">
         <div className="flex items-center gap-3">
           {otherParticipants.map(participant => {
             const profile = participant.profiles
-            const displayName = `${profile.first_name} ${profile.last_name}`.trim() || profile.username
+            const displayName = profile.first_name && profile.last_name 
+              ? `${profile.first_name} ${profile.last_name}`.trim()
+              : profile.username || 'Unknown User'
             const avatarUrl = profile.avatar_url || 
               `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.id}`
             
@@ -175,7 +177,9 @@ export function MessageThread({
             const isCurrentUser = msg.sender_id === currentUserId
             const sender = participantMap.get(msg.sender_id)
             const displayName = sender 
-              ? `${sender.first_name} ${sender.last_name}`.trim() || sender.username
+              ? (sender.first_name && sender.last_name 
+                  ? `${sender.first_name} ${sender.last_name}`.trim()
+                  : sender.username || 'Unknown')
               : 'Unknown'
             const avatarUrl = sender?.avatar_url || 
               (sender ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${sender.id}` : undefined)

@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge'
 import { BrowseStudiosContent } from '@/components/browse-studios-content'
 import { ProfilesGrid } from '@/components/discover/profiles-grid'
 import { FilterPanel } from '@/components/discover/filter-panel'
-import { UnifiedLayout } from '@/components/layouts/unified-layout'
 
 type DiscoverView = 'studios' | 'people'
 type PeopleSubView = 'all' | 'artists' | 'engineers' | 'industry'
@@ -197,31 +196,43 @@ export function DiscoverPageContent() {
   )
 
   return (
-    <UnifiedLayout secondaryNav={secondaryNav} navActions={navActions}>
-      {/* Main content */}
-      {activeView === 'studios' ? (
-        <BrowseStudiosContent 
-          filters={filters}
-          searchQuery={debouncedSearchQuery}
-        />
-      ) : (
-        <ProfilesGrid 
-          category={peopleSubView}
-          searchQuery={debouncedSearchQuery}
-        />
-      )}
+    <div className="h-full flex flex-col">
+      {/* Secondary navigation and actions bar */}
+      <div className="flex-shrink-0 border-b bg-background">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-6">
+            {secondaryNav}
+          </div>
+          {navActions}
+        </div>
+      </div>
 
-      {/* Filter Panel */}
-      <FilterPanel
-        open={filterPanelOpen}
-        onOpenChange={setFilterPanelOpen}
-        filters={filters}
-        onFiltersChange={setFilters}
-        onApply={() => {
-          setFilterPanelOpen(false)
-        }}
-        type={activeView}
-      />
-    </UnifiedLayout>
+      {/* Main content area */}
+      <div className="flex-1 overflow-hidden px-4 py-3 sm:px-6 sm:py-4">
+        {activeView === 'studios' ? (
+          <BrowseStudiosContent 
+            filters={filters}
+            searchQuery={debouncedSearchQuery}
+          />
+        ) : (
+          <ProfilesGrid 
+            category={peopleSubView}
+            searchQuery={debouncedSearchQuery}
+          />
+        )}
+
+        {/* Filter Panel */}
+        <FilterPanel
+          open={filterPanelOpen}
+          onOpenChange={setFilterPanelOpen}
+          filters={filters}
+          onFiltersChange={setFilters}
+          onApply={() => {
+            setFilterPanelOpen(false)
+          }}
+          type={activeView}
+        />
+      </div>
+    </div>
   )
 }

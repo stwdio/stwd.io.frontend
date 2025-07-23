@@ -56,7 +56,9 @@ export function ConversationList({
           const otherUser = otherParticipants[0]?.profiles
           
           const displayName = otherUser
-            ? `${otherUser.first_name} ${otherUser.last_name}`.trim() || otherUser.username
+            ? (otherUser.first_name && otherUser.last_name 
+                ? `${otherUser.first_name} ${otherUser.last_name}`.trim()
+                : otherUser.username || 'Unknown User')
             : 'Unknown User'
           
           const avatarUrl = otherUser?.avatar_url || 

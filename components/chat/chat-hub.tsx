@@ -45,8 +45,9 @@ export function ChatHub({
   studioId
 }: ChatHubProps) {
   const [conversations, setConversations] = useState(initialConversations)
+  // Auto-select the first conversation if none selected
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(
-    initialSelectedConversationId || null
+    initialSelectedConversationId || (initialConversations.length > 0 ? initialConversations[0].id : null)
   )
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [draftTargetUserId, setDraftTargetUserId] = useState<string | undefined>(
@@ -207,23 +208,23 @@ export function ChatHub({
   }
 
   return (
-    <>
+    <div className="h-full">
       {/* Desktop Layout */}
-      <div className="hidden md:flex w-full">
+      <div className="hidden md:flex h-full">
         {/* Sidebar */}
-        <div className="w-80 border-r bg-muted/10">
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b">
-              <Button 
-                onClick={handleNewConversation}
-                className="w-full"
-                size="sm"
-              >
-                <IconMessage className="mr-2 h-4 w-4" />
-                New Chat
-              </Button>
-            </div>
-            
+        <div className="w-80 border-r bg-muted/10 flex flex-col">
+          <div className="h-[73px] p-4 border-b flex items-center">
+            <Button 
+              onClick={handleNewConversation}
+              className="w-full"
+              size="sm"
+            >
+              <IconMessage className="mr-2 h-4 w-4" />
+              New Chat
+            </Button>
+          </div>
+          
+          <div className="flex-1 overflow-hidden">
             <ConversationList
               conversations={conversations}
               selectedId={selectedConversationId}
@@ -234,7 +235,7 @@ export function ChatHub({
         </div>
         
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col min-w-0">
           {selectedConversation ? (
             <MessageThread
               conversation={selectedConversation}
@@ -256,9 +257,9 @@ export function ChatHub({
       </div>
       
       {/* Mobile Layout */}
-      <div className="md:hidden w-full">
+      <div className="md:hidden h-full">
         {selectedConversation || draftTargetUserId ? (
-          <div className="h-full flex flex-col">
+          <div className="flex flex-col h-full">
             <div className="p-4 border-b flex items-center gap-2">
               <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                 <SheetTrigger asChild>
@@ -268,7 +269,7 @@ export function ChatHub({
                 </SheetTrigger>
                 <SheetContent side="left" className="w-80 p-0">
                   <div className="h-full flex flex-col">
-                    <div className="p-4 border-b">
+                    <div className="h-[73px] p-4 border-b flex items-center">
                       <Button 
                         onClick={handleNewConversation}
                         className="w-full"
@@ -279,12 +280,14 @@ export function ChatHub({
                       </Button>
                     </div>
                     
-                    <ConversationList
-                      conversations={conversations}
-                      selectedId={selectedConversationId}
-                      onSelect={handleConversationSelect}
-                      currentUserId={userId}
-                    />
+                    <div className="flex-1 overflow-hidden">
+                      <ConversationList
+                        conversations={conversations}
+                        selectedId={selectedConversationId}
+                        onSelect={handleConversationSelect}
+                        currentUserId={userId}
+                      />
+                    </div>
                   </div>
                 </SheetContent>
               </Sheet>
@@ -294,21 +297,23 @@ export function ChatHub({
               </h2>
             </div>
             
-            {selectedConversation ? (
-              <MessageThread
-                conversation={selectedConversation}
-                currentUserId={userId}
-                currentProfile={profile}
-              />
-            ) : (
-              <DraftMessageThread
-                currentUserId={userId}
-                currentProfile={profile}
-                targetUserId={draftTargetUserId!}
-                studioId={draftStudioId}
-                onConversationCreated={handleConversationCreated}
-              />
-            )}
+            <div className="flex-1 min-h-0">
+              {selectedConversation ? (
+                <MessageThread
+                  conversation={selectedConversation}
+                  currentUserId={userId}
+                  currentProfile={profile}
+                />
+              ) : (
+                <DraftMessageThread
+                  currentUserId={userId}
+                  currentProfile={profile}
+                  targetUserId={draftTargetUserId!}
+                  studioId={draftStudioId}
+                  onConversationCreated={handleConversationCreated}
+                />
+              )}
+            </div>
           </div>
         ) : (
           <div className="h-full flex flex-col">
@@ -352,6 +357,6 @@ export function ChatHub({
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }

@@ -134,6 +134,22 @@
   - `components/studio-card.tsx` - Enhanced card sizing and spacing
 - **Result**: Cards now better utilize available space with improved readability
 
+### ✅ Layout Group Implementation for Navigation Stability - COMPLETED (January 31, 2025)
+- **Status**: ✅ **COMPLETED** - Fixed navigation header shifting when switching tabs
+- **Issue**: Navigation header would shift up/down when switching between STUDIOS/PEOPLE and CHAT
+- **Solution**: Implemented Next.js layout groups to keep navigation persistent
+- **Changes Made**:
+  - Created `(discover)` layout group to wrap discover and chat pages
+  - Moved navigation to persistent layout component
+  - Navigation now stays static when switching between tabs
+  - Cleaned up duplicate page directories
+- **Files Modified**:
+  - Created `/app/(discover)/layout.tsx` with DiscoverNavigation
+  - Created `/components/discover/discover-navigation.tsx`
+  - Moved pages to `(discover)` group directory
+  - Removed old `/app/discover` and `/app/chat` directories
+- **Result**: Navigation header remains stable without any shifting
+
 ### ✅ Unified "Discover Hub" Refactor - COMPLETED (January 31, 2025)
 - **Status**: ✅ **COMPLETED** - Transformed app from sidebar-based to header-only navigation
 - **Major Changes**:

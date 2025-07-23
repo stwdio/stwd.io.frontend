@@ -36,17 +36,15 @@ export function ChatWithLayout({
   studioId
 }: ChatWithLayoutProps) {
   return (
-    <UnifiedLayout>
-      <div className="h-[calc(100vh-10rem)] -mx-4 sm:-mx-6 -my-6">
-        <ChatHub 
-          userId={userId}
-          profile={profile}
-          initialConversations={initialConversations}
-          initialSelectedConversationId={initialSelectedConversationId}
-          targetUserId={targetUserId}
-          studioId={studioId}
-        />
-      </div>
+    <UnifiedLayout fullHeight>
+      <ChatHub 
+        userId={userId}
+        profile={profile}
+        initialConversations={initialConversations}
+        initialSelectedConversationId={initialSelectedConversationId}
+        targetUserId={targetUserId}
+        studioId={studioId}
+      />
     </UnifiedLayout>
   )
 }

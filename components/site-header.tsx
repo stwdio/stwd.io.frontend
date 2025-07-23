@@ -51,14 +51,43 @@ export function SiteHeader({ className }: SiteHeaderProps) {
       "flex h-16 lg:h-20 shrink-0 items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40",
       className
     )}>
-      <div className="flex w-full items-center justify-between px-4 sm:px-6">
-        {/* Logo only */}
-        <Link href="/" className="text-xl font-bold">
-          stwd.io
-        </Link>
+      <div className="flex w-full items-center justify-between">
+        <div className="w-full px-4 sm:px-6 flex items-center justify-between">
+          {/* Logo or DISCOVER text based on route */}
+          {pathname?.startsWith('/discover') || pathname?.startsWith('/chat') ? (
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/discover" 
+                className={cn(
+                  "text-3xl tracking-tight transition-all",
+                  pathname?.startsWith('/discover') 
+                    ? "font-bold underline" 
+                    : "font-light text-muted-foreground hover:text-foreground"
+                )}
+              >
+                DISCOVER
+              </Link>
+              <span className="text-3xl font-light text-muted-foreground">|</span>
+              <Link 
+                href="/chat" 
+                className={cn(
+                  "text-3xl tracking-tight transition-all",
+                  pathname?.startsWith('/chat') 
+                    ? "font-bold underline" 
+                    : "font-light text-muted-foreground hover:text-foreground"
+                )}
+              >
+                CONNECT
+              </Link>
+            </div>
+          ) : (
+            <Link href="/" className="text-xl font-bold">
+              stwd.io
+            </Link>
+          )}
 
-        {/* User profile section on the right */}
-        {isAuthenticated && profile ? (
+          {/* User profile section on the right */}
+          {isAuthenticated && profile ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none">
@@ -126,15 +155,16 @@ export function SiteHeader({ className }: SiteHeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          /* Guest user - show sign in link */
-          <Link 
-            href="/auth/login" 
-            className="text-sm font-medium hover:opacity-80 transition-opacity"
-          >
-            Sign In
-          </Link>
-        )}
+          ) : (
+            /* Guest user - show sign in link */
+            <Link 
+              href="/auth/login" 
+              className="text-sm font-medium hover:opacity-80 transition-opacity"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   )

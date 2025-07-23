@@ -1,6 +1,5 @@
 'use client'
 
-import { UnifiedLayout } from '@/components/layouts/unified-layout'
 import { ChatHub } from './chat-hub'
 import type { Database } from '@/lib/types/database'
 
@@ -36,15 +35,13 @@ export function ChatWithLayout({
   studioId
 }: ChatWithLayoutProps) {
   return (
-    <UnifiedLayout fullHeight>
-      <ChatHub 
-        userId={userId}
-        profile={profile}
-        initialConversations={initialConversations}
-        initialSelectedConversationId={initialSelectedConversationId}
-        targetUserId={targetUserId}
-        studioId={studioId}
-      />
-    </UnifiedLayout>
+    <ChatHub 
+      userId={userId}
+      profile={profile}
+      initialConversations={initialConversations}
+      initialSelectedConversationId={initialSelectedConversationId}
+      targetUserId={targetUserId}
+      studioId={studioId}
+    />
   )
 }

@@ -106,7 +106,7 @@ export function DiscoverPageContent() {
   // Debounce search query for API calls
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery)
+      setDebouncedSearchQuery(searchQuery) 
     }, 300)
 
     return () => clearTimeout(timeoutId)
@@ -165,19 +165,19 @@ export function DiscoverPageContent() {
 
   // Navigation actions (search and filter)
   const navActions = (
-    <div className="flex gap-2 max-w-md w-full">
-      <div className="relative w-full">
+    <div className="flex gap-3 items-center">
+      <div className="relative">
         <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
           type="search"
-          placeholder={activeView === 'studios' ? "Search studios..." : "Search people..."}
-          className="pl-10"
+          placeholder="Lets find a studio..."
+          className="pl-10 w-[280px]"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
       <Button 
-        variant="outline" 
+        variant="default" 
         size="icon"
         onClick={() => setFilterPanelOpen(true)}
         className="relative"
@@ -198,17 +198,17 @@ export function DiscoverPageContent() {
   return (
     <div className="h-full flex flex-col">
       {/* Secondary navigation and actions bar */}
-      <div className="flex-shrink-0 border-b bg-background">
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-6">
-            {secondaryNav}
+      <div className="flex-shrink-0 bg-background">
+        <div className="w-full px-4 sm:px-6">
+          <div className="flex items-center justify-end py-2">
+            {navActions}
           </div>
-          {navActions}
         </div>
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 overflow-auto px-4 py-3 sm:px-6 sm:py-4">
+      <div className="flex-1 overflow-auto">
+        <div className="w-full">
         {activeView === 'studios' ? (
           <BrowseStudiosContent 
             filters={filters}
@@ -232,6 +232,7 @@ export function DiscoverPageContent() {
           }}
           type={activeView}
         />
+        </div>
       </div>
     </div>
   )

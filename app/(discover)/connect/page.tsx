@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function OldChatPage() {
+export default function ConnectPage() {
   redirect('/connect/chat')
 }

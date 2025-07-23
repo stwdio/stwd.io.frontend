@@ -10,7 +10,7 @@ export default function DiscoverLayout({
   children: ReactNode
 }) {
   const pathname = usePathname()
-  const showNavigation = pathname?.startsWith('/discover') || pathname?.startsWith('/chat') || pathname?.startsWith('/quotes') || pathname?.startsWith('/profile')
+  const showNavigation = pathname?.startsWith('/discover') || pathname?.startsWith('/connect')
   
   return (
     <div className="flex flex-col h-full">

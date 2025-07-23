@@ -54,10 +54,10 @@ export function SiteHeader({ className }: SiteHeaderProps) {
       <div className="flex w-full items-center justify-between">
         <div className="w-full px-4 sm:px-6 flex items-center justify-between">
           {/* Logo or DISCOVER text based on route */}
-          {pathname?.startsWith('/discover') || pathname?.startsWith('/chat') ? (
+          {pathname?.startsWith('/discover') || pathname?.startsWith('/connect') ? (
             <div className="flex items-center gap-4">
               <Link 
-                href="/discover" 
+                href="/discover/studios" 
                 className={cn(
                   "text-6xl tracking-tight transition-all",
                   pathname?.startsWith('/discover') 
@@ -69,10 +69,10 @@ export function SiteHeader({ className }: SiteHeaderProps) {
               </Link>
               <span className="text-6xl font-light text-muted-foreground">|</span>
               <Link 
-                href="/chat" 
+                href="/connect/chat" 
                 className={cn(
                   "text-6xl tracking-tight transition-all",
-                  pathname?.startsWith('/chat') 
+                  pathname?.startsWith('/connect') 
                     ? "font-bold underline" 
                     : "font-light text-muted-foreground hover:text-foreground"
                 )}

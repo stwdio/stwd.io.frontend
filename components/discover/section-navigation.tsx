@@ -9,16 +9,16 @@ export function SectionNavigation() {
   
   // Determine which section we're in
   const isDiscoverSection = pathname?.startsWith('/discover')
-  const isConnectSection = pathname?.startsWith('/chat') || pathname?.startsWith('/quotes') || pathname?.startsWith('/profile')
+  const isConnectSection = pathname?.startsWith('/connect')
   
   // Determine active states for discover sub-navigation
-  const isStudiosActive = pathname === '/discover' || (pathname?.startsWith('/discover') && !pathname?.includes('/people'))
-  const isPeopleActive = pathname?.includes('/people')
+  const isStudiosActive = pathname === '/discover/studios' || pathname === '/discover'
+  const isPeopleActive = pathname === '/discover/people'
   
   // Determine active states for connect sub-navigation
-  const isChatActive = pathname?.startsWith('/chat')
-  const isQuotesActive = pathname?.startsWith('/quotes')
-  const isProfileActive = pathname?.startsWith('/profile')
+  const isChatActive = pathname?.startsWith('/connect/chat')
+  const isQuotesActive = pathname?.startsWith('/connect/quotes')
+  const isProfileActive = pathname?.startsWith('/connect/profile')
   
   if (isDiscoverSection) {
     return (
@@ -26,7 +26,7 @@ export function SectionNavigation() {
         <div className="w-full px-4 sm:px-6">
           <div className="flex items-center gap-6 text-4xl">
             <Link
-              href="/discover"
+              href="/discover/studios"
               className={cn(
                 "transition-all",
                 isStudiosActive 
@@ -60,7 +60,7 @@ export function SectionNavigation() {
         <div className="w-full px-4 sm:px-6">
           <div className="flex items-center gap-6 text-4xl">
             <Link
-              href="/chat"
+              href="/connect/chat"
               className={cn(
                 "transition-all",
                 isChatActive 
@@ -72,7 +72,7 @@ export function SectionNavigation() {
             </Link>
             <span className="text-4xl text-muted-foreground font-light">|</span>
             <Link
-              href="/quotes"
+              href="/connect/quotes"
               className={cn(
                 "transition-all",
                 isQuotesActive 
@@ -84,7 +84,7 @@ export function SectionNavigation() {
             </Link>
             <span className="text-4xl text-muted-foreground font-light">|</span>
             <Link
-              href="/profile"
+              href="/connect/profile"
               className={cn(
                 "transition-all",
                 isProfileActive 

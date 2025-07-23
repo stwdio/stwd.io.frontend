@@ -1,5 +1,5 @@
-import { DiscoverPageContent } from "@/components/discover/discover-page-content"
+import { redirect } from 'next/navigation'
 
 export default function DiscoverPage() {
-  return <DiscoverPageContent />
+  redirect('/discover/studios')
 }

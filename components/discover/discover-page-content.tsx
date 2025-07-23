@@ -27,7 +27,10 @@ export function DiscoverPageContent() {
                      pathname.includes('/industry') ? 'industry' : 'all'
       return { view: 'people', subView }
     }
-    return { view: 'studios' }
+    if (pathname.includes('/studios')) {
+      return { view: 'studios' }
+    }
+    return { view: 'studios' } // default to studios
   }
 
   const initial = getInitialView()
@@ -207,7 +210,8 @@ export function DiscoverPageContent() {
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-hidden rounded-t-xl">
+        <div className="h-full overflow-auto">
         <div className="w-full">
         {activeView === 'studios' ? (
           <BrowseStudiosContent 
@@ -232,6 +236,7 @@ export function DiscoverPageContent() {
           }}
           type={activeView}
         />
+        </div>
         </div>
       </div>
     </div>

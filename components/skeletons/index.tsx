@@ -5,4 +5,4 @@ export { AuthLoadingSkeleton, MinimalAuthLoading } from './auth-loading-skeleton
 export { DashboardSkeleton } from './dashboard-skeleton'
 export { ChatLayoutSkeleton, ConversationListSkeleton } from './chat-skeleton'
 export { StudioFormSkeleton, ProfileFormSkeleton } from './form-skeleton'
-export { ProfileCardSkeleton } from './profile-card-skeleton'
+export { GenericCardSkeleton } from './generic-card-skeleton'

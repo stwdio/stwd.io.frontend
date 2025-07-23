@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react"
 import { StudioCardNew as StudioCard } from "@/components/studio-card-new"
-import { StudioCardSkeleton } from "@/components/skeletons"
+import { GenericCardSkeleton } from "@/components/skeletons/generic-card-skeleton"
 import { useAuth } from "@/lib/auth/auth-context"
 import { GenericGrid } from "@/components/discover/generic-grid"
 
@@ -108,7 +108,7 @@ export function BrowseStudiosContent({
       isFetchingNextPage={isFetchingNextPage}
       fetchNextPage={fetchNextPage}
       onRefresh={handleRefresh}
-      renderSkeleton={() => <StudioCardSkeleton />}
+      renderSkeleton={() => <GenericCardSkeleton />}
       emptyStateTitle="No studios found"
       emptyStateMessage="Try adjusting your filters or search criteria"
       errorMessage="Failed to load studios. Please try again."

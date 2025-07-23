@@ -2,7 +2,7 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
-import { StudioCardSkeleton } from './studio-card-skeleton'
+import { GenericCardSkeleton } from './generic-card-skeleton'
 import { useEffect, useState } from 'react'
 
 export function BrowsePageSkeleton() {
@@ -118,7 +118,7 @@ export function BrowsePageSkeleton() {
                 : 'grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
             }`}>
               {Array.from({ length: 12 }).map((_, i) => (
-                <StudioCardSkeleton key={i} />
+                <GenericCardSkeleton key={i} />
               ))}
             </div>
           </div>

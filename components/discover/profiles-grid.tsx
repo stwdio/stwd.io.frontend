@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { ProfileCard } from '@/components/profile-card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { GenericCardSkeleton } from '@/components/skeletons/generic-card-skeleton'
 import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/lib/types/database'
 import { GenericGrid } from '@/components/discover/generic-grid'
@@ -93,23 +93,7 @@ export function ProfilesGrid({ category, searchQuery }: ProfilesGridProps) {
   ), [])
 
   const renderSkeleton = useCallback(() => (
-    <div className="overflow-hidden rounded-lg border bg-card">
-      {/* Image skeleton */}
-      <Skeleton className="aspect-video w-full" />
-      {/* Content skeleton */}
-      <div className="p-5 space-y-3">
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-full" />
-        <div className="flex gap-2 pt-2">
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-24" />
-        </div>
-      </div>
-    </div>
+    <GenericCardSkeleton />
   ), [])
 
   return (

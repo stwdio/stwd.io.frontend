@@ -142,41 +142,47 @@ export function GenericCard({
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
             <h3 className="font-semibold text-xl truncate">{title}</h3>
-            {subtitle && (
-              <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-            )}
-          </div>
-          {priceTier && (
-            <div className="text-lg text-muted-foreground">
-              {priceTier}
+            <div className="h-5 mt-1">
+              {subtitle && (
+                <p className="text-sm text-muted-foreground">{subtitle}</p>
+              )}
             </div>
-          )}
+          </div>
+          <div className="text-lg text-muted-foreground">
+            {priceTier || ''}
+          </div>
         </div>
         
         {/* Location */}
-        {location && (
-          <div className="flex items-center mb-3">
-            <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
-            <span className="text-base text-muted-foreground">{location}</span>
-          </div>
-        )}
+        <div className="flex items-center mb-3 min-h-[24px]">
+          {location && (
+            <>
+              <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
+              <span className="text-base text-muted-foreground">{location}</span>
+            </>
+          )}
+        </div>
 
         {/* Rating */}
-        {rating !== undefined && (
-          <div className="flex items-center mb-4">
-            <div className="flex">{renderStars(rating)}</div>
-            <span className="text-sm text-muted-foreground ml-2">
-              ({reviewCount || 0} reviews)
-            </span>
-          </div>
-        )}
+        <div className="flex items-center mb-4 min-h-[24px]">
+          {rating !== undefined && (
+            <>
+              <div className="flex">{renderStars(rating)}</div>
+              <span className="text-sm text-muted-foreground ml-2">
+                ({reviewCount || 0} reviews)
+              </span>
+            </>
+          )}
+        </div>
 
         {/* Description */}
-        {description && (
-          <p className="text-base text-muted-foreground mb-4 line-clamp-3 flex-1">
-            {description}
-          </p>
-        )}
+        <div className="mb-4 flex-1 min-h-[72px]">
+          {description && (
+            <p className="text-base text-muted-foreground line-clamp-3">
+              {description}
+            </p>
+          )}
+        </div>
 
         {/* Notes */}
         {notes && (
@@ -187,48 +193,54 @@ export function GenericCard({
         )}
 
         {/* Additional content slot */}
-        {additionalContent}
+        <div className="mb-4 min-h-[24px]">
+          {additionalContent}
+        </div>
 
         {/* Tags */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4 min-h-[28px]">
-            {tags.slice(0, maxTags).map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-sm px-3 py-1">
-                {tag}
-              </Badge>
-            ))}
-            {tags.length > maxTags && (
-              <Badge variant="secondary" className="text-sm px-3 py-1">
-                +{tags.length - maxTags} more
-              </Badge>
-            )}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2 mb-4 min-h-[32px]">
+          {tags.length > 0 && (
+            <>
+              {tags.slice(0, maxTags).map((tag, index) => (
+                <Badge key={index} variant="secondary" className="text-sm px-3 py-1">
+                  {tag}
+                </Badge>
+              ))}
+              {tags.length > maxTags && (
+                <Badge variant="secondary" className="text-sm px-3 py-1">
+                  +{tags.length - maxTags} more
+                </Badge>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Followed by section */}
-        {followedBy.length > 0 && (
-          <div className="flex items-center gap-3 mb-4 pt-3 border-t">
-            <span className="text-sm text-muted-foreground">Followed by</span>
-            <div className="flex -space-x-2">
-              {followedBy.slice(0, 3).map((follower) => (
-                <Avatar key={follower.id} className="h-8 w-8 border-2 border-background">
-                  <AvatarImage 
-                    src={follower.avatar} 
-                    alt={follower.name} 
-                  />
-                  <AvatarFallback className="text-xs">
-                    {follower.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-              {followedBy.length > 3 && (
-                <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground">+{followedBy.length - 3}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <div className="flex items-center gap-3 mb-4 min-h-[40px]">
+          {followedBy.length > 0 && (
+            <>
+              <span className="text-sm text-muted-foreground">Followed by</span>
+              <div className="flex -space-x-2">
+                {followedBy.slice(0, 3).map((follower) => (
+                  <Avatar key={follower.id} className="h-8 w-8 border-2 border-background">
+                    <AvatarImage 
+                      src={follower.avatar} 
+                      alt={follower.name} 
+                    />
+                    <AvatarFallback className="text-xs">
+                      {follower.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+                {followedBy.length > 3 && (
+                  <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                    <span className="text-xs text-muted-foreground">+{followedBy.length - 3}</span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Action buttons */}
         {(primaryAction || secondaryAction || customActions) && (

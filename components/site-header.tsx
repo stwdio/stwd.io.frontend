@@ -48,7 +48,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
 
   return (
     <header className={cn(
-      "flex h-16 lg:h-20 shrink-0 items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40",
+      "flex h-20 lg:h-24 shrink-0 items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40",
       className
     )}>
       <div className="flex w-full items-center justify-between">
@@ -59,7 +59,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
               <Link 
                 href="/discover" 
                 className={cn(
-                  "text-3xl tracking-tight transition-all",
+                  "text-6xl tracking-tight transition-all",
                   pathname?.startsWith('/discover') 
                     ? "font-bold underline" 
                     : "font-light text-muted-foreground hover:text-foreground"
@@ -67,11 +67,11 @@ export function SiteHeader({ className }: SiteHeaderProps) {
               >
                 DISCOVER
               </Link>
-              <span className="text-3xl font-light text-muted-foreground">|</span>
+              <span className="text-6xl font-light text-muted-foreground">|</span>
               <Link 
                 href="/chat" 
                 className={cn(
-                  "text-3xl tracking-tight transition-all",
+                  "text-6xl tracking-tight transition-all",
                   pathname?.startsWith('/chat') 
                     ? "font-bold underline" 
                     : "font-light text-muted-foreground hover:text-foreground"
@@ -103,7 +103,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
                   </div>
                   
                   {/* Avatar - always visible */}
-                  <Avatar className="h-9 w-9">
+                  <Avatar className="h-18 w-18">
                     <AvatarImage src={avatarUrl || undefined} alt={displayName} />
                     <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                   </Avatar>

@@ -22,9 +22,9 @@ export function SectionNavigation() {
   
   if (isDiscoverSection) {
     return (
-      <div className="flex-shrink-0 bg-background">
+      <div className="flex-shrink-0 bg-background py-4">
         <div className="w-full px-4 sm:px-6">
-          <div className="flex items-center gap-4 text-lg">
+          <div className="flex items-center gap-6 text-4xl">
             <Link
               href="/discover"
               className={cn(
@@ -36,7 +36,7 @@ export function SectionNavigation() {
             >
               STUDIOS
             </Link>
-            <span className="text-muted-foreground font-light">|</span>
+            <span className="text-4xl text-muted-foreground font-light">|</span>
             <Link
               href="/discover/people"
               className={cn(
@@ -56,9 +56,9 @@ export function SectionNavigation() {
   
   if (isConnectSection) {
     return (
-      <div className="flex-shrink-0 bg-background">
+      <div className="flex-shrink-0 bg-background py-4">
         <div className="w-full px-4 sm:px-6">
-          <div className="flex items-center gap-4 text-lg">
+          <div className="flex items-center gap-6 text-4xl">
             <Link
               href="/chat"
               className={cn(
@@ -70,7 +70,7 @@ export function SectionNavigation() {
             >
               CHAT
             </Link>
-            <span className="text-muted-foreground font-light">|</span>
+            <span className="text-4xl text-muted-foreground font-light">|</span>
             <Link
               href="/quotes"
               className={cn(
@@ -82,7 +82,7 @@ export function SectionNavigation() {
             >
               QUOTES
             </Link>
-            <span className="text-muted-foreground font-light">|</span>
+            <span className="text-4xl text-muted-foreground font-light">|</span>
             <Link
               href="/profile"
               className={cn(

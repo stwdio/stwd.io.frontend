@@ -33,7 +33,7 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
     ? `${profile.first_name} ${profile.last_name}`
     : profile.username
 
-  const avatarUrl = profile.avatar_url || undefined
+  const avatarUrl = profile.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
 
   const roles = Array.isArray(profile.profile_roles) 
     ? profile.profile_roles.map(pr => pr.role.name) 
@@ -79,7 +79,6 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
       link={`/profiles/${profile.username}`}
       tags={roles}
       followedBy={mockFollowers}
-      aspectRatio="square"
       priority={priority}
       primaryAction={{
         label: 'Message',

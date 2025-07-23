@@ -126,18 +126,14 @@ export function GenericCard({
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Avatar className="w-1/2 h-1/2 rounded-none">
-              <AvatarImage 
-                src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${id}&backgroundColor=ffffff&shapeColor=000000`} 
-                alt={title}
-                className="object-cover"
-              />
-              <AvatarFallback className="rounded-none text-4xl">
-                {title.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </div>
+          <Image
+            src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${id}&backgroundColor=ffffff&shapeColor=000000`}
+            alt={title}
+            fill
+            className="object-cover"
+            priority={priority}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
         )}
       </div>
       

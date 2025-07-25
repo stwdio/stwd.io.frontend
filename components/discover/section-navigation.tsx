@@ -18,7 +18,6 @@ export function SectionNavigation() {
   // Determine active states for connect sub-navigation
   const isChatActive = pathname?.startsWith('/connect/chat')
   const isQuotesActive = pathname?.startsWith('/connect/quotes')
-  const isProfileActive = pathname?.startsWith('/connect/profile')
   
   if (isDiscoverSection) {
     return (
@@ -81,18 +80,6 @@ export function SectionNavigation() {
               )}
             >
               QUOTES
-            </Link>
-            <span className="text-4xl text-muted-foreground font-light">|</span>
-            <Link
-              href="/connect/profile"
-              className={cn(
-                "transition-all",
-                isProfileActive 
-                  ? "font-bold underline" 
-                  : "font-light text-muted-foreground hover:text-foreground"
-              )}
-            >
-              PROFILE
             </Link>
           </div>
         </div>

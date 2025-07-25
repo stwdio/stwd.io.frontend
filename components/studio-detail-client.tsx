@@ -194,7 +194,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         <Button 
           variant="outline" 
           className="w-full"
-          onClick={() => addStudio(studio)}
+          onClick={async () => await addStudio(studio)}
           disabled={isInBasket}
         >
           <Plus className="h-4 w-4 mr-2" />

@@ -2,14 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { ConnectLayout } from '@/components/connect/connect-layout'
 import { ConversationList } from './conversation-list'
 import { MessageThread } from './message-thread'
 import { EmptyChat } from './empty-chat'
 import { DraftMessageThread } from './draft-message-thread'
-import { Button } from '@/components/ui/button'
-import { IconMessage, IconMenu2 } from '@tabler/icons-react'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/types/database'
 
@@ -51,7 +48,6 @@ export function ChatHub({
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(
     initialSelectedConversationId || (!targetUserId && initialConversations.length > 0 ? initialConversations[0].id : null)
   )
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [draftTargetUserId, setDraftTargetUserId] = useState<string | undefined>(
     targetUserId && !initialSelectedConversationId ? targetUserId : undefined
   )
@@ -249,7 +245,6 @@ export function ChatHub({
     setSelectedConversationId(conversationId)
     setDraftTargetUserId(undefined)
     setDraftStudioId(undefined)
-    setIsSidebarOpen(false)
     
     // Determine URL based on conversation type
     let url = `/connect/chat?conversation=${conversationId}`
@@ -331,146 +326,46 @@ export function ChatHub({
     }
   }
 
+  const sidebar = (
+    <ConversationList
+      conversations={displayConversations}
+      selectedId={mockDraftConversation ? -1 : selectedConversationId}
+      onSelect={(id) => {
+        if (id === -1) {
+          // It's the draft conversation, do nothing as it's already selected
+          return
+        }
+        handleConversationSelect(id)
+      }}
+      currentUserId={userId}
+    />
+  )
+
+  const content = selectedConversation ? (
+    <MessageThread
+      conversation={selectedConversation}
+      currentUserId={userId}
+      currentProfile={profile}
+    />
+  ) : draftTargetUserId ? (
+    <DraftMessageThread
+      currentUserId={userId}
+      currentProfile={profile}
+      targetUserId={draftTargetUserId}
+      studioId={draftStudioId}
+      onConversationCreated={handleConversationCreated}
+    />
+  ) : null
+
+  const emptyState = <EmptyChat onNewChat={handleNewConversation} />
+
   return (
-    <div className="h-full flex flex-col">
-      {/* Desktop Layout */}
-      <div className="hidden md:flex h-full min-h-0">
-        {/* Sidebar */}
-        <div className="w-96 border-r bg-muted/10 flex flex-col h-full">
-          <div className="flex-1 overflow-hidden min-h-0 h-full">
-            <ConversationList
-              conversations={displayConversations}
-              selectedId={mockDraftConversation ? -1 : selectedConversationId}
-              onSelect={(id) => {
-                if (id === -1) {
-                  // It's the draft conversation, do nothing as it's already selected
-                  return
-                }
-                handleConversationSelect(id)
-              }}
-              currentUserId={userId}
-            />
-          </div>
-        </div>
-        
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {selectedConversation ? (
-            <MessageThread
-              conversation={selectedConversation}
-              currentUserId={userId}
-              currentProfile={profile}
-            />
-          ) : draftTargetUserId ? (
-            <DraftMessageThread
-              currentUserId={userId}
-              currentProfile={profile}
-              targetUserId={draftTargetUserId}
-              studioId={draftStudioId}
-              onConversationCreated={handleConversationCreated}
-            />
-          ) : (
-            <EmptyChat onNewChat={handleNewConversation} />
-          )}
-        </div>
-      </div>
-      
-      {/* Mobile Layout */}
-      <div className="md:hidden h-full">
-        {selectedConversation || draftTargetUserId ? (
-          <div className="flex flex-col h-full">
-            <div className="p-4 border-b flex items-center gap-2">
-              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <IconMenu2 className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-96 p-0">
-                  <div className="h-full flex flex-col">
-                    <div className="flex-1 overflow-hidden min-h-0">
-                      <ConversationList
-                        conversations={displayConversations}
-                        selectedId={mockDraftConversation ? -1 : selectedConversationId}
-                        onSelect={(id) => {
-                          if (id === -1) {
-                            // It's the draft conversation, do nothing as it's already selected
-                            return
-                          }
-                          handleConversationSelect(id)
-                        }}
-                        currentUserId={userId}
-                      />
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-              
-              <h2 className="font-semibold truncate">
-                {selectedConversation?.title || 'New Chat'}
-              </h2>
-            </div>
-            
-            <div className="flex-1 min-h-0">
-              {selectedConversation ? (
-                <MessageThread
-                  conversation={selectedConversation}
-                  currentUserId={userId}
-                  currentProfile={profile}
-                />
-              ) : (
-                <DraftMessageThread
-                  currentUserId={userId}
-                  currentProfile={profile}
-                  targetUserId={draftTargetUserId!}
-                  studioId={draftStudioId}
-                  onConversationCreated={handleConversationCreated}
-                />
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b">
-              <Button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="w-full"
-                variant="outline"
-              >
-                <IconMenu2 className="mr-2 h-4 w-4" />
-                View Conversations
-              </Button>
-            </div>
-            
-            <EmptyChat onNewChat={handleNewConversation} />
-            
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger className="sr-only" />
-              <SheetContent side="left" className="w-80 p-0">
-                <div className="h-full flex flex-col">
-                  <div className="p-4 border-b">
-                    <Button 
-                      onClick={handleNewConversation}
-                      className="w-full"
-                      size="sm"
-                    >
-                      <IconMessage className="mr-2 h-4 w-4" />
-                      New Chat
-                    </Button>
-                  </div>
-                  
-                  <ConversationList
-                    conversations={conversations}
-                    selectedId={selectedConversationId}
-                    onSelect={handleConversationSelect}
-                    currentUserId={userId}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        )}
-      </div>
-    </div>
+    <ConnectLayout
+      sidebar={sidebar}
+      content={content}
+      emptyState={emptyState}
+      selectedId={selectedConversation?.id || (draftTargetUserId ? -1 : null)}
+      mobileTitle={selectedConversation?.title || 'New Chat'}
+    />
   )
 }

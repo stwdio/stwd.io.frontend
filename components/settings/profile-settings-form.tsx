@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, AlertCircle } from 'lucide-react'
+import { AvatarUpload } from '@/components/settings/avatar-upload'
 import type { Database } from '@/lib/types/database'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -30,6 +31,7 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
   const [bio, setBio] = useState(profile.bio || '')
   const [location, setLocation] = useState(profile.location || '')
   const [website, setWebsite] = useState(profile.website || '')
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url)
   
   const [initialUsername] = useState(profile.username)
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
@@ -156,6 +158,13 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
+      {/* Avatar Upload */}
+      <AvatarUpload
+        currentAvatarUrl={avatarUrl}
+        userId={profile.user_id}
+        onAvatarUpdate={setAvatarUrl}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="firstName">First Name</Label>

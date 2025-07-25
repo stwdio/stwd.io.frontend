@@ -5,9 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { Plus, MessageSquare, BookmarkPlus } from 'lucide-react'
+import { Plus, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
-import AddToListDropdown from './add-to-list-dropdown'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 
 interface Profile {
@@ -64,6 +63,7 @@ export function StudioCardActions({
   const loading = profileLoading
   const professionalRoles = sharedProfessionalRoles
   const [hasInquiry, setHasInquiry] = useState(false)
+  const [hasConversation, setHasConversation] = useState(false)
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
   const authModal = useAuthModal()
@@ -105,13 +105,10 @@ export function StudioCardActions({
   }
 
   const checkInquiryStatus = async (profileData: Profile) => {
-    // Check if user has any creator-type role (not studio owner)
-    const hasCreatorRole = professionalRoles.some(pr => 
-      ['musician', 'podcaster', 'voice-actor', 'a-and-r', 'engineer', 'manager'].includes(pr.role.slug)
-    )
-    if (!hasCreatorRole) return
+    const supabase = createClient()
     
-    const { data: inquiryCheck } = await createClient()
+    // Check for existing inquiries
+    const { data: inquiryCheck, error } = await supabase
       .from('inquiry_recipients')
       .select(`
         inquiry_id,
@@ -122,6 +119,33 @@ export function StudioCardActions({
       .limit(1)
 
     setHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
+    
+    // Check for existing conversations with this studio
+    // First check if studio owner exists
+    const { data: studioOwner } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('id', parseInt(studio.owner_id))
+      .single()
+    
+    if (studioOwner) {
+      // Check if there's a conversation between the user and studio owner
+      const { data: conversationCheck } = await supabase
+        .from('chat_conversations')
+        .select(`
+          id,
+          chat_participants!inner(user_id)
+        `)
+        .eq('title', studio.name)
+        .limit(1)
+      
+      const hasStudioConversation = conversationCheck && conversationCheck.some(conv => {
+        const participantIds = conv.chat_participants.map(p => p.user_id)
+        return participantIds.includes(profileData.user_id) && participantIds.includes(studioOwner.user_id)
+      })
+      
+      setHasConversation(hasStudioConversation || false)
+    }
   }
 
   // OPTIMIZED: Check inquiry status when profile is available
@@ -153,22 +177,22 @@ export function StudioCardActions({
     )
   }
 
-  // If user is not logged in - show creator actions (two buttons)
+  // If user is not logged in - show both buttons that prompt login
   if (!profile) {
     return (
-      <div className="flex gap-1 h-8">
+      <div className="flex gap-2 w-full">
         <Button 
           variant="outline" 
           size="sm" 
-          className="flex-1 text-xs px-2"
+          className="flex-1 text-xs"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            authModal.open("Sign in to save studios", "Create an account to save studios to your lists and organize your favorites.")
+            authModal.open("Sign in to message studios", "Create an account to start conversations with studio owners.")
           }}
         >
-          <BookmarkPlus className="h-4 w-4 mr-1" />
-          List
+          <MessageSquare className="h-4 w-4 mr-1" />
+          Enquire
         </Button>
         <Button
           size="sm"
@@ -177,7 +201,7 @@ export function StudioCardActions({
             e.stopPropagation()
             authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")
           }}
-          className="flex-1 text-xs px-2"
+          className="flex-1 text-xs"
           variant="default"
         >
           <Plus className="h-4 w-4 mr-1" />
@@ -192,53 +216,42 @@ export function StudioCardActions({
     return null
   }
 
-  // For creators - show list, and either "View Conversation" or "Quote" (two buttons)
+  // For creators - show both Enquire and Quote buttons
   return (
-    <div className="flex gap-1 h-8">
-      <AddToListDropdown
-        studioId={studio.id.toString()}
-        studioName={studio.name}
-        initialMemberships={memberships}
-        sharedLists={sharedLists}
-        listsLoading={listsLoading}
-        onSuccess={onListsChange}
-        trigger={
-          <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
-            <BookmarkPlus className="h-4 w-4 mr-1" />
-            List
-          </Button>
-        }
-      />
-      {hasInquiry ? (
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            handleViewConversation()
-          }}
-          className="flex-1 text-xs px-2"
-          variant="outline"
-        >
-          <MessageSquare className="h-4 w-4 mr-1" />
-          Chat
-        </Button>
-      ) : (
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            addStudio(studio)
-          }}
-          className="flex-1 text-xs px-2"
-          disabled={isInBasket}
-          variant={isInBasket ? "secondary" : "default"}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          {isInBasket ? 'Quote' : 'Quote'}
-        </Button>
-      )}
+    <div className="flex gap-2 w-full">
+      <Button
+        size="sm"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          // Navigate to chat with studio context
+          router.push(`/connect/chat?studio=${studio.slug || studio.id}`)
+        }}
+        className="flex-1 text-xs"
+        variant="outline"
+      >
+        <MessageSquare className="h-4 w-4 mr-1" />
+        Enquire
+      </Button>
+      
+      <Button
+        size="sm"
+        onClick={async (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (hasInquiry) {
+            toast.error('You already have a quote request for this studio')
+            return
+          }
+          await addStudio(studio)
+        }}
+        className="flex-1 text-xs"
+        disabled={isInBasket || hasInquiry}
+        variant={isInBasket || hasInquiry ? "secondary" : "default"}
+      >
+        <Plus className="h-4 w-4 mr-1" />
+        {hasInquiry ? 'Quoted' : isInBasket ? 'In Basket' : 'Quote'}
+      </Button>
     </div>
   )
 } 

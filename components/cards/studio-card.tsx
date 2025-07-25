@@ -3,7 +3,8 @@
 import { GenericCard } from '@/components/cards/generic-card'
 import { IconMessage, IconPlus } from '@tabler/icons-react'
 import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
-import { ReactNode } from 'react'
+import { StudioCardActions } from '@/components/studio-card-actions'
+import { ReactNode, useState } from 'react'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
 import { getPriceTierSymbol } from '@/lib/constants/currencies'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
@@ -117,7 +118,7 @@ export function StudioCard({
     router.push(`/chat?studio=${studio.slug || studio.id}`)
   }
 
-  const handleQuote = (e: React.MouseEvent) => {
+  const handleQuote = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
@@ -130,7 +131,7 @@ export function StudioCard({
     }
     
     // Add to quote basket
-    addStudio(studio)
+    await addStudio(studio)
   }
 
   const amenityTags = showAmenities && studio.amenities 
@@ -164,19 +165,18 @@ export function StudioCard({
       additionalContent={additionalContent}
       className={className}
       priority={priority}
-      customActions={customActions}
-      primaryAction={customActions ? undefined : {
-        label: 'Enquire',
-        icon: <IconMessage className="h-5 w-5 mr-2" />,
-        onClick: handleMessage
-      }}
-      secondaryAction={customActions ? undefined : {
-        label: isInBasket ? 'In Quote Basket' : 'Quote',
-        icon: <IconPlus className="h-5 w-5 mr-2" />,
-        onClick: isInBasket ? (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); } : handleQuote,
-        variant: isInBasket ? 'secondary' : 'default',
-        disabled: isInBasket
-      }}
+      customActions={customActions || (
+        <StudioCardActions
+          studio={studio}
+          memberships={memberships}
+          sharedProfile={sharedProfile}
+          profileLoading={profileLoading}
+          sharedProfessionalRoles={sharedProfessionalRoles}
+          sharedLists={sharedLists}
+          listsLoading={listsLoading}
+          onListsChange={onListsChange}
+        />
+      )}
     />
   )
 }

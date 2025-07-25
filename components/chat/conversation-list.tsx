@@ -185,7 +185,8 @@ export function ConversationList({
               onClick={() => onSelect(conversation.id)}
               className={cn(
                 "w-full p-3 rounded-lg flex items-start gap-3 hover:bg-accent transition-colors text-left",
-                selectedId === conversation.id && "bg-accent"
+                selectedId === conversation.id && "bg-accent",
+                conversation.id === -1 && "opacity-90"
               )}
             >
               <Avatar className="h-10 w-10 shrink-0">
@@ -201,9 +202,9 @@ export function ConversationList({
                     <h3 className="font-medium truncate">
                       {conversation.title || displayName}
                     </h3>
-                    {isEnquiry && (
+                    {(isEnquiry || conversation.id === -1) && (
                       <Badge variant="secondary" className="shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                        Enquiry
+                        {conversation.id === -1 ? 'Draft' : 'Enquiry'}
                       </Badge>
                     )}
                   </div>
@@ -229,12 +230,16 @@ export function ConversationList({
                   )}
                 </div>
                 
-                {lastMessage && (
+                {lastMessage ? (
                   <p className="text-sm text-muted-foreground truncate mt-1">
                     {lastMessage.sender_id === currentUserId ? 'You: ' : ''}
                     {lastMessage.content}
                   </p>
-                )}
+                ) : conversation.id === -1 ? (
+                  <p className="text-sm text-muted-foreground truncate mt-1 italic">
+                    Start typing to begin conversation...
+                  </p>
+                ) : null}
               </div>
             </button>
           )

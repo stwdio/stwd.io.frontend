@@ -187,6 +187,61 @@ export function ChatHub({
   
   const selectedConversation = conversations.find(c => c.id === selectedConversationId)
   
+  // Create a mock conversation for the draft state
+  const [draftTargetProfile, setDraftTargetProfile] = useState<any>(null)
+  const [draftStudio, setDraftStudio] = useState<any>(null)
+  
+  // Fetch draft target profile and studio info
+  useEffect(() => {
+    if (draftTargetUserId) {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', draftTargetUserId)
+        .single()
+        .then(({ data }) => {
+          if (data) setDraftTargetProfile(data)
+        })
+    }
+    
+    if (draftStudioId) {
+      supabase
+        .from('studios')
+        .select('*')
+        .eq('id', parseInt(draftStudioId))
+        .single()
+        .then(({ data }) => {
+          if (data) setDraftStudio(data)
+        })
+    }
+  }, [draftTargetUserId, draftStudioId, supabase])
+  
+  // Create mock conversation for display
+  const mockDraftConversation = draftTargetUserId && draftTargetProfile ? {
+    id: -1, // Negative ID to indicate it's a draft
+    title: draftStudio?.name || null,
+    is_group: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    created_by: userId,
+    chat_participants: [
+      {
+        user_id: draftTargetUserId,
+        profiles: draftTargetProfile
+      },
+      {
+        user_id: userId,
+        profiles: profile
+      }
+    ],
+    chat_messages: []
+  } : null
+  
+  // Combine real conversations with mock draft
+  const displayConversations = mockDraftConversation 
+    ? [mockDraftConversation, ...conversations]
+    : conversations
+  
   const handleConversationSelect = async (conversationId: number) => {
     const conversation = conversations.find(c => c.id === conversationId)
     if (!conversation) return
@@ -284,9 +339,15 @@ export function ChatHub({
         <div className="w-96 border-r bg-muted/10 flex flex-col h-full">
           <div className="flex-1 overflow-hidden min-h-0 h-full">
             <ConversationList
-              conversations={conversations}
-              selectedId={selectedConversationId}
-              onSelect={handleConversationSelect}
+              conversations={displayConversations}
+              selectedId={mockDraftConversation ? -1 : selectedConversationId}
+              onSelect={(id) => {
+                if (id === -1) {
+                  // It's the draft conversation, do nothing as it's already selected
+                  return
+                }
+                handleConversationSelect(id)
+              }}
               currentUserId={userId}
             />
           </div>
@@ -329,9 +390,15 @@ export function ChatHub({
                   <div className="h-full flex flex-col">
                     <div className="flex-1 overflow-hidden min-h-0">
                       <ConversationList
-                        conversations={conversations}
-                        selectedId={selectedConversationId}
-                        onSelect={handleConversationSelect}
+                        conversations={displayConversations}
+                        selectedId={mockDraftConversation ? -1 : selectedConversationId}
+                        onSelect={(id) => {
+                          if (id === -1) {
+                            // It's the draft conversation, do nothing as it's already selected
+                            return
+                          }
+                          handleConversationSelect(id)
+                        }}
                         currentUserId={userId}
                       />
                     </div>

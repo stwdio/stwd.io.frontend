@@ -198,16 +198,13 @@ export function DraftMessageThread({
         <div className="flex-1">
           <h3 className="font-semibold">
             {studio ? (
-              <>
-                New Enquiry with{' '}
-                {studio.slug ? (
-                  <Link href={`/discover/studios/${studio.slug}`} className="hover:underline">
-                    {studio.name}
-                  </Link>
-                ) : (
-                  studio.name
-                )}
-              </>
+              studio.slug ? (
+                <Link href={`/discover/studios/${studio.slug}`} className="hover:underline">
+                  {studio.name}
+                </Link>
+              ) : (
+                studio.name
+              )
             ) : (
               getDisplayName(targetProfile)
             )}

@@ -82,7 +82,7 @@ export async function createDraftStudio(data: CreateDraftStudioData): Promise<Ac
       return { success: false, error: 'Failed to create studio draft' }
     }
 
-    revalidatePath('/profile/dashboard')
+    revalidatePath('/workspace')
     return { success: true, data: newStudio }
   } catch (error) {
     console.error('Unexpected error creating draft studio:', error)
@@ -182,8 +182,8 @@ export async function uploadStudioImage(
       return { success: false, error: 'Failed to save image reference' }
     }
 
-    revalidatePath(`/dashboard/studios/${studioId}/edit`)
-    revalidatePath('/profile/dashboard')
+    revalidatePath(`/workspace/studios/${studioId}/edit`)
+    revalidatePath('/workspace')
     revalidatePath('/discover')
     
     return { success: true, data: publicUrl }
@@ -272,8 +272,8 @@ export async function deleteStudioImage(
       // The cleanup job will handle orphaned storage files
     }
 
-    revalidatePath(`/dashboard/studios/${studioId}/edit`)
-    revalidatePath('/profile/dashboard')
+    revalidatePath(`/workspace/studios/${studioId}/edit`)
+    revalidatePath('/workspace')
     revalidatePath('/discover')
     
     return { success: true }

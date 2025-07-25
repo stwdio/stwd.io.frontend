@@ -10,7 +10,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioDetailActions } from "@/components/studio-detail-client"
 import { StudioReviews } from "@/components/studio-reviews"
-import { getStudioPrimaryImageUrl, getTransformedImageUrl } from "@/lib/utils"
+import { getStudioPrimaryImageUrl } from "@/lib/utils"
+import { imagePresets } from "@/lib/utils/image-transformations"
 import { getPriceTierSymbol } from "@/lib/constants/currencies"
 
 interface Studio {
@@ -117,11 +118,11 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating 
               studio.photo_urls.slice(0, 4).map((photoUrl, i) => (
                 <div key={i} className="aspect-square relative overflow-hidden rounded-lg">
                   <StudioImage
-                    src={getTransformedImageUrl(photoUrl, 150)}
+                    src={imagePresets.galleryThumbnail(photoUrl)}
                     alt={`${studio.name} ${i + 1}`}
                     fill
-                    width={150}
-                    height={150}
+                    width={600}
+                    height={600}
                     className="object-cover cursor-pointer hover:opacity-80 transition-opacity"
                   />
                 </div>

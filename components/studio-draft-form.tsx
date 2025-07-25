@@ -56,7 +56,7 @@ export function StudioDraftForm({ onSuccess }: StudioDraftFormProps) {
         toast.success('Studio draft created! Add photos and details to complete your listing.')
         
         // Redirect to edit page
-        router.push(`/dashboard/studios/${result.data.id}/edit`)
+        router.push(`/workspace/studios/${result.data.id}/edit`)
         
         // Call success callback
         onSuccess(result.data.id)

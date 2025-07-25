@@ -107,14 +107,14 @@ export function StudioCard({
     
     if (!isAuthenticated) {
       authModal.open(
-        'Sign in to message studios',
-        'Create an account or sign in to start messaging studio owners.'
+        'Sign in to enquire with studios',
+        'Create an account or sign in to start enquiring with studio owners.'
       )
       return
     }
     
     // Navigate to messages with studio context
-    router.push(`/chat?studio=${studio.id}`)
+    router.push(`/chat?studio=${studio.slug || studio.id}`)
   }
 
   const handleQuote = (e: React.MouseEvent) => {
@@ -152,7 +152,7 @@ export function StudioCard({
       id={studio.id}
       title={studio.name}
       description={studio.description}
-      imageUrl={getStudioPrimaryImageUrl(studio.photo_urls, 300)}
+      imageUrl={getStudioPrimaryImageUrl(studio.photo_urls, 600)}
       link={linkToStudio ? `/discover/studios/${studio.slug || studio.id}` : undefined}
       location={studio.location}
       rating={studio.average_rating}
@@ -166,7 +166,7 @@ export function StudioCard({
       priority={priority}
       customActions={customActions}
       primaryAction={customActions ? undefined : {
-        label: 'Message',
+        label: 'Enquire',
         icon: <IconMessage className="h-5 w-5 mr-2" />,
         onClick: handleMessage
       }}

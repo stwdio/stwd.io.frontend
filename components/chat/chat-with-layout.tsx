@@ -24,6 +24,7 @@ interface ChatWithLayoutProps {
   initialSelectedConversationId?: number
   targetUserId?: string
   studioId?: string
+  studioInfo?: { id: number; name: string; slug: string }
 }
 
 export function ChatWithLayout({ 
@@ -32,7 +33,8 @@ export function ChatWithLayout({
   initialConversations,
   initialSelectedConversationId,
   targetUserId,
-  studioId
+  studioId,
+  studioInfo
 }: ChatWithLayoutProps) {
   return (
     <ChatHub 
@@ -42,6 +44,7 @@ export function ChatWithLayout({
       initialSelectedConversationId={initialSelectedConversationId}
       targetUserId={targetUserId}
       studioId={studioId}
+      studioInfo={studioInfo}
     />
   )
 }

@@ -3,13 +3,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { IconSend } from '@tabler/icons-react'
 import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
+import { cn, getAvatarImageUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/types/database'
+import Link from 'next/link'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Conversation = Database['public']['Tables']['chat_conversations']['Row'] & {
@@ -39,6 +40,8 @@ export function MessageThread({
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [messages, setMessages] = useState(conversation.chat_messages)
+  const [studioImage, setStudioImage] = useState<string | null>(null)
+  const [studioSlug, setStudioSlug] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   
@@ -49,6 +52,42 @@ export function MessageThread({
   const participantMap = new Map(
     conversation.chat_participants.map(p => [p.user_id, p.profiles])
   )
+  
+  // Load messages and studio image when conversation changes
+  useEffect(() => {
+    const loadMessages = async () => {
+      const { data: messages } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', conversation.id)
+        .order('created_at', { ascending: true })
+      
+      if (messages) {
+        setMessages(messages)
+      }
+    }
+    
+    const loadStudioImage = async () => {
+      if (conversation.title) {
+        const { data: studio } = await supabase
+          .from('studios')
+          .select('photo_urls, slug')
+          .eq('name', conversation.title)
+          .single()
+        
+        if (studio) {
+          if (studio.photo_urls && studio.photo_urls.length > 0) {
+            // Use optimized avatar size for header (80x80)
+            setStudioImage(getAvatarImageUrl(studio.photo_urls[0], 80) || studio.photo_urls[0])
+          }
+          setStudioSlug(studio.slug)
+        }
+      }
+    }
+    
+    loadMessages()
+    loadStudioImage()
+  }, [conversation.id, conversation.title, supabase])
   
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -147,22 +186,55 @@ export function MessageThread({
             const displayName = profile.first_name && profile.last_name 
               ? `${profile.first_name} ${profile.last_name}`.trim()
               : profile.username || 'Unknown User'
-            const avatarUrl = profile.avatar_url || 
-              `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.id}`
+            const isEnquiry = conversation.title && conversation.title.trim() !== ''
+            const avatarUrl = isEnquiry && studioImage 
+              ? studioImage 
+              : profile.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
             
             return (
               <div key={participant.user_id} className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={avatarUrl} alt={displayName} />
-                  <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={avatarUrl} alt={isEnquiry ? conversation.title : displayName} />
+                  <AvatarFallback>
+                    {isEnquiry && conversation.title ? conversation.title.charAt(0) : displayName.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h2 className="font-semibold">{displayName}</h2>
-                  {conversation.context_type && (
-                    <p className="text-sm text-muted-foreground">
-                      Direct message
-                    </p>
-                  )}
+                  <h2 className="font-semibold">
+                    {conversation.title ? (
+                      studioSlug ? (
+                        <>
+                          {' '}
+                          <Link href={`/discover/studios/${studioSlug}`} className="hover:underline">
+                            {conversation.title}
+                          </Link>
+                        </>
+                      ) : (
+                        `${conversation.title}`
+                      )
+                    ) : (
+                      profile.username ? (
+                        <Link href={`/profiles/${profile.username}`} className="hover:underline">
+                          {displayName}
+                        </Link>
+                      ) : (
+                        displayName
+                      )
+                    )}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {conversation.title ? (
+                      profile.username ? (
+                        <Link href={`/profiles/${profile.username}`} className="hover:underline">
+                          {displayName}
+                        </Link>
+                      ) : (
+                        displayName
+                      )
+                    ) : (
+                      'Direct message'
+                    )}
+                  </p>
                 </div>
               </div>
             )
@@ -182,7 +254,7 @@ export function MessageThread({
                   : sender.username || 'Unknown')
               : 'Unknown'
             const avatarUrl = sender?.avatar_url || 
-              (sender ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${sender.id}` : undefined)
+              (sender ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${sender.user_id}&backgroundColor=ffffff&shapeColor=000000` : undefined)
             
             return (
               <div
@@ -222,13 +294,13 @@ export function MessageThread({
       
       {/* Input */}
       <div className="p-4 border-t">
-        <div className="flex gap-2">
-          <Textarea
+        <div className="flex gap-2 items-center">
+          <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="min-h-[60px] resize-none"
+            className="flex-1"
             disabled={isLoading}
           />
           <Button 

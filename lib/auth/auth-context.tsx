@@ -240,12 +240,12 @@ export const isPublicRoute = (pathname: string): boolean => {
 export const getDefaultDashboard = (role: string): string => {
   switch (role) {
     case 'creator':
-      return '/discover'
+      return '/discover/studios'
     case 'owner':
-      return '/profile/dashboard'
+      return '/workspace'
     case 'admin':
-      return '/profile/dashboard'
+      return '/workspace'
     default:
-      return '/discover'
+      return '/discover/studios'
   }
 }

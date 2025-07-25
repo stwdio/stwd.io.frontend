@@ -34,6 +34,7 @@ interface ChatHubProps {
   initialSelectedConversationId?: number
   targetUserId?: string
   studioId?: string
+  studioInfo?: { id: number; name: string; slug: string }
 }
 
 export function ChatHub({ 
@@ -42,12 +43,13 @@ export function ChatHub({
   initialConversations,
   initialSelectedConversationId,
   targetUserId,
-  studioId
+  studioId,
+  studioInfo
 }: ChatHubProps) {
   const [conversations, setConversations] = useState(initialConversations)
-  // Auto-select the first conversation if none selected
+  // Auto-select the first conversation if none selected, unless we have a target user
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(
-    initialSelectedConversationId || (initialConversations.length > 0 ? initialConversations[0].id : null)
+    initialSelectedConversationId || (!targetUserId && initialConversations.length > 0 ? initialConversations[0].id : null)
   )
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [draftTargetUserId, setDraftTargetUserId] = useState<string | undefined>(
@@ -145,15 +147,83 @@ export function ChatHub({
     }
   }, [userId, supabase])
   
+  // Subscribe to new messages to update conversation list
+  useEffect(() => {
+    if (conversations.length === 0) return
+    
+    const channel = supabase
+      .channel('conversation-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `conversation_id=in.(${conversations.map(c => c.id).join(',')})`
+        },
+        (payload) => {
+          const newMessage = payload.new as any
+          // Update the conversation with the new message
+          setConversations(prev => 
+            prev.map(conv => {
+              if (conv.id === newMessage.conversation_id) {
+                return {
+                  ...conv,
+                  chat_messages: [newMessage],
+                  updated_at: new Date().toISOString()
+                }
+              }
+              return conv
+            }).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+          )
+        }
+      )
+      .subscribe()
+    
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [conversations.length, supabase])
+  
   const selectedConversation = conversations.find(c => c.id === selectedConversationId)
   
-  const handleConversationSelect = (conversationId: number) => {
+  const handleConversationSelect = async (conversationId: number) => {
+    const conversation = conversations.find(c => c.id === conversationId)
+    if (!conversation) return
+    
     setSelectedConversationId(conversationId)
     setDraftTargetUserId(undefined)
     setDraftStudioId(undefined)
     setIsSidebarOpen(false)
-    // Update URL
-    router.push(`/chat?conversation=${conversationId}`)
+    
+    // Determine URL based on conversation type
+    let url = `/connect/chat?conversation=${conversationId}`
+    
+    // If it's a studio enquiry (has a title), try to get studio info
+    if (conversation.title) {
+      // Try to find studio by name
+      const { data: studio } = await supabase
+        .from('studios')
+        .select('slug')
+        .eq('name', conversation.title)
+        .single()
+      
+      if (studio?.slug) {
+        url = `/connect/chat?studio=${studio.slug}`
+      }
+    } else {
+      // It's a profile message - get the other user's username
+      const otherParticipant = conversation.chat_participants.find(
+        p => p.user_id !== userId
+      )
+      
+      if (otherParticipant?.profiles?.username) {
+        url = `/connect/chat?user=${otherParticipant.profiles.username}`
+      }
+    }
+    
+    // Update URL without full page reload
+    window.history.replaceState(null, '', url)
   }
   
   const handleNewConversation = () => {
@@ -202,29 +272,17 @@ export function ChatHub({
       setSelectedConversationId(conversationId)
       setDraftTargetUserId(undefined)
       setDraftStudioId(undefined)
-      // Update URL to show the new conversation
-      router.push(`/chat?conversation=${conversationId}`)
+      // Don't update URL - keep the nice studio/user URL
     }
   }
 
   return (
-    <div className="h-full">
+    <div className="h-full flex flex-col">
       {/* Desktop Layout */}
-      <div className="hidden md:flex h-full">
+      <div className="hidden md:flex h-full min-h-0">
         {/* Sidebar */}
-        <div className="w-80 border-r bg-muted/10 flex flex-col">
-          <div className="h-[73px] p-4 border-b flex items-center">
-            <Button 
-              onClick={handleNewConversation}
-              className="w-full"
-              size="sm"
-            >
-              <IconMessage className="mr-2 h-4 w-4" />
-              New Chat
-            </Button>
-          </div>
-          
-          <div className="flex-1 overflow-hidden">
+        <div className="w-96 border-r bg-muted/10 flex flex-col h-full">
+          <div className="flex-1 overflow-hidden min-h-0 h-full">
             <ConversationList
               conversations={conversations}
               selectedId={selectedConversationId}
@@ -267,20 +325,9 @@ export function ChatHub({
                     <IconMenu2 className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80 p-0">
+                <SheetContent side="left" className="w-96 p-0">
                   <div className="h-full flex flex-col">
-                    <div className="h-[73px] p-4 border-b flex items-center">
-                      <Button 
-                        onClick={handleNewConversation}
-                        className="w-full"
-                        size="sm"
-                      >
-                        <IconMessage className="mr-2 h-4 w-4" />
-                        New Chat
-                      </Button>
-                    </div>
-                    
-                    <div className="flex-1 overflow-hidden">
+                    <div className="flex-1 overflow-hidden min-h-0">
                       <ConversationList
                         conversations={conversations}
                         selectedId={selectedConversationId}

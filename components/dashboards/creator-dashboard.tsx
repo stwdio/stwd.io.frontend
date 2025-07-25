@@ -235,8 +235,8 @@ export function CreatorDashboard() {
         return
       }
 
-      // Navigate to messages page - the conversation will be auto-selected based on URL or we can use a state
-      router.push(`/profile/messages?conversation=${conversation.id}`)
+      // Navigate to chat page - the conversation will be auto-selected based on URL or we can use a state
+      router.push(`/connect/chat?conversation=${conversation.id}`)
     } catch (error) {
       console.error('Error navigating to conversation:', error)
       toast.error('Failed to open conversation')

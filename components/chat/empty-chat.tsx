@@ -9,7 +9,11 @@ interface EmptyChatProps {
 
 export function EmptyChat({ onNewChat }: EmptyChatProps) {
   return (
-    <div className="h-full flex items-center justify-center p-8">
+    <div className="h-full flex flex-col">
+      {/* Empty header to align with conversation list */}
+      <div className="h-[73px] border-b"></div>
+      
+      <div className="flex-1 flex items-center justify-center p-8">
       <div className="text-center max-w-md">
         <IconMessage className="h-16 w-16 mx-auto text-muted-foreground mb-6" />
         
@@ -45,6 +49,7 @@ export function EmptyChat({ onNewChat }: EmptyChatProps) {
           <p>Your conversations are private and secure.</p>
           <p>Studio owners will receive notifications for new messages.</p>
         </div>
+      </div>
       </div>
     </div>
   )

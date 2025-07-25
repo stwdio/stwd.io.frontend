@@ -162,7 +162,7 @@ export function MobileStudioCard({
             size="sm" 
             className="w-full"
           >
-            <Link href={`/dashboard/studios/${studio.id}/edit`}>
+            <Link href={`/workspace/studios/${studio.id}/edit`}>
               <IconEdit className="h-3 w-3 mr-2" />
               Edit Studio
             </Link>

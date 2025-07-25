@@ -7,6 +7,7 @@ import { Database } from '@/types/supabase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
+import { imagePresets } from '@/lib/utils/image-transformations'
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   profile_roles?: Array<{
@@ -33,7 +34,7 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
     ? `${profile.first_name} ${profile.last_name}`
     : profile.username
 
-  const avatarUrl = profile.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
+  const avatarUrl = imagePresets.cardThumbnail(profile.avatar_url) || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
 
   const roles = Array.isArray(profile.profile_roles) 
     ? profile.profile_roles.map(pr => pr.role.name) 
@@ -60,7 +61,7 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
     }
     
     // Navigate to messages with user context
-    router.push(`/chat?user=${profile.user_id}`)
+    router.push(`/chat?user=${profile.username}`)
   }
 
   const handleProfile = (e: React.MouseEvent) => {

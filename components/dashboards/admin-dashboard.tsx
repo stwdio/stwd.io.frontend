@@ -253,7 +253,7 @@ export function AdminDashboard() {
             Manage all studios and platform oversight
           </p>
         </div>
-        <Button onClick={() => window.open('/dashboard/studios/new', '_blank')}>
+        <Button onClick={() => window.open('/workspace/studios/new', '_blank')}>
           <IconPlus className="h-4 w-4 mr-2" />
           Add Studio
         </Button>

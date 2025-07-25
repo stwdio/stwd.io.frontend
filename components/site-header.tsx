@@ -14,6 +14,7 @@ import { IconBriefcase, IconHome, IconLogout, IconMessage, IconSearch, IconSetti
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { imagePresets } from "@/lib/utils/image-transformations"
 
 interface SiteHeaderProps {
   className?: string
@@ -38,8 +39,8 @@ export function SiteHeader({ className }: SiteHeaderProps) {
   // Get the user's professional role for the badge
   const professionalRole = professionalRoles?.[0]?.role?.name
 
-  // Generate avatar URL
-  const avatarUrl = profile?.avatar_url || (profile ? 
+  // Generate avatar URL with optimization (using 80x80 for header avatars)
+  const avatarUrl = imagePresets.avatar(profile?.avatar_url) || (profile ? 
     `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
     : null)
 

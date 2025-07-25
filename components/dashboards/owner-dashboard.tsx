@@ -360,7 +360,7 @@ export function OwnerDashboard() {
           </p>
         </div>
         {studios.length > 0 && (
-          <Button onClick={() => router.push('/dashboard/studios/new')}>
+          <Button onClick={() => router.push('/workspace/studios/new')}>
             <IconPlus className="h-4 w-4 mr-2" />
             Add Studio
           </Button>
@@ -377,7 +377,7 @@ export function OwnerDashboard() {
           <p className="text-muted-foreground mb-6 max-w-md">
             Get started by creating your first studio listing. Once you have a studio, you'll be able to receive inquiries and manage bookings from potential clients.
           </p>
-          <Button onClick={() => router.push('/dashboard/studios/new')} size="lg">
+          <Button onClick={() => router.push('/workspace/studios/new')} size="lg">
             <IconPlus className="h-4 w-4 mr-2" />
             Create Your First Studio
           </Button>
@@ -467,7 +467,7 @@ export function OwnerDashboard() {
                       <MobileStudioCard
                         key={studio.id}
                         studio={studio}
-                        onEdit={(studio) => router.push(`/dashboard/studios/${studio.id}/edit`)}
+                        onEdit={(studio) => router.push(`/workspace/studios/${studio.id}/edit`)}
                         onView={(studio) => window.open(`/studios/${studio.id}`, '_blank')}
                         onDelete={(studio) => {
                           setStudioToDelete(studio)
@@ -479,7 +479,7 @@ export function OwnerDashboard() {
                       <div className="text-center py-8 text-muted-foreground">
                         <IconBuilding className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No studios found. Create your first studio to get started!</p>
-                        <Button className="mt-4" onClick={() => router.push('/dashboard/studios/new')}>
+                        <Button className="mt-4" onClick={() => router.push('/workspace/studios/new')}>
                           <IconPlus className="h-4 w-4 mr-2" />
                           Add Studio
                         </Button>
@@ -556,7 +556,7 @@ export function OwnerDashboard() {
                             <div>
                               <div 
                                 className="font-medium hover:text-primary cursor-pointer hover:underline"
-                                onClick={() => router.push(`/dashboard/studios/${studio.id}/edit`)}
+                                onClick={() => router.push(`/workspace/studios/${studio.id}/edit`)}
                               >
                                 {studio.name}
                               </div>
@@ -588,7 +588,7 @@ export function OwnerDashboard() {
                                   <IconEye className="mr-2 h-4 w-4" />
                                   View Studio
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push(`/dashboard/studios/${studio.id}/edit`)}>
+                                <DropdownMenuItem onClick={() => router.push(`/workspace/studios/${studio.id}/edit`)}>
                                   <IconEdit className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem>

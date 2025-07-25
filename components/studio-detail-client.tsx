@@ -52,23 +52,23 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
 
       if (error) {
         console.error('Error finding conversation:', error)
-        // If no conversation exists, route to creator dashboard instead
-        router.push('/dashboard/creator')
+        // If no conversation exists, route to discover page instead
+        router.push('/discover/studios')
         return
       }
 
       if (!conversation) {
-        // If no conversation exists, route to creator dashboard instead
-        router.push('/dashboard/creator')
+        // If no conversation exists, route to discover page instead
+        router.push('/discover/studios')
         return
       }
 
       // Navigate to messages page with conversation selected
-      router.push(`/profile/messages?conversation=${conversation.id}`)
+      router.push(`/connect/chat?conversation=${conversation.id}`)
     } catch (error) {
       console.error('Error navigating to conversation:', error)
-      // Fallback to creator dashboard
-      router.push('/dashboard/creator')
+      // Fallback to discover page
+      router.push('/discover/studios')
     }
   }
 
@@ -165,7 +165,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
       <Button 
         className="w-full" 
         size="lg"
-        onClick={() => router.push(`/dashboard/studios/${studio.id}/edit`)}
+        onClick={() => router.push(`/workspace/studios/${studio.id}/edit`)}
       >
         <Edit className="h-4 w-4 mr-2" />
         Edit Studio

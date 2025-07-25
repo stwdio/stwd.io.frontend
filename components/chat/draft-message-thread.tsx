@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { IconSend } from '@tabler/icons-react'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import type { Database } from '@/lib/types/database'
+import { imagePresets } from '@/lib/utils/image-transformations'
+import Link from 'next/link'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Studio = Database['public']['Tables']['studios']['Row']
@@ -185,13 +187,52 @@ export function DraftMessageThread({
       {/* Header */}
       <div className="h-[73px] border-b p-4 flex items-center gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={getAvatarUrl(targetProfile)} alt={getDisplayName(targetProfile)} />
-          <AvatarFallback>{getDisplayName(targetProfile).charAt(0).toUpperCase()}</AvatarFallback>
+          <AvatarImage 
+            src={studio?.photo_urls?.[0] ? imagePresets.avatar(studio.photo_urls[0]) : imagePresets.avatar(getAvatarUrl(targetProfile))} 
+            alt={studio ? studio.name : getDisplayName(targetProfile)} 
+          />
+          <AvatarFallback>
+            {studio ? studio.name.charAt(0).toUpperCase() : getDisplayName(targetProfile).charAt(0).toUpperCase()}
+          </AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          <h3 className="font-semibold">{getDisplayName(targetProfile)}</h3>
+          <h3 className="font-semibold">
+            {studio ? (
+              <>
+                New Enquiry with{' '}
+                {studio.slug ? (
+                  <Link href={`/discover/studios/${studio.slug}`} className="hover:underline">
+                    {studio.name}
+                  </Link>
+                ) : (
+                  studio.name
+                )}
+              </>
+            ) : (
+              getDisplayName(targetProfile)
+            )}
+          </h3>
           <p className="text-sm text-muted-foreground">
-            {studio ? `Owner of ${studio.name}` : `@${targetProfile.username}`}
+            {studio ? (
+              targetProfile.username ? (
+                <Link href={`/profiles/${targetProfile.username}`} className="hover:underline">
+                  {getDisplayName(targetProfile)}
+                </Link>
+              ) : (
+                getDisplayName(targetProfile)
+              )
+            ) : (
+              targetProfile.username ? (
+                <>
+                  @
+                  <Link href={`/profiles/${targetProfile.username}`} className="hover:underline">
+                    {targetProfile.username}
+                  </Link>
+                </>
+              ) : (
+                'Direct message'
+              )
+            )}
           </p>
         </div>
       </div>
@@ -211,19 +252,18 @@ export function DraftMessageThread({
 
       {/* Message input */}
       <div className="border-t p-4">
-        <div className="flex gap-2">
-          <Textarea
+        <div className="flex gap-2 items-center">
+          <Input
             placeholder={studio ? `Hi, I'm interested in ${studio.name}...` : "Type a message..."}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter') {
                 e.preventDefault()
                 handleSendMessage()
               }
             }}
-            rows={1}
-            className="flex-1 min-h-[40px] max-h-[120px] resize-none"
+            className="flex-1"
           />
           <Button
             onClick={handleSendMessage}

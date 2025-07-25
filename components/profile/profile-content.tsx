@@ -28,6 +28,7 @@ import {
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { imagePresets } from '@/lib/utils/image-transformations'
 
 export function ProfileContent() {
   const { profile, professionalRoles, refreshProfile } = useAuth()
@@ -52,7 +53,7 @@ export function ProfileContent() {
     ? `${profile.first_name} ${profile.last_name}`
     : profile.username || 'User'
 
-  const avatarUrl = profile.avatar_url || 
+  const avatarUrl = imagePresets.avatar(profile.avatar_url) || 
     `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
 
   const handleSave = async () => {

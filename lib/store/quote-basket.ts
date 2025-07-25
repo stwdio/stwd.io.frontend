@@ -75,7 +75,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
       },
       
       clearBasket: () => {
-        set({ studios: [] })
+        set({ studios: [], isOpen: false })
         toast.success('Quote basket cleared')
       },
       

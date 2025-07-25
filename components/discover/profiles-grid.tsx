@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ProfileCard } from '@/components/profile-card'
+import { ProfileCard } from '@/components/cards/profile-card'
 import { GenericCardSkeleton } from '@/components/skeletons/generic-card-skeleton'
 import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/lib/types/database'

@@ -1,4 +1,3 @@
-export { StudioCardSkeleton } from './studio-card-skeleton'
 export { BrowsePageSkeleton } from './browse-page-skeleton'
 export { StudioDetailPageSkeleton } from './studio-detail-page-skeleton'
 export { AuthLoadingSkeleton, MinimalAuthLoading } from './auth-loading-skeleton'

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { GenericCard } from '@/components/generic-card'
+import { GenericCard } from '@/components/cards/generic-card'
 import { IconMessage, IconUser } from '@tabler/icons-react'
 import { Database } from '@/types/supabase'
 import { useRouter } from 'next/navigation'

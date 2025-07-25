@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
-import { StudioCardNew as StudioCard } from "@/components/studio-card-new"
+import { useCallback, useMemo } from "react"
+import { StudioCard } from "@/components/cards/studio-card"
 import { GenericCardSkeleton } from "@/components/skeletons/generic-card-skeleton"
 import { useAuth } from "@/lib/auth/auth-context"
 import { GenericGrid } from "@/components/discover/generic-grid"
@@ -33,7 +33,7 @@ export function BrowseStudiosContent({
   },
   searchQuery = ""
 }: BrowseStudiosContentProps) {
-  const { user, profile, professionalRoles } = useAuth()
+  const { profile, professionalRoles } = useAuth()
 
   // Combine all filters including search for the query
   const queryFilters = useMemo(() => ({
@@ -83,7 +83,7 @@ export function BrowseStudiosContent({
     refetchLists()
   }, [refetchStudios, refetchLists])
 
-  const renderStudio = useCallback((studio: any, index: number) => (
+  const renderStudio = useCallback((studio: Studio & { average_rating?: number; review_count?: number }, index: number) => (
     <StudioCard
       key={studio.id}
       studio={studio}

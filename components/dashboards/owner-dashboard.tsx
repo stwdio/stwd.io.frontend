@@ -32,7 +32,7 @@ import {
   IconChevronUp,
   IconChevronDown
 } from '@tabler/icons-react'
-import { MobileStudioCard, MobileInquiryCard } from '@/components/mobile-studio-card'
+import { MobileStudioCard, MobileInquiryCard } from '@/components/cards/mobile-studio-card'
 import { getPriceTierSymbol } from '@/lib/constants/currencies'
 
 interface Studio {

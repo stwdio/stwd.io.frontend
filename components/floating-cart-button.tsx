@@ -11,8 +11,8 @@ export function FloatingCartButton() {
   const { studios: basketStudios, toggleBasket } = useQuoteBasket()
   const pathname = usePathname()
 
-  // Hide on profile pages
-  if (loading || pathname.startsWith('/profile')) {
+  // Only show on studios discover page
+  if (loading || !pathname?.includes('/discover/studios')) {
     return null
   }
   

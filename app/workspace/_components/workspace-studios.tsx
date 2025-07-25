@@ -83,7 +83,7 @@ export async function WorkspaceStudios({ userId }: WorkspaceStudiosProps) {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground mb-4">
-              You haven't created any studios yet
+              You haven&apos;t created any studios yet
             </p>
             <Button asChild>
               <Link href="/workspace/studios/new">

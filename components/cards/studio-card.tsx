@@ -1,11 +1,11 @@
 'use client'
 
-import { GenericCard } from '@/components/generic-card'
+import { GenericCard } from '@/components/cards/generic-card'
 import { IconMessage, IconPlus } from '@tabler/icons-react'
 import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
 import { ReactNode } from 'react'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
-import { formatPrice, getPriceTierSymbol } from '@/lib/constants/currencies'
+import { getPriceTierSymbol } from '@/lib/constants/currencies'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
@@ -27,7 +27,7 @@ interface Studio {
   average_rating?: number
   review_count?: number
   amenities?: string[]
-  gear?: any
+  gear?: Record<string, unknown>
   notes?: string // For lists view
   photo_urls?: string[]
   slug?: string
@@ -56,7 +56,7 @@ interface StudioCardProps {
   sharedProfile?: Profile | null
   profileLoading?: boolean
   sharedProfessionalRoles?: ProfessionalRole[]
-  sharedLists?: any[]
+  sharedLists?: Array<{ id: number; name: string }>
   listsLoading?: boolean
   onListsChange?: () => void
   // Customization props
@@ -70,7 +70,7 @@ interface StudioCardProps {
   priority?: boolean
 }
 
-export function StudioCardNew({
+export function StudioCard({
   studio,
   memberships = [],
   sharedProfile,

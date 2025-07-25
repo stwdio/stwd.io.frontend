@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Star, MapPin } from 'lucide-react'
-import { IconMessage, IconPlus } from '@tabler/icons-react'
 import Link from 'next/link'
 import { ReactNode } from 'react'
 import Image from 'next/image'
@@ -27,8 +26,6 @@ export interface GenericCardProps {
   reviewCount?: number
   
   // Price data
-  price?: string | number
-  priceLabel?: string
   priceTier?: string
   
   // Tags/badges
@@ -77,8 +74,6 @@ export function GenericCard({
   location,
   rating,
   reviewCount,
-  price,
-  priceLabel,
   priceTier,
   tags = [],
   maxTags = 4,

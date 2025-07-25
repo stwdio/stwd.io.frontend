@@ -26,6 +26,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
   }
 
   const selectedQuoteId = params.quote as string | undefined
+  const selectedStudioSlug = params.studio as string | undefined
   
   let quotes = []
   
@@ -53,6 +54,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
         studio:studios!inner (
           id,
           name,
+          slug,
           location,
           photo_urls
         )
@@ -81,6 +83,15 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
         } : undefined,
         conversation_id: undefined // TODO: Add conversation lookup
       }))
+    }
+  }
+  
+  // If a studio slug is provided, find the matching quote
+  let initialQuoteId = selectedQuoteId
+  if (selectedStudioSlug && !selectedQuoteId && quotes.length > 0) {
+    const matchingQuote = quotes.find(q => q.studio.slug === selectedStudioSlug)
+    if (matchingQuote) {
+      initialQuoteId = matchingQuote.id
     }
   }
   // For studio owners: get received inquiries
@@ -155,7 +166,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
       userId={user.id}
       profile={profile}
       initialQuotes={quotes || []}
-      initialSelectedQuoteId={selectedQuoteId}
+      initialSelectedQuoteId={initialQuoteId}
     />
   )
 }

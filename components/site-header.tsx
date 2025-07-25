@@ -143,7 +143,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
                 <DropdownMenuItem asChild>
                   <Link href="/workspace" className="cursor-pointer">
                     <IconBriefcase className="mr-2 h-4 w-4" />
-                    Workspace
+                    Dashboard
                   </Link>
                 </DropdownMenuItem>
               )}

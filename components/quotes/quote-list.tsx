@@ -15,6 +15,7 @@ interface Quote {
   studio: {
     id: number
     name: string
+    slug?: string
     location: string
     photo_urls?: string[]
   }

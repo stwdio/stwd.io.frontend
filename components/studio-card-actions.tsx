@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { Plus, MessageSquare } from 'lucide-react'
+import { Plus, MessageSquare, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 
@@ -29,6 +29,7 @@ interface StudioCardActionsProps {
   studio: {
     id: number
     name: string
+    slug?: string
     description: string
     location: string
     hourly_rate: number
@@ -121,30 +122,28 @@ export function StudioCardActions({
     setHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
     
     // Check for existing conversations with this studio
-    // First check if studio owner exists
-    const { data: studioOwner } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('id', parseInt(studio.owner_id))
-      .single()
-    
-    if (studioOwner) {
-      // Check if there's a conversation between the user and studio owner
-      const { data: conversationCheck } = await supabase
-        .from('chat_conversations')
-        .select(`
+    // First get all conversations for this user
+    const { data: userConversations } = await supabase
+      .from('chat_participants')
+      .select(`
+        conversation_id,
+        chat_conversations!inner(
           id,
+          title,
           chat_participants!inner(user_id)
-        `)
-        .eq('title', studio.name)
-        .limit(1)
-      
-      const hasStudioConversation = conversationCheck && conversationCheck.some(conv => {
-        const participantIds = conv.chat_participants.map(p => p.user_id)
-        return participantIds.includes(profileData.user_id) && participantIds.includes(studioOwner.user_id)
+        )
+      `)
+      .eq('user_id', profileData.user_id)
+    
+    if (userConversations) {
+      // Check if any conversation has the studio name as title
+      const hasStudioConversation = userConversations.some(item => {
+        const conv = item.chat_conversations
+        // Check if conversation title matches studio name (case insensitive)
+        return conv.title?.toLowerCase() === studio.name.toLowerCase()
       })
       
-      setHasConversation(hasStudioConversation || false)
+      setHasConversation(hasStudioConversation)
     }
   }
 
@@ -201,8 +200,7 @@ export function StudioCardActions({
             e.stopPropagation()
             authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")
           }}
-          className="flex-1 text-xs"
-          variant="default"
+          className="flex-1 text-xs bg-black hover:bg-gray-800 text-white"
         >
           <Plus className="h-4 w-4 mr-1" />
           Quote
@@ -224,14 +222,19 @@ export function StudioCardActions({
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          // Navigate to chat with studio context
-          router.push(`/connect/chat?studio=${studio.slug || studio.id}`)
+          if (hasConversation) {
+            // If conversation exists, navigate to it
+            handleViewConversation()
+          } else {
+            // Navigate to chat with studio context
+            router.push(`/connect/chat?studio=${studio.slug || studio.id}`)
+          }
         }}
         className="flex-1 text-xs"
         variant="outline"
       >
-        <MessageSquare className="h-4 w-4 mr-1" />
-        Enquire
+        {hasConversation ? <Eye className="h-4 w-4 mr-1" /> : <MessageSquare className="h-4 w-4 mr-1" />}
+        {hasConversation ? 'View Chat' : 'Enquire'}
       </Button>
       
       <Button
@@ -240,17 +243,17 @@ export function StudioCardActions({
           e.preventDefault()
           e.stopPropagation()
           if (hasInquiry) {
-            toast.error('You already have a quote request for this studio')
+            // Navigate to quotes page with studio slug
+            router.push(`/connect/quotes?studio=${studio.slug || studio.id}`)
             return
           }
           await addStudio(studio)
         }}
-        className="flex-1 text-xs"
-        disabled={isInBasket || hasInquiry}
-        variant={isInBasket || hasInquiry ? "secondary" : "default"}
+        className="flex-1 text-xs bg-black hover:bg-gray-800 text-white"
+        disabled={isInBasket}
       >
-        <Plus className="h-4 w-4 mr-1" />
-        {hasInquiry ? 'Quoted' : isInBasket ? 'In Basket' : 'Quote'}
+        {hasInquiry ? <Eye className="h-4 w-4 mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+        {hasInquiry ? 'View Quote' : isInBasket ? 'In Basket' : 'Quote'}
       </Button>
     </div>
   )

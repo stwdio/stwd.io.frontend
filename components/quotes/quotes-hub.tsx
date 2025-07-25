@@ -21,6 +21,7 @@ interface Quote {
   studio: {
     id: number
     name: string
+    slug?: string
     location: string
     photo_urls?: string[]
   }
@@ -47,6 +48,7 @@ export function QuotesHub({
   initialSelectedQuoteId
 }: QuotesHubProps) {
   const [quotes, setQuotes] = useState(initialQuotes)
+  // Auto-select the first quote if none selected
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(
     initialSelectedQuoteId || (initialQuotes.length > 0 ? initialQuotes[0].id : null)
   )
@@ -57,8 +59,15 @@ export function QuotesHub({
 
   const handleQuoteSelect = (quoteId: string) => {
     setSelectedQuoteId(quoteId)
-    // Update URL without full page reload
-    window.history.replaceState(null, '', `/connect/quotes?quote=${quoteId}`)
+    // Find the quote to get the studio slug
+    const quote = quotes.find(q => q.id === quoteId)
+    if (quote && quote.studio.slug) {
+      // Update URL with studio slug
+      window.history.replaceState(null, '', `/connect/quotes?studio=${quote.studio.slug}`)
+    } else {
+      // Fallback to quote ID if no slug
+      window.history.replaceState(null, '', `/connect/quotes?quote=${quoteId}`)
+    }
   }
 
   const sidebar = (

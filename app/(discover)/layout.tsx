@@ -11,13 +11,11 @@ export default function DiscoverLayout({
   children: ReactNode
 }) {
   const pathname = usePathname()
-  // Don't show navigation on studio detail pages
-  const isStudioDetailPage = pathname?.match(/^\/discover\/studios\/[^\/]+$/)
-  const showNavigation = (pathname?.startsWith('/discover') || pathname?.startsWith('/connect')) && !isStudioDetailPage
+  const showNavigation = pathname?.startsWith('/discover') || pathname?.startsWith('/connect')
   
   return (
     <div className="flex flex-col h-full">
-      {/* Show navigation for both discover and connect routes, but not on studio detail pages */}
+      {/* Show navigation for both discover and connect routes */}
       {showNavigation && <SectionNavigation />}
       
       {/* Dynamic content area */}

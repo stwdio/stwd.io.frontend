@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star, MapPin, ChevronLeft, ChevronRight } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Star, MapPin, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { StudioImage } from "@/components/studio-image-placeholder"
-import { StudioDetailActions } from "@/components/studio-detail-client"
+import { StudioDetailActions } from "@/components/studio-detail-actions"
 import { imagePresets } from "@/lib/utils/image-transformations"
 import { getPriceTierSymbol } from "@/lib/constants/currencies"
 import { BackButton } from "@/components/back-button"
@@ -55,6 +57,9 @@ interface StudioDetailContentProps {
 export function StudioDetailContent({ studio, amenities, reviews, averageRating, ownerProfile, currentUserProfile }: StudioDetailContentProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showAllReviews, setShowAllReviews] = useState(false)
+  const [gearOpen, setGearOpen] = useState(true)
+  const [gearSearchQuery, setGearSearchQuery] = useState('')
+  const [reviewSearchQuery, setReviewSearchQuery] = useState('')
   
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -132,12 +137,9 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
             <div className="space-y-4">
               <div className="flex items-start justify-between">
                 <h1 className="text-4xl font-bold tracking-tight">{studio.name}</h1>
-                <div className="text-right">
-                  <span className="text-3xl font-bold">
-                    {getPriceTierSymbol(studio.price_tier || 1)}
-                  </span>
-                  <span className="text-sm text-muted-foreground block">Price range</span>
-                </div>
+                <span className="text-3xl font-light text-muted-foreground">
+                  {getPriceTierSymbol(studio.price_tier || 1)}
+                </span>
               </div>
               <div className="flex items-center gap-6 text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -151,11 +153,6 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-3 w-full">
-              <StudioDetailActions studio={studio} />
-            </div>
-
             {/* Description */}
             <div>
               <p className="text-base leading-relaxed text-foreground/90">
@@ -163,67 +160,132 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
               </p>
             </div>
 
+            {/* Action Buttons */}
+            <div className="flex gap-3 w-full">
+              <StudioDetailActions studio={studio} />
+            </div>
 
-            {/* Available Gear Section */}
+
+            {/* Gear Section - Collapsible with Search */}
             {studio.gear && Object.keys(studio.gear).length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Available Gear</h3>
+              <Collapsible open={gearOpen} onOpenChange={setGearOpen}>
                 <div className="space-y-4">
-                  {Object.entries(studio.gear).map(([category, items]) => (
-                    <div key={category} className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground capitalize">
-                        {category}
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {Array.isArray(items) ? (
-                          items.map((item: string, index: number) => (
-                            <Badge key={index} variant="secondary" className="font-normal">
-                              {item}
-                            </Badge>
-                          ))
-                        ) : (
-                          <Badge variant="secondary" className="font-normal">
-                            {String(items)}
-                          </Badge>
-                        )}
+                  <div className="flex items-center justify-between">
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                          Gear
+                          {gearOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </h3>
+                      </Button>
+                    </CollapsibleTrigger>
+                    {gearOpen && (
+                      <div className="relative w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Search gear..."
+                          value={gearSearchQuery}
+                          onChange={(e) => setGearSearchQuery(e.target.value)}
+                          className="pl-9 h-9"
+                        />
                       </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
+                  <CollapsibleContent className="space-y-4">
+                    {Object.entries(studio.gear).map(([category, items]) => {
+                      const filteredItems = Array.isArray(items) 
+                        ? items.filter((item: string) => 
+                            item.toLowerCase().includes(gearSearchQuery.toLowerCase())
+                          )
+                        : [String(items)].filter(item => 
+                            item.toLowerCase().includes(gearSearchQuery.toLowerCase())
+                          )
+                      
+                      if (filteredItems.length === 0) return null
+                      
+                      return (
+                        <div key={category} className="space-y-2">
+                          <h4 className="text-sm font-medium text-muted-foreground capitalize">
+                            {category}
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {filteredItems.map((item: string, index: number) => (
+                              <Badge key={index} variant="secondary" className="font-normal">
+                                {item}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </CollapsibleContent>
                 </div>
-              </div>
+              </Collapsible>
             )}
 
-            {/* Reviews Section */}
+            {/* Reviews Section with Search */}
             <div className="space-y-4 pb-8">
-              <h3 className="text-lg font-semibold">
-                Reviews ({reviews.length})
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Reviews</h3>
+                {reviews.length > 0 && (
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search reviews..."
+                      value={reviewSearchQuery}
+                      onChange={(e) => setReviewSearchQuery(e.target.value)}
+                      className="pl-9 h-9"
+                    />
+                  </div>
+                )}
+              </div>
               {reviews.length > 0 ? (
                 <div className="space-y-4">
-                  {reviews.slice(0, showAllReviews ? reviews.length : 3).map((review) => (
-                    <div key={review.id} className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div className="flex">
-                          {renderStars(review.rating)}
+                  {reviews
+                    .filter(review => {
+                      const searchLower = reviewSearchQuery.toLowerCase()
+                      const reviewerName = review.reviewer?.first_name || 'Anonymous'
+                      return reviewerName.toLowerCase().includes(searchLower) ||
+                             (review.comment && review.comment.toLowerCase().includes(searchLower))
+                    })
+                    .slice(0, showAllReviews ? undefined : 3)
+                    .map((review) => (
+                      <div key={review.id} className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="flex">
+                            {renderStars(review.rating)}
+                          </div>
+                          <span className="font-medium">
+                            {review.reviewer?.first_name || 'Anonymous'}
+                          </span>
                         </div>
-                        <span className="font-medium">
-                          {review.reviewer?.first_name || 'Anonymous'}
-                        </span>
+                        {review.comment && (
+                          <p className="text-foreground/80 leading-relaxed">
+                            {review.comment}
+                          </p>
+                        )}
                       </div>
-                      {review.comment && (
-                        <p className="text-foreground/80 leading-relaxed">
-                          {review.comment}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                  {reviews.length > 3 && (
+                    ))
+                  }
+                  {reviews.filter(review => {
+                    const searchLower = reviewSearchQuery.toLowerCase()
+                    const reviewerName = review.reviewer?.first_name || 'Anonymous'
+                    return reviewerName.toLowerCase().includes(searchLower) ||
+                           (review.comment && review.comment.toLowerCase().includes(searchLower))
+                  }).length > 3 && (
                     <Button
                       variant="link"
                       onClick={() => setShowAllReviews(!showAllReviews)}
                       className="px-0 h-auto font-normal text-base"
                     >
-                      {showAllReviews ? 'Show less' : `Show all ${reviews.length} reviews`}
+                      {showAllReviews ? 'Show less' : `Show all ${reviews.filter(review => {
+                        const searchLower = reviewSearchQuery.toLowerCase()
+                        const reviewerName = review.reviewer?.first_name || 'Anonymous'
+                        return reviewerName.toLowerCase().includes(searchLower) ||
+                               (review.comment && review.comment.toLowerCase().includes(searchLower))
+                      }).length} reviews`}
                     </Button>
                   )}
                 </div>

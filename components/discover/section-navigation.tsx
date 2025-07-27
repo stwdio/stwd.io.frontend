@@ -12,7 +12,7 @@ export function SectionNavigation() {
   const isConnectSection = pathname?.startsWith('/connect')
   
   // Determine active states for discover sub-navigation
-  const isStudiosActive = pathname === '/discover/studios' || pathname === '/discover'
+  const isStudiosActive = pathname === '/discover/studios' || pathname === '/discover' || pathname?.startsWith('/discover/studios/')
   const isPeopleActive = pathname === '/discover/people'
   
   // Determine active states for connect sub-navigation

@@ -47,6 +47,12 @@ interface StudioCardActionsProps {
   sharedLists?: any[]
   listsLoading?: boolean
   onListsChange?: () => void
+  // OPTIMIZED: Receive interaction status to avoid individual queries
+  interactionStatus?: {
+    hasInquiry: boolean
+    hasConversation: boolean
+    conversationId?: number
+  }
 }
 
 export function StudioCardActions({ 
@@ -57,14 +63,22 @@ export function StudioCardActions({
   sharedProfessionalRoles = [],
   sharedLists = [],
   listsLoading = false,
-  onListsChange
+  onListsChange,
+  interactionStatus
 }: StudioCardActionsProps) {
   // OPTIMIZED: Use shared profile instead of individual fetching
   const profile = sharedProfile
   const loading = profileLoading
   const professionalRoles = sharedProfessionalRoles
-  const [hasInquiry, setHasInquiry] = useState(false)
-  const [hasConversation, setHasConversation] = useState(false)
+  
+  // Use passed interaction status or fetch if not provided
+  const [localHasInquiry, setLocalHasInquiry] = useState(false)
+  const [localHasConversation, setLocalHasConversation] = useState(false)
+  
+  const hasInquiry = interactionStatus?.hasInquiry ?? localHasInquiry
+  const hasConversation = interactionStatus?.hasConversation ?? localHasConversation
+  const conversationId = interactionStatus?.conversationId
+  
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
   const authModal = useAuthModal()
@@ -72,35 +86,28 @@ export function StudioCardActions({
   const isInBasket = isStudioInBasket(studio.id)
 
   const handleViewConversation = async () => {
-    if (!profile) return
+    if (conversationId) {
+      router.push(`/connect/chat?conversation=${conversationId}`)
+    } else if (!interactionStatus) {
+      // Only fetch if interaction status wasn't provided
+      try {
+        const { data: conversation } = await createClient()
+          .from('conversations')
+          .select('id')
+          .eq('studio_id', studio.id)
+          .eq('customer_id', profile.id)
+          .single()
 
-    try {
-      // Find the conversation for this studio and creator
-      const { data: conversation, error } = await createClient()
-        .from('conversations')
-        .select('id')
-        .eq('studio_id', studio.id)
-        .eq('customer_id', profile.id)
-        .single()
-
-      if (error) {
+        if (conversation) {
+          router.push(`/connect/chat?conversation=${conversation.id}`)
+        } else {
+          router.push('/discover/studios')
+        }
+      } catch (error) {
         console.error('Error finding conversation:', error)
-        // If no conversation exists, route to discover page instead
         router.push('/discover/studios')
-        return
       }
-
-      if (!conversation) {
-        // If no conversation exists, route to discover page instead
-        router.push('/discover/studios')
-        return
-      }
-
-      // Navigate to messages page with conversation selected
-      router.push(`/connect/chat?conversation=${conversation.id}`)
-    } catch (error) {
-      console.error('Error navigating to conversation:', error)
-      // Fallback to discover page
+    } else {
       router.push('/discover/studios')
     }
   }
@@ -119,7 +126,7 @@ export function StudioCardActions({
       .eq('inquiries.creator_id', profileData.id)
       .limit(1)
 
-    setHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
+    setLocalHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
     
     // Check for existing conversations with this studio
     // First get all conversations for this user
@@ -143,16 +150,16 @@ export function StudioCardActions({
         return conv.title?.toLowerCase() === studio.name.toLowerCase()
       })
       
-      setHasConversation(hasStudioConversation)
+      setLocalHasConversation(hasStudioConversation)
     }
   }
 
-  // OPTIMIZED: Check inquiry status when profile is available
+  // OPTIMIZED: Check inquiry status when profile is available and status not provided
   useEffect(() => {
-    if (profile && !loading) {
+    if (profile && !loading && !interactionStatus) {
       checkInquiryStatus(profile)
     }
-  }, [profile, loading, studio.id])
+  }, [profile, loading, studio.id, interactionStatus])
   
   // Listen for inquiry submissions in a separate effect
   useEffect(() => {

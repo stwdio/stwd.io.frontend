@@ -60,6 +60,11 @@ interface StudioCardProps {
   sharedLists?: Array<{ id: number; name: string }>
   listsLoading?: boolean
   onListsChange?: () => void
+  interactionStatus?: {
+    hasInquiry: boolean
+    hasConversation: boolean
+    conversationId?: number
+  }
   // Customization props
   showAmenities?: boolean
   showNotes?: boolean
@@ -80,6 +85,7 @@ export function StudioCard({
   sharedLists = [],
   listsLoading = false,
   onListsChange,
+  interactionStatus,
   showAmenities = true,
   showNotes = false,
   customActions,
@@ -175,6 +181,7 @@ export function StudioCard({
           sharedLists={sharedLists}
           listsLoading={listsLoading}
           onListsChange={onListsChange}
+          interactionStatus={interactionStatus}
         />
       )}
     />

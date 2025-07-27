@@ -176,7 +176,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   // For creators - show contact and either "View Inquiry" or "Quote"
   return (
     <>
-      <Button className="w-full" size="lg">
+      <Button className="flex-1" size="lg">
         <MessageCircle className="h-4 w-4 mr-2" />
         Contact Studio
       </Button>
@@ -184,7 +184,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
       {hasInquiry ? (
         <Button 
           variant="outline" 
-          className="w-full"
+          className="flex-1"
           onClick={handleViewConversation}
         >
           <MessageSquare className="h-4 w-4 mr-2" />
@@ -193,7 +193,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
       ) : (
         <Button 
           variant="outline" 
-          className="w-full"
+          className="flex-1"
           onClick={async () => await addStudio(studio)}
           disabled={isInBasket}
         >

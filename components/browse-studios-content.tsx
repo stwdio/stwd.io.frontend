@@ -9,6 +9,7 @@ import { GenericGrid } from "@/components/discover/generic-grid"
 // React Query hooks
 import { useStudiosInfinite, useStudioListMemberships } from "@/lib/hooks/queries/studios"
 import { useUserLists } from "@/lib/hooks/queries/auth"
+import { useStudioInteractionStatuses } from "@/lib/hooks/queries/studio-interactions"
 
 interface FilterState {
   location: string
@@ -33,7 +34,7 @@ export function BrowseStudiosContent({
   },
   searchQuery = ""
 }: BrowseStudiosContentProps) {
-  const { profile, professionalRoles } = useAuth()
+  const { profile, professionalRoles, user } = useAuth()
 
   // Combine all filters including search for the query
   const queryFilters = useMemo(() => ({
@@ -77,6 +78,14 @@ export function BrowseStudiosContent({
   const { 
     data: membershipsMap = {}
   } = useStudioListMemberships(studioIds, profile?.id || null)
+  
+  // Fetch interaction statuses for all studios
+  const {
+    data: interactionStatuses = {}
+  } = useStudioInteractionStatuses(
+    allStudios.map(s => s.id), 
+    user?.id || null
+  )
 
   const handleRefresh = useCallback(() => {
     refetchStudios()
@@ -94,9 +103,10 @@ export function BrowseStudiosContent({
       sharedLists={userLists}
       listsLoading={listsLoading}
       onListsChange={refetchLists}
+      interactionStatus={interactionStatuses[studio.id]}
       priority={index < 4}
     />
-  ), [membershipsMap, profile, professionalRoles, userLists, listsLoading, refetchLists])
+  ), [membershipsMap, profile, professionalRoles, userLists, listsLoading, refetchLists, interactionStatuses])
 
   return (
     <GenericGrid

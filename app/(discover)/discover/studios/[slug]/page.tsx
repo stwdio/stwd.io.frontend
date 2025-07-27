@@ -120,25 +120,13 @@ export default async function StudioPage({ params }: StudioPageProps) {
   })) || []
   
   return (
-    <div className="h-full flex flex-col">
-      {/* Header with back button */}
-      <div className="flex-shrink-0 border-b bg-background">
-        <div className="flex items-center gap-4 px-4 sm:px-6 py-3">
-          <BackButton href="/discover" label="Back to Studios" />
-        </div>
-      </div>
-
-      {/* Studio detail content */}
-      <div className="flex-1 overflow-auto px-4 py-3 sm:px-6 sm:py-4">
-        <StudioDetailContent
-          studio={studio}
-          amenities={amenities}
-          reviews={formattedReviews}
-          averageRating={averageRating}
-          ownerProfile={ownerProfile}
-          currentUserProfile={profile}
-        />
-      </div>
-    </div>
+    <StudioDetailContent
+      studio={studio}
+      amenities={amenities}
+      reviews={formattedReviews}
+      averageRating={averageRating}
+      ownerProfile={ownerProfile}
+      currentUserProfile={profile}
+    />
   )
 }

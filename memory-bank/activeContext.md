@@ -377,3 +377,48 @@ All 8 implementation plans have been created in `/implementation-plans/to-do/`:
   - `/components/discover/profiles-grid.tsx` - Using GenericCardSkeleton
 - **Result**: Consistent card heights with no layout shifts during loading
 - **Memory Bank Updated**: Added comprehensive documentation in systemPatterns.md section 13
+
+### ✅ Studio Detail Page Redesign - COMPLETED (February 2025)
+- **Status**: ✅ **COMPLETED** - Optimized studio detail page layout for desktop viewing
+- **Major Changes**:
+  - Implemented shadcn carousel component for studio images
+  - Reduced image sizes and aspect ratio from video to 16:10 for better space utilization
+  - Reorganized layout to fit all content without scrolling on desktop screens
+  - Moved price, contact, and quote section alongside main content as sticky sidebar
+  - Added click-to-expand modal for full-size image viewing
+- **Implementation Details**:
+  - Installed and configured shadcn carousel component
+  - Created new `galleryLarge` image preset (1200x750) for optimized carousel display
+  - Changed grid layout from 3-column to 12-column system for better control
+  - Main content takes 8 columns, pricing/actions sidebar takes 4 columns
+  - Carousel shows navigation arrows only when multiple images exist
+  - Dialog component used for full-screen image viewing on click
+  - Amenities section remains collapsible, gear section defaults to collapsed
+  - Reviews limited to 3 visible by default to save vertical space
+- **Files Modified**:
+  - `/components/studio-detail-content.tsx` - Complete redesign with carousel and new layout
+  - `/app/(discover)/discover/studios/[slug]/page.tsx` - Updated container styling
+  - `/lib/utils/image-transformations.ts` - Added galleryLarge preset
+  - `/components/ui/carousel.tsx` - New shadcn component installed
+- **Result**: All studio information visible without scrolling on desktop, improved image viewing experience
+
+### ✅ Studio Detail Page Two-Column Redesign - COMPLETED (February 2025)
+- **Status**: ✅ **COMPLETED** - Redesigned studio detail page with modern two-column layout
+- **Major Changes**:
+  - Implemented 45%/55% two-column grid layout below static header
+  - Left column: Full-height image carousel with minimal navigation arrows
+  - Right column: Scrollable content area with all studio details
+  - Removed previous carousel implementation in favor of custom image viewer
+  - Applied shadcn/ui aesthetic with clean typography and spacing
+- **Implementation Details**:
+  - Static header with "Back to Studios" link remains fixed
+  - Image carousel fills entire left column height with black background
+  - Custom circular arrow buttons for image navigation (ChevronLeft/ChevronRight)
+  - Right column uses ScrollArea component for smooth scrolling
+  - Increased font sizes and spacing for better readability
+  - Action buttons integrated with StudioDetailActions component
+  - Available Gear section no longer collapsible for cleaner presentation
+  - Reviews section simplified with inline "Show all" link
+- **Files Modified**:
+  - `/components/studio-detail-content.tsx` - Complete redesign with two-column layout
+- **Result**: Modern, clean layout matching the provided design mockup

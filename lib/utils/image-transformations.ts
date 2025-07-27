@@ -112,6 +112,15 @@ export const imagePresets = {
     getOptimizedImageUrl(url, { 
       width: 2000,
       quality: 100 // Maximum quality for full-size viewing
+    }),
+  
+  // Studio detail carousel images - optimized for carousel display
+  galleryLarge: (url: string | null | undefined) => 
+    getOptimizedImageUrl(url, { 
+      width: 1200, 
+      height: 750, // 16:10 aspect ratio
+      resize: 'cover',
+      quality: 95
     })
 }
 

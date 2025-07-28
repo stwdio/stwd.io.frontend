@@ -40,7 +40,9 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
   const avatarUrl = imagePresets.cardThumbnail(profile.avatar_url) || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
 
   const roles = Array.isArray(profile.profile_roles) 
-    ? profile.profile_roles.map(pr => pr.role.name) 
+    ? profile.profile_roles.map(pr => pr.role.name)
+    : profile.profile_roles && typeof profile.profile_roles === 'object' && 'role' in profile.profile_roles
+    ? [(profile.profile_roles as { role: { name: string } }).role.name]
     : []
   
   const primaryRole = roles[0] || ''

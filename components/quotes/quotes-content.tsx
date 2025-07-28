@@ -286,7 +286,7 @@ export function QuotesContent() {
                   </div>
                   <Badge variant={getStatusColor(quote.status)} className="flex items-center gap-1">
                     {getStatusIcon(quote.status)}
-                    {quote.status}
+                    {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
                   </Badge>
                 </div>
               </CardHeader>

@@ -106,7 +106,7 @@ export function MessageThread({
           filter: `conversation_id=eq.${conversation.id}`
         },
         (payload) => {
-          const newMessage = payload.new as any
+          const newMessage = payload.new as { id: number; sender_id: string; content: string; created_at: string; conversation_id: number }
           // Only add if it's not from the current user (we already added it locally)
           if (newMessage.sender_id !== currentUserId) {
             setMessages(prev => [...prev, newMessage])
@@ -122,7 +122,7 @@ export function MessageThread({
           filter: `conversation_id=eq.${conversation.id}`
         },
         (payload) => {
-          const deletedMessage = payload.old as any
+          const deletedMessage = payload.old as { id: number }
           setMessages(prev => prev.filter(msg => msg.id !== deletedMessage.id))
         }
       )

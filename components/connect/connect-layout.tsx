@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, ReactNode } from 'react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { IconMenu2 } from '@tabler/icons-react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -20,7 +19,6 @@ export function ConnectLayout({
   content,
   emptyState,
   selectedId,
-  isMobile = false,
   mobileTitle = 'Messages'
 }: ConnectLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)

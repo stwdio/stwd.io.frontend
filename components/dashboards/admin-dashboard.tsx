@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -36,7 +36,7 @@ interface Studio {
   verification_status: string
   claimed_by: number | null
   owner_id: number | null
-  verification_documents: any
+  verification_documents: Record<string, unknown> | null
   created_at: string
   published: boolean
   profiles?: {
@@ -78,9 +78,9 @@ export function AdminDashboard() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       // Fetch all studios with their owners
       const { data: studios } = await supabase
@@ -109,7 +109,7 @@ export function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   const handleEditStudio = (studio: Studio) => {
     setEditingStudio(studio)
@@ -174,9 +174,9 @@ export function AdminDashboard() {
       } else {
         throw new Error(data.error || 'Failed to delete studio')
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting studio:', error)
-      toast.error(`Failed to delete studio: ${error.message}`)
+      toast.error(`Failed to delete studio: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -518,7 +518,7 @@ export function AdminDashboard() {
             
             <div>
               <Label htmlFor="studio-name-confirmation">
-                Type the studio name "{studioToDelete?.name}" to confirm deletion:
+                Type the studio name &ldquo;{studioToDelete?.name}&rdquo; to confirm deletion:
               </Label>
               <Input
                 id="studio-name-confirmation"

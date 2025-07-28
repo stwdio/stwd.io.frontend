@@ -66,7 +66,7 @@ const portfolioIcons = {
 
 interface ProfileContentProps {
   profile: Profile & {
-    profile_roles?: { role: Role }[]
+    profile_roles?: { role: Role }[] | { role: Role } | unknown
   }
 }
 
@@ -96,6 +96,23 @@ export function ProfileContent({ profile }: ProfileContentProps) {
     }
     return profile.username
   }
+
+  // Handle different profile_roles structures
+  const getRoles = () => {
+    if (!profile.profile_roles) return []
+    
+    if (Array.isArray(profile.profile_roles)) {
+      return profile.profile_roles
+    }
+    
+    if (typeof profile.profile_roles === 'object' && 'role' in profile.profile_roles) {
+      return [profile.profile_roles as { role: Role }]
+    }
+    
+    return []
+  }
+
+  const roles = getRoles()
 
   const socialLinks = profile.social_links || {}
   const portfolioLinks = profile.portfolio_links || {}
@@ -169,20 +186,20 @@ export function ProfileContent({ profile }: ProfileContentProps) {
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <span className="text-lg">@{profile.username}</span>
-              {Array.isArray(profile.profile_roles) && profile.profile_roles.length > 0 && (
+              {roles.length > 0 && (
                 <>
                   <span className="text-lg">•</span>
                   <span className="text-lg">
-                    {profile.profile_roles[0].role.name}
+                    {roles[0].role.name}
                   </span>
                 </>
               )}
             </div>
             
             {/* Professional Roles */}
-            {Array.isArray(profile.profile_roles) && profile.profile_roles.length > 0 && (
+            {roles.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {profile.profile_roles.map(({ role }) => {
+                {roles.map(({ role }) => {
                   const Icon = roleIcons[role.slug as keyof typeof roleIcons] || Briefcase
                   return (
                     <Badge key={role.id} variant="secondary" className="flex items-center gap-1.5 px-3 py-1">

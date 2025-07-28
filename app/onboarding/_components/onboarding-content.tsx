@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Music, Mic, Radio, Briefcase, Wrench, Users, Building, ChevronRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
 
 const roleIcons = {
   'musician': Music,

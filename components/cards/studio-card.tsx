@@ -6,10 +6,7 @@ import { StudioCardActions } from '@/components/studio-card-actions'
 import { ReactNode } from 'react'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
 import { getPriceTierSymbol } from '@/lib/constants/currencies'
-import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 import { useAuth } from '@/lib/auth/auth-context'
-import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 
@@ -95,10 +92,6 @@ export function StudioCard({
   priority = false
 }: StudioCardProps) {
   const { user } = useAuth()
-  const authModal = useAuthModal()
-  const isAuthenticated = !!user
-  const router = useRouter()
-  const { addStudio, isStudioInBasket } = useQuoteBasket()
 
   // Fetch real followers for the studio
   const { data: followers = [] } = useQuery({

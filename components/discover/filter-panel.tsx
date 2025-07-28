@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { IconX, IconSearch } from "@tabler/icons-react"
+import { IconSearch } from "@tabler/icons-react"
 import { PRICE_TIERS } from "@/lib/constants/currencies"
 import { useAmenities, useAvailableGear } from "@/lib/hooks/queries/studios"
 
@@ -26,6 +26,7 @@ interface FilterState {
   selectedPriceTiers: number[]
   selectedAmenities: string[]
   selectedGear: string[]
+  selectedRoles: string[]
 }
 
 interface FilterPanelProps {
@@ -97,7 +98,8 @@ export function FilterPanel({
       priceRange: [0, 1000],
       selectedPriceTiers: [],
       selectedAmenities: [],
-      selectedGear: []
+      selectedGear: [],
+      selectedRoles: []
     }
     setLocalFilters(clearedFilters)
     onFiltersChange(clearedFilters)
@@ -108,6 +110,7 @@ export function FilterPanel({
     localFilters.selectedPriceTiers.length,
     localFilters.selectedAmenities.length,
     localFilters.selectedGear.length,
+    localFilters.selectedRoles.length,
     localFilters.priceRange[0] > 0 || localFilters.priceRange[1] < 1000
   ].filter(Boolean).length
 
@@ -295,6 +298,45 @@ export function FilterPanel({
               <>
                 {/* People-specific filters */}
                 <div className="space-y-2">
+                  <Label>Professional Role</Label>
+                  <div className="space-y-2">
+                    {[
+                      { slug: 'musician', name: 'Musician' },
+                      { slug: 'podcaster', name: 'Podcaster' },
+                      { slug: 'voice-actor', name: 'Voice Actor' },
+                      { slug: 'engineer', name: 'Engineer' },
+                      { slug: 'producer', name: 'Producer' },
+                      { slug: 'a-and-r', name: 'A&R' },
+                      { slug: 'manager', name: 'Manager' },
+                      { slug: 'studio-owner', name: 'Studio Owner' }
+                    ].map((role) => (
+                      <div key={role.slug} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`role-${role.slug}`}
+                          checked={localFilters.selectedRoles.includes(role.slug)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setLocalFilters({
+                                ...localFilters,
+                                selectedRoles: [...localFilters.selectedRoles, role.slug]
+                              })
+                            } else {
+                              setLocalFilters({
+                                ...localFilters,
+                                selectedRoles: localFilters.selectedRoles.filter(r => r !== role.slug)
+                              })
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`role-${role.slug}`} className="cursor-pointer">
+                          {role.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <Label>Skills</Label>
                   <div className="relative">
                     <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -307,13 +349,6 @@ export function FilterPanel({
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Skills filtering coming soon...
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Experience Level</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Experience filtering coming soon...
                   </p>
                 </div>
               </>

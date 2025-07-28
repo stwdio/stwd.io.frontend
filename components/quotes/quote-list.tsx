@@ -84,7 +84,7 @@ export function QuoteList({ quotes, selectedId, onSelect }: QuoteListProps) {
               </div>
               <Badge variant={getStatusColor(quote.status)} className="flex items-center gap-1 ml-2">
                 {getStatusIcon(quote.status)}
-                {quote.status}
+                {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
               </Badge>
             </div>
             

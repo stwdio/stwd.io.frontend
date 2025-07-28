@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth/auth-context'
@@ -15,9 +15,7 @@ import { toast } from 'sonner'
 import { 
   IconMessage, 
   IconCalendar, 
-  IconMapPin, 
   IconCurrencyDollar, 
-  IconClock, 
   IconEye,
   IconSend,
   IconBuilding
@@ -70,19 +68,12 @@ interface Booking {
   }
 }
 
-interface Profile {
-  id: number
-  user_id: string
-  role: string
-}
-
 export function CreatorDashboard() {
-  const { user, profile, loading: authLoading } = useAuth()
+  const { profile, loading: authLoading } = useAuth()
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [inquiryResponses, setInquiryResponses] = useState<InquiryRecipient[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -92,9 +83,9 @@ export function CreatorDashboard() {
     } else if (!authLoading && !profile) {
       setLoading(false)
     }
-  }, [authLoading, profile])
+  }, [authLoading, profile, fetchCreatorData])
 
-  const fetchCreatorData = async () => {
+  const fetchCreatorData = useCallback(async () => {
     try {
       if (!profile) {
         setLoading(false)
@@ -111,7 +102,7 @@ export function CreatorDashboard() {
       setInquiries(inquiriesData || [])
 
       // Get inquiry IDs for fetching responses
-      const inquiryIds = inquiriesData?.map((inquiry: any) => inquiry.id) || []
+      const inquiryIds = inquiriesData?.map((inquiry: { id: number }) => inquiry.id) || []
 
       if (inquiryIds.length > 0) {
         // Fetch inquiry responses
@@ -157,7 +148,7 @@ export function CreatorDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [profile, supabase])
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -189,7 +180,7 @@ export function CreatorDashboard() {
     return labels[type] || type
   }
 
-  const getStudioOwnerName = (profiles: any) => {
+  const getStudioOwnerName = (profiles: { first_name?: string; last_name?: string; username?: string }) => {
     if (!profiles) return 'Unknown'
     const { first_name, last_name, username } = profiles
     if (first_name && last_name) return `${first_name} ${last_name}`
@@ -207,12 +198,6 @@ export function CreatorDashboard() {
     })
   }
 
-  const getRespondedInquiries = () => {
-    return inquiries.filter(inquiry => {
-      const responses = getResponsesForInquiry(inquiry.id)
-      return responses.some(response => response.status === 'responded')
-    })
-  }
 
   const handleViewConversation = async (inquiryId: number, studioId: number) => {
     try {

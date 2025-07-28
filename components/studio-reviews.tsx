@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Star, ChevronDown, ChevronUp } from "lucide-react"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface Review {
   id: number
@@ -120,7 +120,7 @@ export function StudioReviews({
         {reviews.length > 0 && (
           <div className="border-l-2 border-primary/20 pl-3">
             <p className="text-sm text-muted-foreground line-clamp-2">
-              "{reviews[0].comment}"
+              &ldquo;{reviews[0].comment}&rdquo;
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               - {getDisplayName(reviews[0].reviewer)}

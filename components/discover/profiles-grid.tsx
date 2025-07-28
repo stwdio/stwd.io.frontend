@@ -22,12 +22,13 @@ type PeopleSubView = 'all' | 'artists' | 'engineers' | 'industry'
 interface ProfilesGridProps {
   category: PeopleSubView
   searchQuery?: string
+  roleFilters?: string[]
 }
 
-export function ProfilesGrid({ category, searchQuery }: ProfilesGridProps) {
+export function ProfilesGrid({ category, searchQuery, roleFilters = [] }: ProfilesGridProps) {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<any>(null)
+  const [error, setError] = useState<Error | null>(null)
   const supabase = createClient()
 
   const fetchProfiles = useCallback(async () => {
@@ -39,7 +40,11 @@ export function ProfilesGrid({ category, searchQuery }: ProfilesGridProps) {
       .select(`
         *,
         profile_roles(
-          role:roles(id, name, slug)
+          role:roles(
+            id,
+            name,
+            slug
+          )
         )
       `)
       .not('system_role', 'is', null) // Only show users who have completed onboarding
@@ -62,27 +67,42 @@ export function ProfilesGrid({ category, searchQuery }: ProfilesGridProps) {
       // Client-side filtering by role
       let filteredData = data || []
       
+      // Apply category filter
       if (category !== 'all' && filteredData.length > 0) {
-        const roleFilters: Record<string, string[]> = {
+        const categoryRoleFilters: Record<string, string[]> = {
           'artists': ['musician', 'podcaster', 'voice-actor'],
           'engineers': ['engineer', 'producer'],
           'industry': ['record-label', 'other']
         }
         
-        const allowedRoles = roleFilters[category] || []
+        const allowedRoles = categoryRoleFilters[category] || []
         filteredData = filteredData.filter(profile => 
           Array.isArray(profile.profile_roles) && 
-          profile.profile_roles.some((pr: any) => 
+          profile.profile_roles.some((pr) => 
             allowedRoles.includes(pr.role?.slug || '')
           )
         )
+      }
+      
+      // Apply role filters from filter panel
+      if (roleFilters.length > 0 && filteredData.length > 0) {
+        filteredData = filteredData.filter(profile => {
+          if (Array.isArray(profile.profile_roles)) {
+            return profile.profile_roles.some((pr) => 
+              roleFilters.includes(pr.role?.slug || '')
+            )
+          } else if (profile.profile_roles && typeof profile.profile_roles === 'object' && 'role' in profile.profile_roles) {
+            return roleFilters.includes((profile.profile_roles as { role?: { slug?: string } }).role?.slug || '')
+          }
+          return false
+        })
       }
       
       setProfiles(filteredData)
     }
     
     setLoading(false)
-  }, [category, searchQuery, supabase])
+  }, [category, searchQuery, roleFilters, supabase])
 
   useEffect(() => {
     fetchProfiles()

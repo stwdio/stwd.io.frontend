@@ -91,7 +91,7 @@ export function STWDChatLayout() {
     }
 
     getCurrentUser()
-  }, [createClient])
+  }, [])
 
   // Handle mobile responsiveness
   useEffect(() => {

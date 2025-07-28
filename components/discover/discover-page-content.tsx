@@ -34,9 +34,9 @@ export function DiscoverPageContent() {
   }
 
   const initial = getInitialView()
-  const [activeView, setActiveView] = useState<DiscoverView>(initial.view)
   const [peopleSubView, setPeopleSubView] = useState<PeopleSubView>(initial.subView || 'all')
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
+  const activeView = initial.view
   
   // Initialize state from URL params
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
@@ -49,7 +49,8 @@ export function DiscoverPageContent() {
     ] as [number, number],
     selectedPriceTiers: searchParams.get('tiers') ? searchParams.get('tiers')!.split(',').map(Number) : [],
     selectedAmenities: searchParams.get('amenities') ? searchParams.get('amenities')!.split(',') : [],
-    selectedGear: searchParams.get('gear') ? searchParams.get('gear')!.split(',') : []
+    selectedGear: searchParams.get('gear') ? searchParams.get('gear')!.split(',') : [],
+    selectedRoles: searchParams.get('roles') ? searchParams.get('roles')!.split(',') : []
   })
   
   // Calculate active filter count
@@ -58,6 +59,7 @@ export function DiscoverPageContent() {
     filters.selectedPriceTiers.length,
     filters.selectedAmenities.length,
     filters.selectedGear.length,
+    filters.selectedRoles.length,
     filters.priceRange[0] > 0 || filters.priceRange[1] < 1000
   ].filter(Boolean).length
 
@@ -93,6 +95,10 @@ export function DiscoverPageContent() {
       params.set('gear', filters.selectedGear.join(','))
     }
     
+    if (filters.selectedRoles.length > 0) {
+      params.set('roles', filters.selectedRoles.join(','))
+    }
+    
     const url = `${pathname}${params.toString() ? '?' + params.toString() : ''}`
     router.replace(url, { scroll: false })
   }, [searchQuery, filters, pathname, router])
@@ -123,48 +129,6 @@ export function DiscoverPageContent() {
       router.push(`/discover/people/${subView}`)
     }
   }
-
-  // Secondary navigation for people view
-  const secondaryNav = activeView === 'people' && (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground ml-3">
-      <button
-        onClick={() => handlePeopleSubViewChange('all')}
-        className={cn(
-          "transition-all hover:text-foreground",
-          peopleSubView === 'all' && "text-foreground font-medium"
-        )}
-      >
-        All
-      </button>
-      <button
-        onClick={() => handlePeopleSubViewChange('artists')}
-        className={cn(
-          "transition-all hover:text-foreground",
-          peopleSubView === 'artists' && "text-foreground font-medium"
-        )}
-      >
-        Artists
-      </button>
-      <button
-        onClick={() => handlePeopleSubViewChange('engineers')}
-        className={cn(
-          "transition-all hover:text-foreground",
-          peopleSubView === 'engineers' && "text-foreground font-medium"
-        )}
-      >
-        Engineers
-      </button>
-      <button
-        onClick={() => handlePeopleSubViewChange('industry')}
-        className={cn(
-          "transition-all hover:text-foreground",
-          peopleSubView === 'industry' && "text-foreground font-medium"
-        )}
-      >
-        Industry
-      </button>
-    </div>
-  )
 
   // Navigation actions (search and filter)
   const navActions = (
@@ -222,6 +186,7 @@ export function DiscoverPageContent() {
           <ProfilesGrid 
             category={peopleSubView}
             searchQuery={debouncedSearchQuery}
+            roleFilters={filters.selectedRoles}
           />
         )}
 

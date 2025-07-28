@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { ConnectLayout } from '@/components/connect/connect-layout'
 import { ConversationList } from './conversation-list'
 import { MessageThread } from './message-thread'
@@ -177,7 +176,7 @@ export function ChatHub({
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [conversations.length, supabase])
+  }, [conversations, supabase])
   
   const selectedConversation = conversations.find(c => c.id === selectedConversationId)
   

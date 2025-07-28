@@ -34,8 +34,7 @@ interface MessageThreadProps {
 
 export function MessageThread({ 
   conversation, 
-  currentUserId,
-  currentProfile 
+  currentUserId
 }: MessageThreadProps) {
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)

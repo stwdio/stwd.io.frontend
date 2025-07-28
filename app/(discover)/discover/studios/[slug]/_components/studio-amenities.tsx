@@ -45,9 +45,9 @@ export async function StudioAmenities({ studioId }: { studioId: number }) {
 
   const amenities: Amenity[] =
     amenitiesData
-      ?.map((item: any) => item.amenities)
-      ?.filter((amenity: any) => amenity && amenity.name)
-      ?.map((amenity: any) => ({ name: amenity.name })) || []
+      ?.map((item: { amenities: { name: string } | null }) => item.amenities)
+      ?.filter((amenity): amenity is { name: string } => amenity !== null && amenity.name !== undefined)
+      ?.map((amenity) => ({ name: amenity.name })) || []
 
   if (amenities.length === 0) {
     return null

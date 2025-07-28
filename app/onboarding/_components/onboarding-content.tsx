@@ -35,7 +35,6 @@ interface OnboardingContentProps {
 export function OnboardingContent({ roles, profileId }: OnboardingContentProps) {
   const [loading, setLoading] = useState(false)
   const [selectedRole, setSelectedRole] = useState<number | null>(null)
-  const router = useRouter()
   const { toast } = useToast()
   const supabase = createClient()
 

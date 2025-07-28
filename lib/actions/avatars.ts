@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createServerActionClient } from '@/lib/supabase/server'
 
-export type ActionResult<T = any> = {
+export type ActionResult<T = unknown> = {
   success: boolean
   data?: T
   error?: string
@@ -57,7 +57,7 @@ export async function uploadAvatar(file: File): Promise<ActionResult<string>> {
     const fileName = `${user.id}/avatar_${Date.now()}.${fileExtension}`
 
     // Upload new avatar
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(fileName, file, {
         contentType: file.type,

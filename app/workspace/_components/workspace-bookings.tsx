@@ -4,7 +4,7 @@ interface WorkspaceBookingsProps {
   userId: string
 }
 
-export async function WorkspaceBookings({ userId }: WorkspaceBookingsProps) {
+export async function WorkspaceBookings({}: WorkspaceBookingsProps) {
   // TODO: Implement bookings fetching
   
   return (

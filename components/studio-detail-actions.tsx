@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { Plus, Edit, MessageSquare, Eye } from 'lucide-react'
+import { Plus, Edit, MessageSquare, Eye, UserCheck, UserPlus } from 'lucide-react'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 import { useStudioInteractionStatus } from '@/lib/hooks/queries/studio-interactions'
+import { useFollowStudio, useUnfollowStudio } from '@/lib/hooks/mutations/social'
+import { useIsFollowingStudio } from '@/lib/hooks/queries/social'
 
 interface Profile {
   id: number
@@ -43,12 +45,33 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   const conversationId = interactionStatus?.conversationId
 
   const isInBasket = isStudioInBasket(studio.id)
+  
+  // Follow functionality
+  const { data: isFollowing } = useIsFollowingStudio(studio.id)
+  const { mutate: followStudio, isPending: isFollowingPending } = useFollowStudio()
+  const { mutate: unfollowStudio, isPending: isUnfollowingPending } = useUnfollowStudio()
 
   const handleViewConversation = () => {
     if (conversationId) {
       router.push(`/connect/chat?conversation=${conversationId}`)
     } else {
       router.push('/discover/studios')
+    }
+  }
+  
+  const handleFollow = () => {
+    if (!profile) {
+      authModal.open(
+        'Sign in to follow studios',
+        'Create an account or sign in to follow studios.'
+      )
+      return
+    }
+    
+    if (isFollowing) {
+      unfollowStudio({ followingStudioId: studio.id })
+    } else {
+      followStudio({ followingStudioId: studio.id })
     }
   }
 
@@ -114,6 +137,14 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
           <Plus className="h-4 w-4 mr-2" />
           Quote
         </Button>
+        <Button 
+          variant="outline"
+          size="lg"
+          onClick={handleFollow}
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          Follow
+        </Button>
       </>
     )
   }
@@ -132,7 +163,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
     )
   }
 
-  // For creators - show Enquire and Quote buttons
+  // For creators - show Enquire, Quote and Follow buttons
   return (
     <>
       <Button 
@@ -167,6 +198,25 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
       >
         {hasInquiry ? <Eye className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
         {hasInquiry ? 'View Quote' : isInBasket ? 'In Basket' : 'Quote'}
+      </Button>
+      
+      <Button 
+        variant={isFollowing ? "secondary" : "outline"}
+        size="lg"
+        onClick={handleFollow}
+        disabled={isFollowingPending || isUnfollowingPending}
+      >
+        {isFollowing ? (
+          <>
+            <UserCheck className="h-4 w-4 mr-2" />
+            Following
+          </>
+        ) : (
+          <>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Follow
+          </>
+        )}
       </Button>
     </>
   )

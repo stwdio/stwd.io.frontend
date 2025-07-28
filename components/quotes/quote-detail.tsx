@@ -1,6 +1,5 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MessageSquare, Clock, CheckCircle, XCircle } from 'lucide-react'
@@ -62,33 +61,37 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-6 max-w-3xl mx-auto">
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4">
-                {quote.studio.photo_urls?.[0] && (
-                  <img 
-                    src={quote.studio.photo_urls[0]} 
-                    alt={quote.studio.name}
-                    className="h-20 w-20 rounded-lg object-cover"
-                  />
+    <div className="h-full flex flex-col bg-background">
+      {/* Header section */}
+      <div className="flex-shrink-0 border-b bg-background">
+        <div className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4">
+              {quote.studio.photo_urls?.[0] && (
+                <img 
+                  src={quote.studio.photo_urls[0]} 
+                  alt={quote.studio.name}
+                  className="h-20 w-20 rounded-lg object-cover"
+                />
+              )}
+              <div>
+                <h1 className="text-2xl font-bold">{quote.studio.name}</h1>
+                {quote.studio.location && (
+                  <p className="text-muted-foreground">{quote.studio.location}</p>
                 )}
-                <div>
-                  <CardTitle className="text-xl">{quote.studio.name}</CardTitle>
-                  {quote.studio.location && (
-                    <p className="text-muted-foreground">{quote.studio.location}</p>
-                  )}
-                </div>
               </div>
-              <Badge variant={getStatusColor(quote.status)} className="flex items-center gap-1">
-                {getStatusIcon(quote.status)}
-                {quote.status}
-              </Badge>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
+            <Badge variant={getStatusColor(quote.status)} className="flex items-center gap-1">
+              {getStatusIcon(quote.status)}
+              {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
+            </Badge>
+          </div>
+        </div>
+      </div>
+      
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6 space-y-8">
             <div>
               <h3 className="font-semibold mb-2">Quote Details</h3>
               <div className="space-y-3">
@@ -140,22 +143,21 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
               </div>
             )}
             
-            <div className="flex gap-3 pt-4">
-              {quote.conversation_id ? (
-                <Button asChild className="flex-1">
-                  <Link href={`/connect/chat?conversation=${quote.conversation_id}`}>
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    View Conversation
-                  </Link>
-                </Button>
-              ) : quote.status === 'responded' && (
-                <Button disabled className="flex-1">
-                  Conversation Starting...
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          <div className="flex gap-3 pt-4">
+            {quote.conversation_id ? (
+              <Button asChild className="flex-1">
+                <Link href={`/connect/chat?conversation=${quote.conversation_id}`}>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  View Conversation
+                </Link>
+              </Button>
+            ) : quote.status === 'responded' && (
+              <Button disabled className="flex-1">
+                Conversation Starting...
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

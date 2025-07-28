@@ -28,7 +28,7 @@ function makeQueryClient() {
           
           // Don't retry 400-level errors except for timeouts
           if (error && 'status' in error) {
-            const status = (error as any).status
+            const status = (error as { status: number }).status
             if (status >= 400 && status < 500 && status !== 408) {
               return false
             }

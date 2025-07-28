@@ -1,8 +1,6 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { ChatHub } from './chat-hub'
 import type { Database } from '@/lib/types/database'
 
@@ -27,7 +25,6 @@ interface ChatPageWrapperProps {
 }
 
 export function ChatPageWrapper({ userId, profile, initialConversations }: ChatPageWrapperProps) {
-  const pathname = usePathname()
   
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-5rem)]">

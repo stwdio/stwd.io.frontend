@@ -1,16 +1,17 @@
 'use client'
 
 import { GenericCard } from '@/components/cards/generic-card'
-import { IconMessage, IconPlus } from '@tabler/icons-react'
 import { StudioListMembershipIndicators } from '@/components/studio-list-membership-indicators'
 import { StudioCardActions } from '@/components/studio-card-actions'
-import { ReactNode, useState } from 'react'
+import { ReactNode } from 'react'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
 import { getPriceTierSymbol } from '@/lib/constants/currencies'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import { createClient } from '@/lib/supabase/client'
 
 interface Studio {
   id: number
@@ -98,47 +99,51 @@ export function StudioCard({
   const isAuthenticated = !!user
   const router = useRouter()
   const { addStudio, isStudioInBasket } = useQuoteBasket()
-  const isInBasket = isStudioInBasket(studio.id)
 
-  // Mock data for "followed by" - to be replaced with real data later
-  const mockFollowers = [
-    { id: 1, name: 'John Doe', avatar: `https://api.dicebear.com/9.x/thumbs/svg?seed=user1&backgroundColor=ffffff&shapeColor=000000` },
-    { id: 2, name: 'Jane Smith', avatar: `https://api.dicebear.com/9.x/thumbs/svg?seed=user2&backgroundColor=ffffff&shapeColor=000000` },
-    { id: 3, name: 'Mike Johnson', avatar: `https://api.dicebear.com/9.x/thumbs/svg?seed=user3&backgroundColor=ffffff&shapeColor=000000` },
-    { id: 4, name: 'Sarah Wilson', avatar: `https://api.dicebear.com/9.x/thumbs/svg?seed=user4&backgroundColor=ffffff&shapeColor=000000` },
-  ]
+  // Fetch real followers for the studio
+  const { data: followers = [] } = useQuery({
+    queryKey: ['studio-followers', studio.id],
+    queryFn: async () => {
+      const supabase = createClient()
+      
+      // First get the follower connections
+      const { data: connections, error: connectionsError } = await supabase
+        .from('social_connections')
+        .select('follower_id')
+        .eq('following_studio_id', studio.id)
+        .limit(4)
+        .order('created_at', { ascending: false })
 
-  const handleMessage = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (!isAuthenticated) {
-      authModal.open(
-        'Sign in to enquire with studios',
-        'Create an account or sign in to start enquiring with studio owners.'
-      )
-      return
-    }
-    
-    // Navigate to messages with studio context
-    router.push(`/chat?studio=${studio.slug || studio.id}`)
-  }
+      if (connectionsError || !connections || connections.length === 0) {
+        if (connectionsError) console.error('Error fetching studio followers:', connectionsError)
+        return []
+      }
 
-  const handleQuote = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (!isAuthenticated) {
-      authModal.open(
-        'Sign in to request quotes',
-        'Create an account or sign in to request quotes from studios.'
-      )
-      return
-    }
-    
-    // Add to quote basket
-    await addStudio(studio)
-  }
+      // Then fetch the profile data for those followers
+      const followerIds = connections.map(c => c.follower_id)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, username, first_name, last_name, avatar_url')
+        .in('user_id', followerIds)
+
+      if (profilesError) {
+        console.error('Error fetching follower profiles:', profilesError)
+        return []
+      }
+
+      return profiles.map(profile => ({
+        id: profile.user_id,
+        name: profile.first_name && profile.last_name 
+          ? `${profile.first_name} ${profile.last_name}`
+          : profile.username || 'Anonymous',
+        avatar: profile.avatar_url || 
+          `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
+      }))
+    },
+    enabled: !!studio.id
+  })
+
+
 
   const amenityTags = showAmenities && studio.amenities 
     ? studio.amenities.map(amenity => typeof amenity === 'string' ? amenity : amenity.name)
@@ -166,7 +171,7 @@ export function StudioCard({
       reviewCount={studio.review_count}
       priceTier={studio.price_tier ? getPriceTierSymbol(studio.price_tier) : '$'}
       tags={amenityTags}
-      followedBy={mockFollowers}
+      followedBy={followers}
       notes={showNotes ? studio.notes : undefined}
       additionalContent={additionalContent}
       className={className}

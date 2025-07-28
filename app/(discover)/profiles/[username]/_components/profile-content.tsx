@@ -19,11 +19,12 @@ import {
   Users,
   Building,
   ExternalLink,
-  MapPin,
   ChevronDown,
   ChevronUp,
   Search,
-  MessageSquare
+  MessageSquare,
+  UserCheck,
+  UserPlus
 } from 'lucide-react'
 import type { Database } from '@/lib/types/database'
 import { FollowersList } from '@/components/social/followers-list'
@@ -32,6 +33,8 @@ import { BackButton } from '@/components/back-button'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
+import { useFollowUser, useUnfollowUser } from '@/lib/hooks/mutations/social'
+import { useIsFollowingUser } from '@/lib/hooks/queries/social'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Role = Database['public']['Tables']['roles']['Row']
@@ -76,6 +79,12 @@ export function ProfileContent({ profile }: ProfileContentProps) {
   const [portfolioOpen, setPortfolioOpen] = useState(true)
   const [socialOpen, setSocialOpen] = useState(true)
   const [skillSearchQuery, setSkillSearchQuery] = useState('')
+  
+  // Follow functionality
+  const { data: isFollowing } = useIsFollowingUser(profile.user_id)
+  const { mutate: followUser, isPending: isFollowingPending } = useFollowUser()
+  const { mutate: unfollowUser, isPending: isUnfollowingPending } = useUnfollowUser()
+  const isCurrentUser = user?.id === profile.user_id
 
   const avatarSrc = profile.avatar_url && profile.avatar_url.trim() !== '' 
     ? profile.avatar_url 
@@ -101,6 +110,24 @@ export function ProfileContent({ profile }: ProfileContentProps) {
       return
     }
     router.push(`/chat?user=${profile.username}`)
+  }
+  
+  const handleFollow = () => {
+    if (!isAuthenticated) {
+      authModal.open(
+        'Sign in to follow users',
+        'Create an account or sign in to follow other users.'
+      )
+      return
+    }
+    
+    if (!profile.user_id) return
+    
+    if (isFollowing) {
+      unfollowUser({ followingUserId: profile.user_id })
+    } else {
+      followUser({ followingUserId: profile.user_id })
+    }
   }
 
   const filteredSkills = skills.filter(skill => 
@@ -198,10 +225,26 @@ export function ProfileContent({ profile }: ProfileContentProps) {
               <MessageSquare className="h-5 w-5 mr-2" />
               Message
             </Button>
-            <Button variant="outline" size="lg">
-              <Users className="h-5 w-5 mr-2" />
-              Follow
-            </Button>
+            {!isCurrentUser && (
+              <Button 
+                variant={isFollowing ? "secondary" : "outline"} 
+                size="lg"
+                onClick={handleFollow}
+                disabled={isFollowingPending || isUnfollowingPending}
+              >
+                {isFollowing ? (
+                  <>
+                    <UserCheck className="h-5 w-5 mr-2" />
+                    Following
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-5 w-5 mr-2" />
+                    Follow
+                  </>
+                )}
+              </Button>
+            )}
           </div>
 
           {/* Skills Section - Collapsible with Search */}

@@ -26,7 +26,7 @@ export type CreateListData = {
 }
 
 // Error types for better error handling
-export type ActionResult<T = any> = {
+export type ActionResult<T = unknown> = {
   success: boolean
   data?: T
   error?: string

@@ -1,7 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Star } from "lucide-react"
 import { getStudioReviews } from "@/lib/studio-reviews"
 import { StudioReviews as StudioReviewsClient } from "@/components/studio-reviews"
 

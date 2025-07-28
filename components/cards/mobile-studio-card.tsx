@@ -227,7 +227,7 @@ export function MobileInquiryCard({
     }
   }
 
-  const getCreatorName = (profiles: any) => {
+  const getCreatorName = (profiles: { first_name?: string; last_name?: string; username?: string }) => {
     if (profiles.first_name && profiles.last_name) {
       return `${profiles.first_name} ${profiles.last_name}`
     }

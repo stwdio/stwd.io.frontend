@@ -40,8 +40,7 @@ export function ChatHub({
   initialConversations,
   initialSelectedConversationId,
   targetUserId,
-  studioId,
-  studioInfo
+  studioId
 }: ChatHubProps) {
   const [conversations, setConversations] = useState(initialConversations)
   // Auto-select the first conversation if none selected, unless we have a target user
@@ -55,7 +54,6 @@ export function ChatHub({
     studioId && !initialSelectedConversationId ? studioId : undefined
   )
   const supabase = createClient()
-  const router = useRouter()
   
   // Subscribe to realtime updates for conversations
   useEffect(() => {
@@ -71,7 +69,7 @@ export function ChatHub({
           filter: `user_id=eq.${userId}`
         },
         async (payload) => {
-          const newParticipant = payload.new as any
+          const newParticipant = payload.new as { conversation_id: number; user_id: number }
           // Fetch the full conversation data
           const { data: conversation } = await supabase
             .from('chat_conversations')
@@ -126,7 +124,7 @@ export function ChatHub({
           table: 'chat_conversations'
         },
         (payload) => {
-          const updated = payload.new as any
+          const updated = payload.new as { id: number; [key: string]: unknown }
           setConversations(prev => 
             prev.map(conv => 
               conv.id === updated.id 
@@ -158,7 +156,7 @@ export function ChatHub({
           filter: `conversation_id=in.(${conversations.map(c => c.id).join(',')})`
         },
         (payload) => {
-          const newMessage = payload.new as any
+          const newMessage = payload.new as { conversation_id: number; id: number; content: string; created_at: string; sender_id: number }
           // Update the conversation with the new message
           setConversations(prev => 
             prev.map(conv => {
@@ -184,8 +182,8 @@ export function ChatHub({
   const selectedConversation = conversations.find(c => c.id === selectedConversationId)
   
   // Create a mock conversation for the draft state
-  const [draftTargetProfile, setDraftTargetProfile] = useState<any>(null)
-  const [draftStudio, setDraftStudio] = useState<any>(null)
+  const [draftTargetProfile, setDraftTargetProfile] = useState<{ user_id: number; username?: string; first_name?: string; last_name?: string } | null>(null)
+  const [draftStudio, setDraftStudio] = useState<{ id: number; name: string; slug: string } | null>(null)
   
   // Fetch draft target profile and studio info
   useEffect(() => {

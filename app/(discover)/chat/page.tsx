@@ -6,6 +6,6 @@ interface OldChatPageProps {
 
 export default async function OldChatPage({ searchParams }: OldChatPageProps) {
   const params = await searchParams
-  const queryString = new URLSearchParams(params as any).toString()
+  const queryString = new URLSearchParams(params as Record<string, string>).toString()
   redirect(`/connect/chat${queryString ? `?${queryString}` : ''}`)
 }

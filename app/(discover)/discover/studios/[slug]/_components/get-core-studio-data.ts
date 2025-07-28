@@ -7,7 +7,7 @@ export interface CoreStudioData {
   description: string
   location: string
   hourly_rate: number
-  gear: any
+  gear: Record<string, unknown> | null
   owner_id: number
   created_at: string
   verification_status: string

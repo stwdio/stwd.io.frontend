@@ -1,7 +1,7 @@
 import { createServerComponentClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { IconBuilding, IconSearch, IconStar } from "@tabler/icons-react"
 

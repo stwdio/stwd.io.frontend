@@ -1,10 +1,8 @@
 import { notFound } from 'next/navigation'
 import { createServerComponentClient } from '@/lib/supabase/server'
 import { StudioDetailContent } from '@/components/studio-detail-content'
-import { getCoreStudioData } from './_components/get-core-studio-data'
 import { Metadata } from 'next'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
-import { BackButton } from '@/components/back-button'
 
 interface StudioPageProps {
   params: Promise<{

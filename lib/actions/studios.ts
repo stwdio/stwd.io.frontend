@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createServerActionClient } from '@/lib/supabase/server'
 
 // Types for studio operations
@@ -11,7 +10,7 @@ export type Studio = {
   description: string | null
   hourly_rate: number
   published: boolean
-  gear: any
+  gear: Record<string, unknown> | null
   location: string | null
   photo_urls: string[]
   owner_id: number
@@ -26,7 +25,7 @@ export type CreateDraftStudioData = {
   hourly_rate?: number
 }
 
-export type ActionResult<T = any> = {
+export type ActionResult<T = unknown> = {
   success: boolean
   data?: T
   error?: string
@@ -146,7 +145,7 @@ export async function uploadStudioImage(
     const filePath = `studios/${studioId}/${fileName}`
 
     // Upload file to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('studio-photos')
       .upload(filePath, file, {
         contentType: file.type,

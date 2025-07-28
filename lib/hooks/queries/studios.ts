@@ -4,7 +4,7 @@ import { useQuery } from '@supabase-cache-helpers/postgrest-react-query'
 import { useInfiniteQuery, useQuery as useReactQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { CACHE_TIMES } from '@/lib/react-query/client'
-import type { Database, StudioWithDetails } from '@/lib/types/database'
+import type { Database } from '@/lib/types/database'
 
 // Re-export createClient with proper typing for consistency
 const getSupabaseClient = () => createClient()
@@ -333,7 +333,6 @@ export function useListStudios(listId: number | null, userProfileId: number | nu
 export function useStudiosNearLocation(
   lat: number | null, 
   lng: number | null, 
-  radiusKm: number = 50
 ) {
   // This will be implemented when you add PostGIS geographic functions
   // For now, returning a disabled query

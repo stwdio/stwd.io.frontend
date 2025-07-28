@@ -3,7 +3,6 @@
 import { useQuery, useSubscription } from '@supabase-cache-helpers/postgrest-react-query'
 import { createClient } from '@/lib/supabase/client'
 import { CACHE_TIMES } from '@/lib/react-query/client'
-import type { Database } from '@/lib/types/database'
 
 const getSupabaseClient = () => createClient()
 

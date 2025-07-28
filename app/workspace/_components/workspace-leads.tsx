@@ -4,7 +4,7 @@ interface WorkspaceLeadsProps {
   userId: string
 }
 
-export async function WorkspaceLeads({ userId }: WorkspaceLeadsProps) {
+export async function WorkspaceLeads({}: WorkspaceLeadsProps) {
   // TODO: Implement leads fetching from inquiries table
   
   return (

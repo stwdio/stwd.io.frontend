@@ -24,13 +24,10 @@ interface DraftMessageThreadProps {
 }
 
 export function DraftMessageThread({
-  currentUserId,
-  currentProfile,
   targetUserId,
   studioId,
   onConversationCreated
 }: DraftMessageThreadProps) {
-  const [loading, setLoading] = useState(false)
   const [targetProfile, setTargetProfile] = useState<Profile | null>(null)
   const [studio, setStudio] = useState<Studio | null>(null)
   const [message, setMessage] = useState('')

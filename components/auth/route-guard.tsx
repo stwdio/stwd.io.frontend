@@ -1,6 +1,6 @@
 'use client'
 
-import { useAuth, isPublicRoute, getDefaultDashboard } from '@/lib/auth/auth-context'
+import { useAuth, isPublicRoute } from '@/lib/auth/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { MinimalAuthLoading } from '@/components/skeletons'

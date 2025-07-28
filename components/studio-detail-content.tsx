@@ -12,6 +12,7 @@ import { imagePresets } from "@/lib/utils/image-transformations"
 import { getPriceTierSymbol } from "@/lib/constants/currencies"
 import { BackButton } from "@/components/back-button"
 import { cn } from "@/lib/utils"
+import { FollowersList } from "@/components/social/followers-list"
 
 interface Studio {
   id: number
@@ -184,7 +185,7 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           type="text"
-                          placeholder="Search gear..."
+                          placeholder="Search Gear..."
                           value={gearSearchQuery}
                           onChange={(e) => setGearSearchQuery(e.target.value)}
                           className="pl-9 h-9"
@@ -224,6 +225,11 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
               </Collapsible>
             )}
 
+            {/* Studio Followers */}
+            <div>
+              <FollowersList studioId={studio.id} limit={10} />
+            </div>
+
             {/* Reviews Section with Search */}
             <div className="space-y-4 pb-8">
               <div className="flex items-center justify-between">
@@ -233,7 +239,7 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="text"
-                      placeholder="Search reviews..."
+                      placeholder="Search Reviews..."
                       value={reviewSearchQuery}
                       onChange={(e) => setReviewSearchQuery(e.target.value)}
                       className="pl-9 h-9"

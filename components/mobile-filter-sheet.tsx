@@ -230,7 +230,7 @@ export function MobileFilterSheet({
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search gear..."
+                    placeholder="Search Gear..."
                     value={filters.gearSearch}
                     onChange={(e) => onFilterChange({ gearSearch: e.target.value })}
                     className="pl-8"

@@ -1,4 +1,3 @@
-import { UnifiedLayout } from '@/components/layouts/unified-layout'
 import { ProfileContent } from './profile-content'
 import type { Database } from '@/lib/types/database'
 
@@ -12,9 +11,5 @@ interface ProfileWithLayoutProps {
 }
 
 export function ProfileWithLayout({ profile }: ProfileWithLayoutProps) {
-  return (
-    <UnifiedLayout>
-      <ProfileContent profile={profile} />
-    </UnifiedLayout>
-  )
+  return <ProfileContent profile={profile} />
 }

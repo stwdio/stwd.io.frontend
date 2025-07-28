@@ -4,26 +4,25 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export function SectionNavigation() {
+export function MainSectionNavigation() {
   const pathname = usePathname()
   
-  // Determine which section we're in
-  const isDiscoverSection = pathname?.startsWith('/discover')
-  const isConnectSection = pathname?.startsWith('/connect')
+  // Determine which main section we're in
+  const isDiscoverSection = pathname?.startsWith('/discover') || pathname?.startsWith('/profiles')
+  const isConnectSection = pathname?.startsWith('/connect') || pathname?.startsWith('/chat')
   
-  // Determine active states for discover sub-navigation
-  const isStudiosActive = pathname === '/discover/studios' || pathname === '/discover' || pathname?.startsWith('/discover/studios/')
-  const isPeopleActive = pathname === '/discover/people'
-  
-  // Determine active states for connect sub-navigation
-  const isChatActive = pathname?.startsWith('/connect/chat')
+  // Determine active sub-navigation states
+  const isStudiosActive = pathname?.startsWith('/discover/studios') || pathname === '/discover'
+  const isPeopleActive = pathname?.startsWith('/discover/people') || pathname?.startsWith('/profiles')
+  const isChatActive = pathname?.startsWith('/connect/chat') || pathname?.startsWith('/chat')
   const isQuotesActive = pathname?.startsWith('/connect/quotes')
   
-  if (isDiscoverSection) {
-    return (
-      <div className="flex-shrink-0 bg-background py-4">
-        <div className="w-full px-4 sm:px-6">
-          <div className="flex items-center gap-6 text-4xl">
+  return (
+    <div className="flex-shrink-0 bg-background">
+      <div className="w-full px-4 sm:px-6">
+        {/* Sub Navigation based on section */}
+        {isDiscoverSection && (
+          <div className="flex items-center gap-6 text-4xl py-4">
             <Link
               href="/discover/studios"
               className={cn(
@@ -48,16 +47,10 @@ export function SectionNavigation() {
               PEOPLE
             </Link>
           </div>
-        </div>
-      </div>
-    )
-  }
-  
-  if (isConnectSection) {
-    return (
-      <div className="flex-shrink-0 bg-background py-4">
-        <div className="w-full px-4 sm:px-6">
-          <div className="flex items-center gap-6 text-4xl">
+        )}
+        
+        {isConnectSection && (
+          <div className="flex items-center gap-6 text-4xl py-4">
             <Link
               href="/connect/chat"
               className={cn(
@@ -82,10 +75,8 @@ export function SectionNavigation() {
               QUOTES
             </Link>
           </div>
-        </div>
+        )}
       </div>
-    )
-  }
-  
-  return null
+    </div>
+  )
 }

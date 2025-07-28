@@ -55,13 +55,13 @@ export function SiteHeader({ className }: SiteHeaderProps) {
       <div className="flex w-full items-center justify-between">
         <div className="w-full px-4 sm:px-6 flex items-center justify-between">
           {/* Logo or DISCOVER text based on route */}
-          {pathname?.startsWith('/discover') || pathname?.startsWith('/connect') ? (
+          {pathname?.startsWith('/discover') || pathname?.startsWith('/connect') || pathname?.startsWith('/profiles') ? (
             <div className="flex items-center gap-4">
               <Link 
                 href="/discover/studios" 
                 className={cn(
                   "text-6xl tracking-tight transition-all",
-                  pathname?.startsWith('/discover') 
+                  pathname?.startsWith('/discover') || pathname?.startsWith('/profiles')
                     ? "font-bold underline" 
                     : "font-light text-muted-foreground hover:text-foreground"
                 )}

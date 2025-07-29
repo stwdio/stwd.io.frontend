@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { GenericCard } from '@/components/cards/generic-card'
-import { IconMessage, IconUser } from '@tabler/icons-react'
+import { IconMessage, IconUserPlus } from '@tabler/icons-react'
 import { Database } from '@/types/supabase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
@@ -80,6 +80,22 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
     fetchFollowers()
   }, [profile.user_id, supabase])
 
+  const handleFollow = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!isAuthenticated) {
+      authModal.open(
+        'Sign in to follow users',
+        'Create an account or sign in to follow other users.'
+      )
+      return
+    }
+    
+    // TODO: Implement follow functionality
+    console.log('Follow user:', profile.username)
+  }
+
   const handleMessage = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -96,12 +112,6 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
     router.push(`/chat?user=${profile.username}`)
   }
 
-  const handleProfile = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    router.push(`/profiles/${profile.username}`)
-  }
-
   return (
     <GenericCard
       id={profile.user_id}
@@ -115,13 +125,15 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
       priority={priority}
       primaryAction={{
         label: 'Message',
-        icon: <IconMessage className="h-5 w-5 mr-2" />,
+        icon: <IconMessage className="h-4 w-4 mr-1" />,
         onClick: handleMessage
       }}
       secondaryAction={{
-        label: '',
-        icon: <IconUser className="h-5 w-5" />,
-        onClick: handleProfile
+        label: 'Follow',
+        icon: <IconUserPlus className="h-4 w-4 mr-1" />,
+        onClick: handleFollow,
+        variant: 'default',
+        className: 'bg-black hover:bg-gray-800 text-white hover:text-white border-black'
       }}
     />
   )

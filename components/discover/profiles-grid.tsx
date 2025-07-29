@@ -1,11 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { ProfileCard } from '@/components/cards/profile-card'
 import { GenericCardSkeleton } from '@/components/skeletons/generic-card-skeleton'
-import { createClient } from '@/lib/supabase/client'
-import { Database } from '@/lib/types/database'
 import { GenericGrid } from '@/components/discover/generic-grid'
+import { useProfilesInfinite } from '@/lib/hooks/queries/auth'
+import { Database } from '@/lib/types/database'
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   profile_roles?: Array<{
@@ -26,90 +26,36 @@ interface ProfilesGridProps {
 }
 
 export function ProfilesGrid({ category, searchQuery, roleFilters = [] }: ProfilesGridProps) {
-  const [profiles, setProfiles] = useState<Profile[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-  const supabase = createClient()
+  // Combine all filters for the query
+  const queryFilters = useMemo(() => ({
+    search: searchQuery,
+    category,
+    roleFilters
+  }), [category, searchQuery, roleFilters])
 
-  const fetchProfiles = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    
-    let query = supabase
-      .from('profiles')
-      .select(`
-        *,
-        profile_roles(
-          role:roles(
-            id,
-            name,
-            slug
-          )
-        )
-      `)
-      .not('system_role', 'is', null) // Only show users who have completed onboarding
+  // Fetch profiles with infinite scroll
+  const {
+    data: profilesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: profilesLoading,
+    error: profilesError,
+    refetch: refetchProfiles
+  } = useProfilesInfinite(queryFilters)
 
-    // Apply search if provided
-    if (searchQuery) {
-      query = query.or(
-        `username.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`
-      )
-    }
-
-    const { data, error: fetchError } = await query
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    if (fetchError) {
-      console.error('Error fetching profiles:', fetchError)
-      setError(fetchError)
-    } else {
-      // Client-side filtering by role
-      let filteredData = data || []
-      
-      // Apply category filter
-      if (category !== 'all' && filteredData.length > 0) {
-        const categoryRoleFilters: Record<string, string[]> = {
-          'artists': ['musician', 'podcaster', 'voice-actor'],
-          'engineers': ['engineer', 'producer'],
-          'industry': ['record-label', 'other']
-        }
-        
-        const allowedRoles = categoryRoleFilters[category] || []
-        filteredData = filteredData.filter(profile => 
-          Array.isArray(profile.profile_roles) && 
-          profile.profile_roles.some((pr) => 
-            allowedRoles.includes(pr.role?.slug || '')
-          )
-        )
-      }
-      
-      // Apply role filters from filter panel
-      if (roleFilters.length > 0 && filteredData.length > 0) {
-        filteredData = filteredData.filter(profile => {
-          if (Array.isArray(profile.profile_roles)) {
-            return profile.profile_roles.some((pr) => 
-              roleFilters.includes(pr.role?.slug || '')
-            )
-          } else if (profile.profile_roles && typeof profile.profile_roles === 'object' && 'role' in profile.profile_roles) {
-            return roleFilters.includes((profile.profile_roles as { role?: { slug?: string } }).role?.slug || '')
-          }
-          return false
-        })
-      }
-      
-      setProfiles(filteredData)
-    }
-    
-    setLoading(false)
-  }, [category, searchQuery, roleFilters, supabase])
-
-  useEffect(() => {
-    fetchProfiles()
-  }, [fetchProfiles])
+  // Flatten pages to get all profiles and deduplicate
+  const allProfiles = useMemo(() => {
+    const profiles = profilesData?.pages.flatMap(page => page.data || []) || []
+    // Deduplicate profiles based on ID
+    const uniqueProfiles = profiles.filter((profile, index, self) =>
+      index === self.findIndex((p) => p.id === profile.id)
+    )
+    return uniqueProfiles
+  }, [profilesData])
 
   const renderProfile = useCallback((profile: Profile, index: number) => (
-    <ProfileCard key={profile.id} profile={profile} priority={index < 4} />
+    <ProfileCard key={`profile-${profile.id}-${index}`} profile={profile} priority={index < 4} />
   ), [])
 
   const renderSkeleton = useCallback(() => (
@@ -118,11 +64,14 @@ export function ProfilesGrid({ category, searchQuery, roleFilters = [] }: Profil
 
   return (
     <GenericGrid
-      items={profiles}
+      items={allProfiles}
       renderItem={renderProfile}
-      isLoading={loading}
-      error={error}
-      onRefresh={fetchProfiles}
+      isLoading={profilesLoading}
+      error={profilesError}
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      fetchNextPage={fetchNextPage}
+      onRefresh={refetchProfiles}
       renderSkeleton={renderSkeleton}
       emptyStateTitle={`No ${category === 'all' ? 'people' : category} found`}
       emptyStateMessage={searchQuery ? `No results matching "${searchQuery}"` : "Check back later for new profiles"}

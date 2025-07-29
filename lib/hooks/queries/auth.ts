@@ -1,10 +1,117 @@
 'use client'
 
 import { useQuery } from '@supabase-cache-helpers/postgrest-react-query'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { CACHE_TIMES } from '@/lib/react-query/client'
+import type { Database } from '@/lib/types/database'
 
 const getSupabaseClient = () => createClient()
+
+// Type for profile with roles
+type ProfileWithRoles = Database['public']['Tables']['profiles']['Row'] & {
+  profile_roles?: Array<{
+    role: {
+      id: number
+      name: string
+      slug: string
+    }
+  }>
+}
+
+const PAGE_SIZE = 20
+
+/**
+ * Hook for fetching profiles with infinite scroll
+ * Similar to useStudiosInfinite but for profiles
+ */
+export function useProfilesInfinite(filters?: {
+  search?: string
+  category?: 'all' | 'artists' | 'engineers' | 'industry'
+  roleFilters?: string[]
+}) {
+  return useInfiniteQuery({
+    queryKey: ['profiles', 'infinite', filters],
+    queryFn: async ({ pageParam = 0 }) => {
+      let query = getSupabaseClient()
+        .from('profiles')
+        .select(`
+          *,
+          profile_roles(
+            role:roles(
+              id,
+              name,
+              slug
+            )
+          )
+        `, { count: 'exact' })
+        .not('system_role', 'is', null) // Only show users who have completed onboarding
+
+      // Apply search filter
+      if (filters?.search) {
+        query = query.or(
+          `username.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`
+        )
+      }
+
+      const from = pageParam * PAGE_SIZE
+      const to = from + PAGE_SIZE - 1
+
+      const { data, error, count } = await query
+        .range(from, to)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      // Client-side filtering by role (since we can't filter JSONB in the query directly)
+      let filteredData = data || []
+      
+      // Apply category filter
+      if (filters?.category && filters.category !== 'all' && filteredData.length > 0) {
+        const categoryRoleFilters: Record<string, string[]> = {
+          'artists': ['musician', 'podcaster', 'voice-actor'],
+          'engineers': ['engineer', 'producer'],
+          'industry': ['record-label', 'other']
+        }
+        
+        const allowedRoles = categoryRoleFilters[filters.category] || []
+        filteredData = filteredData.filter(profile => 
+          Array.isArray(profile.profile_roles) && 
+          profile.profile_roles.some((pr) => 
+            allowedRoles.includes(pr.role?.slug || '')
+          )
+        )
+      }
+      
+      // Apply role filters from filter panel
+      if (filters?.roleFilters && filters.roleFilters.length > 0 && filteredData.length > 0) {
+        filteredData = filteredData.filter(profile => {
+          if (Array.isArray(profile.profile_roles)) {
+            return profile.profile_roles.some((pr) => 
+              filters.roleFilters!.includes(pr.role?.slug || '')
+            )
+          }
+          return false
+        })
+      }
+
+      return {
+        data: filteredData,
+        count: count || 0,
+        pageParam,
+        // Only has more if we received a full page from the database (before filtering)
+        hasMore: data && data.length === PAGE_SIZE && filteredData.length > 0
+      }
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.pageParam + 1 : undefined
+    },
+    initialPageParam: 0,
+    ...CACHE_TIMES.user_profile,
+  })
+}
 
 /**
  * Hook for fetching current user's profile

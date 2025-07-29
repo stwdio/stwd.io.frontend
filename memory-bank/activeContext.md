@@ -339,6 +339,27 @@ All 8 implementation plans have been created in `/implementation-plans/to-do/`:
 
 ## Recent Work Session (February 2025)
 
+### ✅ Profile Page Infinite Scroll Implementation - COMPLETED (February 2025)
+- **Status**: ✅ **COMPLETED** - Added infinite scroll to profiles page like explore page
+- **Issue**: Profile page was only loading 20 profiles with no way to load more
+- **Solution**: 
+  - Created `useProfilesInfinite` hook in `/lib/hooks/queries/auth.ts` matching the pattern of `useStudiosInfinite`
+  - Updated `ProfilesGrid` component to use the new infinite scroll hook
+  - Integrated with existing `GenericGrid` component that already has IntersectionObserver logic
+  - Maintained all existing filters and search functionality
+- **Implementation Details**:
+  - Hook uses `useInfiniteQuery` from React Query with pagination
+  - Page size set to 20 profiles per page
+  - Client-side filtering for roles (artists, engineers, industry) maintained
+  - Search functionality works across username, first name, and last name
+  - Automatic loading when user scrolls near bottom of page
+- **Files Modified**:
+  - `/lib/hooks/queries/auth.ts` - Added useProfilesInfinite hook
+  - `/components/discover/profiles-grid.tsx` - Updated to use infinite scroll
+- **Result**: Profile pages now load more profiles as user scrolls, matching studio browse behavior
+
+## Recent Work Session (February 2025)
+
 ### ✅ Chat-Centric UI Redesign - COMPLETED (February 2025)
 - **Status**: ✅ **COMPLETED** - Implemented new DISCOVER | CONNECT navigation design
 - **Major Changes**:

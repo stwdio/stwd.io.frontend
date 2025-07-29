@@ -44,6 +44,7 @@ export interface GenericCardProps {
     label: string
     icon?: ReactNode
     onClick: (e: React.MouseEvent) => void
+    className?: string
   }
   secondaryAction?: {
     label: string
@@ -51,6 +52,7 @@ export interface GenericCardProps {
     onClick: (e: React.MouseEvent) => void
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
     disabled?: boolean
+    className?: string
   }
   customActions?: ReactNode
   
@@ -248,7 +250,7 @@ export function GenericCard({
                   <Button 
                     variant="outline" 
                     size="default" 
-                    className="flex-1"
+                    className={`flex-1 ${primaryAction.className || ''}`}
                     onClick={primaryAction.onClick}
                   >
                     {primaryAction.icon}
@@ -260,7 +262,7 @@ export function GenericCard({
                     variant={secondaryAction.variant || "outline"} 
                     size="default"
                     onClick={secondaryAction.onClick}
-                    className="flex-1"
+                    className={`flex-1 ${secondaryAction.className || ''}`}
                     disabled={secondaryAction.disabled}
                   >
                     {secondaryAction.icon}

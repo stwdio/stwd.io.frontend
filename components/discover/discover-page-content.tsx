@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { IconFilter, IconSearch } from '@tabler/icons-react'
@@ -34,9 +33,9 @@ export function DiscoverPageContent() {
   }
 
   const initial = getInitialView()
-  const [peopleSubView, setPeopleSubView] = useState<PeopleSubView>(initial.subView || 'all')
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
   const activeView = initial.view
+  const peopleSubView = initial.subView || 'all'
   
   // Initialize state from URL params
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
@@ -121,28 +120,23 @@ export function DiscoverPageContent() {
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
 
-  const handlePeopleSubViewChange = (subView: PeopleSubView) => {
-    setPeopleSubView(subView)
-    if (subView === 'all') {
-      router.push('/discover/people')
-    } else {
-      router.push(`/discover/people/${subView}`)
-    }
-  }
 
   // Navigation actions (search and filter)
   const navActions = (
     <div className="flex gap-3 items-center">
-      <div className="relative">
+      {/* Search bar - only visible on desktop */}
+      <div className="hidden lg:block relative">
         <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
           type="search"
-          placeholder="Lets find a studio..."
+          placeholder={activeView === 'studios' ? "Find Studios..." : "Find People..."}
           className="pl-10 w-[280px]"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
+      
+      {/* Filter button - always visible */}
       <Button 
         variant="default" 
         size="icon"
@@ -167,7 +161,19 @@ export function DiscoverPageContent() {
       {/* Secondary navigation and actions bar */}
       <div className="flex-shrink-0 bg-background">
         <div className="w-full px-4 sm:px-6">
-          <div className="flex items-center justify-end py-2">
+          <div className="flex items-center justify-between py-4 lg:py-2">
+            {/* Page title on mobile */}
+            <div className="lg:hidden">
+              <h2 className="text-3xl font-bold">DISCOVER</h2>
+              <h3 className="text-xl font-medium uppercase text-muted-foreground">
+                {activeView === 'studios' ? 'Studios' : 'People'}
+              </h3>
+            </div>
+            
+            {/* Empty div for desktop to push nav actions to the right */}
+            <div className="hidden lg:block" />
+            
+            {/* Navigation actions */}
             {navActions}
           </div>
         </div>
@@ -200,6 +206,8 @@ export function DiscoverPageContent() {
             setFilterPanelOpen(false)
           }}
           type={activeView}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
         </div>
         </div>

@@ -7,6 +7,8 @@ import { QuoteList } from './quote-list'
 import { QuoteDetail } from './quote-detail'
 import { EmptyQuotes } from './empty-quotes'
 import { createClient } from '@/lib/supabase/client'
+import { Input } from '@/components/ui/input'
+import { IconSearch } from '@tabler/icons-react'
 import type { Database } from '@/lib/types/database'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -48,6 +50,7 @@ export function QuotesHub({
   initialSelectedQuoteId
 }: QuotesHubProps) {
   const [quotes, setQuotes] = useState(initialQuotes)
+  const [searchQuery, setSearchQuery] = useState('')
   // Auto-select the first quote if none selected
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(
     initialSelectedQuoteId || (initialQuotes.length > 0 ? initialQuotes[0].id : null)
@@ -55,6 +58,18 @@ export function QuotesHub({
   const supabase = createClient()
   const router = useRouter()
   
+  // Filter quotes based on search query
+  const filteredQuotes = quotes.filter(quote => {
+    if (!searchQuery) return true
+    const searchLower = searchQuery.toLowerCase()
+    return (
+      quote.studio.name.toLowerCase().includes(searchLower) ||
+      quote.project_type.toLowerCase().includes(searchLower) ||
+      quote.studio.location?.toLowerCase().includes(searchLower) ||
+      quote.custom_message?.toLowerCase().includes(searchLower)
+    )
+  })
+
   const selectedQuote = quotes.find(q => q.id === selectedQuoteId) || null
 
   const handleQuoteSelect = (quoteId: string) => {
@@ -71,11 +86,30 @@ export function QuotesHub({
   }
 
   const sidebar = (
-    <QuoteList
-      quotes={quotes}
-      selectedId={selectedQuoteId}
-      onSelect={handleQuoteSelect}
-    />
+    <div className="h-full flex flex-col">
+      {/* Search bar */}
+      <div className="p-4 border-b">
+        <div className="relative">
+          <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="search"
+            placeholder="Find Quotes..."
+            className="pl-10 w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+      
+      {/* Quote list */}
+      <div className="flex-1 overflow-hidden">
+        <QuoteList
+          quotes={filteredQuotes}
+          selectedId={selectedQuoteId}
+          onSelect={handleQuoteSelect}
+        />
+      </div>
+    </div>
   )
 
   const content = selectedQuote ? (
@@ -85,12 +119,34 @@ export function QuotesHub({
   const emptyState = <EmptyQuotes userRole={profile.system_role || undefined} />
 
   return (
-    <ConnectLayout
-      sidebar={sidebar}
-      content={content}
-      emptyState={emptyState}
-      selectedId={selectedQuoteId ? parseInt(selectedQuoteId) : null}
-      mobileTitle={selectedQuote?.studio.name || 'Quotes'}
-    />
+    <div className="h-full flex flex-col">
+      {/* Mobile header */}
+      <div className="lg:hidden flex-shrink-0 bg-background">
+        <div className="w-full px-4 sm:px-6">
+          <div className="flex items-center justify-between py-4">
+            <div>
+              <h2 className="text-3xl font-bold">CONNECT</h2>
+              <h3 className="text-xl font-medium uppercase text-muted-foreground">
+                Quotes
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Quotes content */}
+      <div className="flex-1 overflow-hidden">
+        <ConnectLayout
+          sidebar={sidebar}
+          content={content}
+          emptyState={emptyState}
+          selectedId={selectedQuoteId ? parseInt(selectedQuoteId) : null}
+          mobileTitle={selectedQuote?.studio.name || 'Quotes'}
+          onBackToList={() => {
+            setSelectedQuoteId(null)
+          }}
+        />
+      </div>
+    </div>
   )
 }

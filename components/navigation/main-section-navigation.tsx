@@ -18,7 +18,7 @@ export function MainSectionNavigation() {
   const isQuotesActive = pathname?.startsWith('/connect/quotes')
   
   return (
-    <div className="flex-shrink-0 bg-background">
+    <div className="hidden lg:block flex-shrink-0 bg-background">
       <div className="w-full px-4 sm:px-6">
         {/* Sub Navigation based on section */}
         {isDiscoverSection && (

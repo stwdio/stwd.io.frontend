@@ -357,12 +357,36 @@ export function ChatHub({
   const emptyState = <EmptyChat onNewChat={handleNewConversation} />
 
   return (
-    <ConnectLayout
-      sidebar={sidebar}
-      content={content}
-      emptyState={emptyState}
-      selectedId={selectedConversation?.id || (draftTargetUserId ? -1 : null)}
-      mobileTitle={selectedConversation?.title || 'New Chat'}
-    />
+    <div className="h-full flex flex-col">
+      {/* Mobile header */}
+      <div className="lg:hidden flex-shrink-0 bg-background">
+        <div className="w-full px-4 sm:px-6">
+          <div className="flex items-center justify-between py-4">
+            <div>
+              <h2 className="text-3xl font-bold">CONNECT</h2>
+              <h3 className="text-xl font-medium uppercase text-muted-foreground">
+                Chat
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Chat content */}
+      <div className="flex-1 overflow-hidden">
+        <ConnectLayout
+          sidebar={sidebar}
+          content={content}
+          emptyState={emptyState}
+          selectedId={selectedConversation?.id || (draftTargetUserId ? -1 : null)}
+          mobileTitle={selectedConversation?.title || 'New Chat'}
+          onBackToList={() => {
+            setSelectedConversationId(null)
+            setDraftTargetUserId(undefined)
+            setDraftStudioId(undefined)
+          }}
+        />
+      </div>
+    </div>
   )
 }

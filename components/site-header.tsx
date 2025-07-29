@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -9,12 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth/auth-context"
-import { IconBriefcase, IconHome, IconLogout, IconMessage, IconSearch, IconSettings, IconUser } from "@tabler/icons-react"
+import { IconBriefcase, IconHome, IconLogout, IconMenu2, IconMessage, IconSearch, IconSettings, IconUser } from "@tabler/icons-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { imagePresets } from "@/lib/utils/image-transformations"
+import { MobileSidebar } from "@/components/mobile-sidebar"
 
 interface SiteHeaderProps {
   className?: string
@@ -25,6 +28,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const isAuthenticated = !!user
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleSignOut = async () => {
     await signOut()
@@ -54,41 +58,63 @@ export function SiteHeader({ className }: SiteHeaderProps) {
     )}>
       <div className="flex w-full items-center justify-between">
         <div className="w-full px-4 sm:px-6 flex items-center justify-between">
-          {/* Logo or DISCOVER text based on route */}
-          {pathname?.startsWith('/discover') || pathname?.startsWith('/connect') || pathname?.startsWith('/profiles') ? (
-            <div className="flex items-center gap-4">
-              <Link 
-                href="/discover/studios" 
-                className={cn(
-                  "text-6xl tracking-tight transition-all",
-                  pathname?.startsWith('/discover') || pathname?.startsWith('/profiles')
-                    ? "font-bold underline" 
-                    : "font-light text-muted-foreground hover:text-foreground"
-                )}
-              >
-                DISCOVER
-              </Link>
-              <span className="text-6xl font-light text-muted-foreground">|</span>
-              <Link 
-                href="/connect/chat" 
-                className={cn(
-                  "text-6xl tracking-tight transition-all",
-                  pathname?.startsWith('/connect') 
-                    ? "font-bold underline" 
-                    : "font-light text-muted-foreground hover:text-foreground"
-                )}
-              >
-                CONNECT
-              </Link>
-            </div>
-          ) : (
-            <Link href="/" className="text-xl font-bold">
-              stwd.io
-            </Link>
-          )}
+          <div className="flex items-center gap-4">
+            {/* Hamburger menu for mobile */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <IconMenu2 className="h-5 w-5" />
+              <span className="sr-only">Open menu</span>
+            </Button>
 
-          {/* User profile section on the right */}
+            {/* Logo or DISCOVER text based on route */}
+            {pathname?.startsWith('/discover') || pathname?.startsWith('/connect') || pathname?.startsWith('/profiles') ? (
+              <>
+                {/* Mobile version - show logo */}
+                <Link href="/" className="lg:hidden text-xl font-bold">
+                  stwd.io
+                </Link>
+                
+                {/* Desktop version - full DISCOVER | CONNECT */}
+                <div className="hidden lg:flex items-center gap-4">
+                  <Link 
+                    href="/discover/studios" 
+                    className={cn(
+                      "text-6xl tracking-tight transition-all",
+                      pathname?.startsWith('/discover') || pathname?.startsWith('/profiles')
+                        ? "font-bold underline" 
+                        : "font-light text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    DISCOVER
+                  </Link>
+                  <span className="text-6xl font-light text-muted-foreground">|</span>
+                  <Link 
+                    href="/connect/chat" 
+                    className={cn(
+                      "text-6xl tracking-tight transition-all",
+                      pathname?.startsWith('/connect') 
+                        ? "font-bold underline" 
+                        : "font-light text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    CONNECT
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <Link href="/" className="text-xl font-bold">
+                stwd.io
+              </Link>
+            )}
+          </div>
+
+          {/* User profile section on the right - hidden on mobile */}
           {isAuthenticated && profile ? (
+          <div className="hidden lg:block">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none">
@@ -156,17 +182,21 @@ export function SiteHeader({ className }: SiteHeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
           ) : (
-            /* Guest user - show sign in link */
+            /* Guest user - show sign in link on desktop only */
             <Link 
               href="/auth/login" 
-              className="text-sm font-medium hover:opacity-80 transition-opacity"
+              className="hidden lg:inline-block text-sm font-medium hover:opacity-80 transition-opacity"
             >
               Sign In
             </Link>
           )}
         </div>
       </div>
+
+      {/* Mobile Sidebar */}
+      <MobileSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
     </header>
   )
 }

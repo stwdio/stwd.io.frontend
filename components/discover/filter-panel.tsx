@@ -36,6 +36,8 @@ interface FilterPanelProps {
   onFiltersChange: (filters: FilterState) => void
   onApply: () => void
   type: 'studios' | 'people'
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
 }
 
 export function FilterPanel({
@@ -44,7 +46,9 @@ export function FilterPanel({
   filters,
   onFiltersChange,
   onApply,
-  type
+  type,
+  searchQuery = '',
+  onSearchChange
 }: FilterPanelProps) {
   const [localFilters, setLocalFilters] = useState<FilterState>(filters)
   const [amenitySearch, setAmenitySearch] = useState('')
@@ -128,6 +132,22 @@ export function FilterPanel({
             )}
           </SheetDescription>
         </SheetHeader>
+
+        {/* Search Bar - only visible on mobile */}
+        {onSearchChange && (
+          <div className="lg:hidden mt-6">
+            <div className="relative">
+              <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="search"
+                placeholder={type === 'studios' ? "Find Studios..." : "Find People..."}
+                className="pl-10 w-full"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
 
         <ScrollArea className="h-[calc(100vh-200px)] mt-6">
           <div className="space-y-6 pr-4">

@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, ReactNode } from 'react'
+import { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { IconMenu2 } from '@tabler/icons-react'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { IconArrowLeft } from '@tabler/icons-react'
 
 interface ConnectLayoutProps {
   sidebar: ReactNode
@@ -12,6 +11,7 @@ interface ConnectLayoutProps {
   selectedId: number | null
   isMobile?: boolean
   mobileTitle?: string
+  onBackToList?: () => void
 }
 
 export function ConnectLayout({ 
@@ -19,10 +19,9 @@ export function ConnectLayout({
   content,
   emptyState,
   selectedId,
-  mobileTitle = 'Messages'
+  mobileTitle = 'Messages',
+  onBackToList
 }: ConnectLayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
   return (
     <div className="h-full flex flex-col">
       {/* Desktop Layout */}
@@ -40,61 +39,34 @@ export function ConnectLayout({
         </div>
       </div>
       
-      {/* Mobile Layout */}
-      <div className="md:hidden h-full">
+      {/* Mobile Layout - Show list or conversation */}
+      <div className="md:hidden h-full flex flex-col">
         {selectedId ? (
-          <div className="flex flex-col h-full">
+          <>
+            {/* Mobile conversation view with back button */}
             <div className="p-4 border-b flex items-center gap-2">
-              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <IconMenu2 className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-96 p-0">
-                  <div className="h-full flex flex-col">
-                    <div className="flex-1 overflow-hidden min-h-0">
-                      {sidebar}
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-              
-              <h2 className="font-semibold truncate">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={onBackToList}
+              >
+                <IconArrowLeft className="h-5 w-5" />
+              </Button>
+              <h2 className="font-semibold truncate flex-1">
                 {mobileTitle}
               </h2>
             </div>
-            
             <div className="flex-1 min-h-0">
               {content}
             </div>
-          </div>
+          </>
         ) : (
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b">
-              <Button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="w-full"
-                variant="outline"
-              >
-                <IconMenu2 className="mr-2 h-4 w-4" />
-                View All
-              </Button>
+          <>
+            {/* Mobile conversation list */}
+            <div className="flex-1 overflow-hidden">
+              {sidebar}
             </div>
-            
-            {emptyState}
-            
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger className="sr-only" />
-              <SheetContent side="left" className="w-80 p-0">
-                <div className="h-full flex flex-col">
-                  <div className="flex-1 overflow-hidden min-h-0">
-                    {sidebar}
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+          </>
         )}
       </div>
     </div>

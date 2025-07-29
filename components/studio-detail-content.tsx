@@ -1,16 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Star, MapPin, Wifi, ChevronDown, ChevronUp } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Star, MapPin, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { StudioImage } from "@/components/studio-image-placeholder"
-import { StudioDetailActions } from "@/components/studio-detail-client"
-import { StudioReviews } from "@/components/studio-reviews"
-import { getStudioPrimaryImageUrl, getTransformedImageUrl } from "@/lib/utils"
+import { StudioDetailActions } from "@/components/studio-detail-actions"
+import { imagePresets } from "@/lib/utils/image-transformations"
+import { getPriceTierSymbol } from "@/lib/constants/currencies"
+import { BackButton } from "@/components/back-button"
+import { cn } from "@/lib/utils"
+import { FollowersList } from "@/components/social/followers-list"
 
 interface Studio {
   id: number
@@ -18,6 +20,7 @@ interface Studio {
   description: string
   location: string
   hourly_rate: number
+  price_tier?: number
   gear: any
   owner_id: number
   created_at: string
@@ -48,228 +51,257 @@ interface StudioDetailContentProps {
   amenities: Amenity[]
   reviews: Review[]
   averageRating: number
+  ownerProfile?: any
+  currentUserProfile?: any
 }
 
-// Client component for collapsible sections
-function CollapsibleSection({ 
-  title, 
-  children, 
-  defaultOpen = true,
-  className = "" 
-}: { 
-  title: string
-  children: React.ReactNode
-  defaultOpen?: boolean
-  className?: string
-}) {
-  const [isOpen, setIsOpen] = useState(defaultOpen)
-
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
-      <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-          <h3 className="text-lg md:text-xl font-semibold">{title}</h3>
-          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-3">
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
-  )
-}
-
-export function StudioDetailContent({ studio, amenities, reviews, averageRating }: StudioDetailContentProps) {
+export function StudioDetailContent({ studio, amenities, reviews, averageRating, ownerProfile, currentUserProfile }: StudioDetailContentProps) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [showAllReviews, setShowAllReviews] = useState(false)
+  const [gearOpen, setGearOpen] = useState(true)
+  const [gearSearchQuery, setGearSearchQuery] = useState('')
+  const [reviewSearchQuery, setReviewSearchQuery] = useState('')
+  
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-4 w-4 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+        className={cn(
+          "h-4 w-4",
+          i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+        )}
       />
     ))
   }
 
-  return (
-    <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-      {/* Main Content */}
-      <div className="lg:col-span-2 space-y-6 lg:space-y-8">
-        {/* Main Studio Image */}
-        <div className="aspect-video relative overflow-hidden rounded-lg">
-          <StudioImage
-            src={getStudioPrimaryImageUrl(studio.photo_urls, 800)}
-            alt={studio.name}
-            fill
-            width={600}
-            height={400}
-            className="object-cover"
-            priority
-          />
-        </div>
+  // Prepare all images including placeholder if no photos
+  const allImages = studio.photo_urls && studio.photo_urls.length > 0 
+    ? studio.photo_urls 
+    : [null] // Show at least one placeholder
 
-        {/* Image Gallery */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Gallery</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {studio.photo_urls && studio.photo_urls.length > 0 ? (
-              // Show actual uploaded photos
-              studio.photo_urls.slice(0, 4).map((photoUrl, i) => (
-                <div key={i} className="aspect-square relative overflow-hidden rounded-lg">
-                  <StudioImage
-                    src={getTransformedImageUrl(photoUrl, 150)}
-                    alt={`${studio.name} ${i + 1}`}
-                    fill
-                    width={150}
-                    height={150}
-                    className="object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                  />
-                </div>
-              ))
-            ) : (
-              // Show placeholder images if no photos uploaded
-              Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="aspect-square relative overflow-hidden rounded-lg">
-                  <StudioImage
-                    src={null}
-                    alt={`${studio.name} ${i + 1}`}
-                    fill
-                    width={150}
-                    height={150}
-                    className="object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                  />
-                </div>
-              ))
+  const handlePreviousImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
+  }
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length)
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-background overflow-hidden">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0 border-b bg-background">
+        <div className="flex items-center gap-4 px-6 py-4">
+          <BackButton href="/discover" label="Back to Studios" />
+        </div>
+      </div>
+
+      {/* Main Content Area - Two Column Grid */}
+      <div className="flex-1 grid grid-cols-[45%_55%] overflow-hidden">
+        {/* Left Column - Full Height Image Carousel */}
+        <div className="relative bg-black overflow-hidden h-full">
+          <div className="relative h-full w-full overflow-hidden">
+            <StudioImage
+              src={allImages[currentImageIndex] ? imagePresets.galleryLarge(allImages[currentImageIndex]) : null}
+              alt={`${studio.name} ${currentImageIndex + 1}`}
+              fill
+              sizes="45vw"
+              className="!h-full !w-full object-cover"
+              style={{ position: 'absolute', height: '100%', width: '100%' }}
+              priority={currentImageIndex === 0}
+            />
+            {allImages.length > 1 && (
+              <>
+                <button
+                  onClick={handlePreviousImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white transition-colors flex items-center justify-center"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white transition-colors flex items-center justify-center"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
             )}
           </div>
         </div>
 
-        {/* Studio Info */}
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">{studio.name}</h1>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0 text-muted-foreground">
-              <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-1" />
-                {studio.location}
+        {/* Right Column - Scrollable Content */}
+        <div className="h-full overflow-y-auto">
+          <div className="p-8 space-y-8">
+            {/* Studio Header */}
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <h1 className="text-4xl font-bold tracking-tight">{studio.name}</h1>
+                <span className="text-3xl font-light text-muted-foreground">
+                  {getPriceTierSymbol(studio.price_tier || 1)}
+                </span>
               </div>
-              <div className="flex items-center space-x-1">
-                {renderStars(averageRating)}
-                <span className="ml-2">({reviews.length} reviews)</span>
+              <div className="flex items-center gap-6 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span>{studio.location}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {renderStars(averageRating)}
+                  <span className="text-sm">({reviews.length})</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <p className="text-muted-foreground leading-relaxed">{studio.description}</p>
+            {/* Description */}
+            <div>
+              <p className="text-base leading-relaxed text-foreground/90">
+                {studio.description}
+              </p>
+            </div>
 
-          {/* Mobile Rate/Book/Contact Card */}
-          <div className="lg:hidden">
-            <Card className="border-2 border-primary/20">
-              <CardContent className="p-4">
-                <div className="space-y-3">
+            {/* Action Buttons */}
+            <div className="flex gap-3 w-full">
+              <StudioDetailActions studio={studio} />
+            </div>
+
+
+            {/* Gear Section - Collapsible with Search */}
+            {studio.gear && Object.keys(studio.gear).length > 0 && (
+              <Collapsible open={gearOpen} onOpenChange={setGearOpen}>
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xl font-bold">${studio.hourly_rate}</div>
-                      <div className="text-xs text-muted-foreground">per hour</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge variant={studio.published ? "default" : "secondary"} className="text-xs">
-                        {studio.published ? "Available" : "Unavailable"}
-                      </Badge>
-                      <Badge variant={studio.verification_status === 'verified' ? "default" : "secondary"} className="text-xs">
-                        {studio.verification_status === 'verified' ? "Verified" : "Pending"}
-                      </Badge>
-                    </div>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                          Gear
+                          {gearOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </h3>
+                      </Button>
+                    </CollapsibleTrigger>
+                    {gearOpen && (
+                      <div className="relative w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Search Gear..."
+                          value={gearSearchQuery}
+                          onChange={(e) => setGearSearchQuery(e.target.value)}
+                          className="pl-9 h-9"
+                        />
+                      </div>
+                    )}
                   </div>
-                  <StudioDetailActions studio={studio} />
+                  <CollapsibleContent className="space-y-4">
+                    {Object.entries(studio.gear).map(([category, items]) => {
+                      const filteredItems = Array.isArray(items) 
+                        ? items.filter((item: string) => 
+                            item.toLowerCase().includes(gearSearchQuery.toLowerCase())
+                          )
+                        : [String(items)].filter(item => 
+                            item.toLowerCase().includes(gearSearchQuery.toLowerCase())
+                          )
+                      
+                      if (filteredItems.length === 0) return null
+                      
+                      return (
+                        <div key={category} className="space-y-2">
+                          <h4 className="text-sm font-medium text-muted-foreground capitalize">
+                            {category}
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {filteredItems.map((item: string, index: number) => (
+                              <Badge key={index} variant="secondary" className="font-normal">
+                                {item}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </CollapsibleContent>
                 </div>
-              </CardContent>
-            </Card>
+              </Collapsible>
+            )}
+
+            {/* Studio Followers */}
+            <div>
+              <FollowersList studioId={studio.id} limit={10} />
+            </div>
+
+            {/* Reviews Section with Search */}
+            <div className="space-y-4 pb-8">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Reviews</h3>
+                {reviews.length > 0 && (
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search Reviews..."
+                      value={reviewSearchQuery}
+                      onChange={(e) => setReviewSearchQuery(e.target.value)}
+                      className="pl-9 h-9"
+                    />
+                  </div>
+                )}
+              </div>
+              {reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews
+                    .filter(review => {
+                      const searchLower = reviewSearchQuery.toLowerCase()
+                      const reviewerName = review.reviewer?.first_name || 'Anonymous'
+                      return reviewerName.toLowerCase().includes(searchLower) ||
+                             (review.comment && review.comment.toLowerCase().includes(searchLower))
+                    })
+                    .slice(0, showAllReviews ? undefined : 3)
+                    .map((review) => (
+                      <div key={review.id} className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="flex">
+                            {renderStars(review.rating)}
+                          </div>
+                          <span className="font-medium">
+                            {review.reviewer?.first_name || 'Anonymous'}
+                          </span>
+                        </div>
+                        {review.comment && (
+                          <p className="text-foreground/80 leading-relaxed">
+                            {review.comment}
+                          </p>
+                        )}
+                      </div>
+                    ))
+                  }
+                  {reviews.filter(review => {
+                    const searchLower = reviewSearchQuery.toLowerCase()
+                    const reviewerName = review.reviewer?.first_name || 'Anonymous'
+                    return reviewerName.toLowerCase().includes(searchLower) ||
+                           (review.comment && review.comment.toLowerCase().includes(searchLower))
+                  }).length > 3 && (
+                    <Button
+                      variant="link"
+                      onClick={() => setShowAllReviews(!showAllReviews)}
+                      className="px-0 h-auto font-normal text-base"
+                    >
+                      {showAllReviews ? 'Show less' : `Show all ${reviews.filter(review => {
+                        const searchLower = reviewSearchQuery.toLowerCase()
+                        const reviewerName = review.reviewer?.first_name || 'Anonymous'
+                        return reviewerName.toLowerCase().includes(searchLower) ||
+                               (review.comment && review.comment.toLowerCase().includes(searchLower))
+                      }).length} reviews`}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No reviews yet</p>
+              )}
+            </div>
           </div>
-
-          {/* Amenities - Collapsible */}
-          {amenities.length > 0 && (
-            <CollapsibleSection title="Amenities">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {amenities.map((amenity, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Wifi className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{amenity.name}</span>
-                  </div>
-                ))}
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* Available Gear - Collapsible */}
-          {studio.gear && Object.keys(studio.gear).length > 0 && (
-            <CollapsibleSection title="Available Gear">
-              <div className="grid gap-4">
-                {Object.entries(studio.gear).map(([category, items]) => (
-                  <div key={category}>
-                    <h4 className="font-medium text-muted-foreground mb-2 capitalize">{category}</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {Array.isArray(items) ? (
-                        items.map((item: string, index: number) => (
-                          <Badge key={index} variant="secondary">
-                            {item}
-                          </Badge>
-                        ))
-                      ) : (
-                        <Badge variant="secondary">{String(items)}</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CollapsibleSection>
-          )}
-        </div>
-
-        {/* Reviews */}
-        <div className="space-y-4">
-          <StudioReviews 
-            reviews={reviews}
-            averageRating={averageRating}
-            totalReviews={reviews.length}
-            studioName={studio.name}
-            showTitle={true}
-            variant="full"
-            maxVisible={5}
-          />
-        </div>
-      </div>
-
-      {/* Desktop Booking/Contact Section */}
-      <div className="hidden lg:block lg:col-span-1">
-        <div className="lg:sticky lg:top-6">
-          <Card>
-            <CardContent className="p-4 md:p-6">
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold">${studio.hourly_rate}</div>
-                  <div className="text-sm text-muted-foreground">per hour</div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Status:</span>
-                    <Badge variant={studio.published ? "default" : "secondary"}>
-                      {studio.published ? "Available" : "Unavailable"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Verification:</span>
-                    <Badge variant={studio.verification_status === 'verified' ? "default" : "secondary"}>
-                      {studio.verification_status === 'verified' ? "Verified" : "Pending"}
-                    </Badge>
-                  </div>
-                </div>
-
-                <StudioDetailActions studio={studio} />
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
   )
-} 
+}

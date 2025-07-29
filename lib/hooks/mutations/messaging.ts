@@ -2,7 +2,7 @@
 
 import { useInsertMutation, useUpdateMutation } from '@supabase-cache-helpers/postgrest-react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { Database, TablesInsert } from '@/lib/types/database'
+import type { Database } from '@/lib/types/database'
 
 const getSupabaseClient = () => createClient()
 

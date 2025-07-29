@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -277,10 +278,11 @@ export function StudioPhotoUploader({
                 return (
                   <div key={url} className="relative group">
                     <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                      <img
+                      <Image
                         src={getTransformedImageUrl(url, 400)}
                         alt={`Studio photo ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                         loading="lazy"
                       />
                       

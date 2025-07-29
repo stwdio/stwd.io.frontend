@@ -9,6 +9,7 @@ interface Studio {
   description: string
   location: string
   hourly_rate: number
+  price_tier?: number
   verification_status: string
   photo_urls?: string[]
 }
@@ -25,7 +26,7 @@ interface InquiryData {
 interface QuoteBasketStore {
   studios: Studio[]
   isOpen: boolean
-  addStudio: (studio: Studio) => void
+  addStudio: (studio: Studio) => Promise<void>
   removeStudio: (studioId: number) => void
   clearBasket: () => void
   toggleBasket: () => void
@@ -43,7 +44,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
       isOpen: false,
       _inquiryCallbacks: new Set(),
       
-      addStudio: (studio: Studio) => {
+      addStudio: async (studio: Studio) => {
         const { studios } = get()
         
         // Check if studio is already in basket
@@ -56,6 +57,34 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
         if (studio.verification_status !== 'verified') {
           toast.error('Only verified studios can be added to quote basket')
           return
+        }
+        
+        // Check if user already has a quote for this studio
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+          
+          if (profile) {
+            const { data: existingInquiry } = await supabase
+              .from('inquiry_recipients')
+              .select(`
+                inquiry_id,
+                inquiries!inner(creator_id)
+              `)
+              .eq('studio_id', studio.id)
+              .eq('inquiries.creator_id', profile.id)
+              .limit(1)
+            
+            if (existingInquiry && existingInquiry.length > 0) {
+              toast.error(`You already have a quote request for ${studio.name}`)
+              return
+            }
+          }
         }
         
         set({ studios: [...studios, studio] })
@@ -74,7 +103,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
       },
       
       clearBasket: () => {
-        set({ studios: [] })
+        set({ studios: [], isOpen: false })
         toast.success('Quote basket cleared')
       },
       
@@ -115,6 +144,39 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
             return false
           }
           
+          // Check for existing quotes for these studios
+          const studioIds = studios.map(s => s.id)
+          const { data: existingInquiries } = await supabase
+            .from('inquiry_recipients')
+            .select(`
+              studio_id,
+              inquiries!inner(creator_id)
+            `)
+            .in('studio_id', studioIds)
+            .eq('inquiries.creator_id', profile.id)
+          
+          let studiosToSubmit = studios
+          
+          if (existingInquiries && existingInquiries.length > 0) {
+            const existingStudioIds = existingInquiries.map(i => i.studio_id)
+            const existingStudioNames = studios
+              .filter(s => existingStudioIds.includes(s.id))
+              .map(s => s.name)
+              .join(', ')
+            
+            toast.error(`You already have pending quotes for: ${existingStudioNames}`)
+            
+            // Remove studios with existing quotes from the basket
+            studiosToSubmit = studios.filter(s => !existingStudioIds.includes(s.id))
+            
+            if (studiosToSubmit.length === 0) {
+              return false
+            }
+            
+            // Update studios to only include those without existing quotes
+            set({ studios: studiosToSubmit })
+          }
+          
           // Create the inquiry
           const { data: inquiry, error: inquiryError } = await supabase
             .from('inquiries')
@@ -133,7 +195,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           if (inquiryError) throw inquiryError
           
           // Create inquiry recipients for each studio
-          const recipients = studios.map(studio => ({
+          const recipients = studiosToSubmit.map(studio => ({
             inquiry_id: inquiry.id,
             studio_id: studio.id
           }))
@@ -145,7 +207,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           if (recipientsError) throw recipientsError
           
           // Get studio IDs before clearing basket
-          const submittedStudioIds = studios.map(s => s.id)
+          const submittedStudioIds = studiosToSubmit.map(s => s.id)
           
           // Clear the basket after successful submission
           set({ studios: [], isOpen: false })
@@ -153,7 +215,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           // Notify components that inquiries were submitted
           get()._notifyInquirySubmitted(submittedStudioIds)
           
-          toast.success(`Inquiry sent to ${studios.length} studio${studios.length > 1 ? 's' : ''}!`)
+          toast.success(`Inquiry sent to ${studiosToSubmit.length} studio${studiosToSubmit.length > 1 ? 's' : ''}!`)
           return true
           
         } catch (error) {

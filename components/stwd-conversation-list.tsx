@@ -97,7 +97,7 @@ export function STWDConversationList({
 
       // Fetch last message for each conversation
       const conversationsWithLastMessage = await Promise.all(
-        (conversationsData || []).map(async (conversation: any) => {
+        (conversationsData || []).map(async (conversation: { id: number; [key: string]: unknown }) => {
           const { data: lastMessage } = await supabase
             .from('messages')
             .select('content, created_at, message_type')

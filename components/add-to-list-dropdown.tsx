@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Heart, Plus, Check, BookmarkPlus, Loader2 } from 'lucide-react'
-import { addStudioToList, removeStudioFromList, getUserLists, ListWithCount } from '@/lib/actions/lists'
+import { Plus, Check, BookmarkPlus, Loader2 } from 'lucide-react'
+import { addStudioToList, removeStudioFromList, ListWithCount } from '@/lib/actions/lists'
 import { toast } from 'sonner'
 import CreateListDialog from './create-list-dialog'
 

@@ -45,10 +45,9 @@ async function OnboardingDataWrapper() {
     .eq('profile_id', profile.id)
     .limit(1)
   
-  // If user already has a role, redirect to dashboard
+  // If user already has a role, redirect to chat
   if (existingRoles && existingRoles.length > 0) {
-    const isStudioOwner = existingRoles.some(pr => pr.role?.slug === 'studio-owner')
-    redirect(isStudioOwner ? '/profile/dashboard' : '/dashboard')
+    redirect('/chat')
   }
   
   // Fetch available roles

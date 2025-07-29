@@ -5,9 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
-import { Plus, MessageSquare, BookmarkPlus } from 'lucide-react'
+import { Plus, MessageSquare, Eye } from 'lucide-react'
 import { toast } from 'sonner'
-import AddToListDropdown from './add-to-list-dropdown'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 
 interface Profile {
@@ -30,6 +29,7 @@ interface StudioCardActionsProps {
   studio: {
     id: number
     name: string
+    slug?: string
     description: string
     location: string
     hourly_rate: number
@@ -47,6 +47,12 @@ interface StudioCardActionsProps {
   sharedLists?: any[]
   listsLoading?: boolean
   onListsChange?: () => void
+  // OPTIMIZED: Receive interaction status to avoid individual queries
+  interactionStatus?: {
+    hasInquiry: boolean
+    hasConversation: boolean
+    conversationId?: number
+  }
 }
 
 export function StudioCardActions({ 
@@ -57,13 +63,22 @@ export function StudioCardActions({
   sharedProfessionalRoles = [],
   sharedLists = [],
   listsLoading = false,
-  onListsChange
+  onListsChange,
+  interactionStatus
 }: StudioCardActionsProps) {
   // OPTIMIZED: Use shared profile instead of individual fetching
   const profile = sharedProfile
   const loading = profileLoading
   const professionalRoles = sharedProfessionalRoles
-  const [hasInquiry, setHasInquiry] = useState(false)
+  
+  // Use passed interaction status or fetch if not provided
+  const [localHasInquiry, setLocalHasInquiry] = useState(false)
+  const [localHasConversation, setLocalHasConversation] = useState(false)
+  
+  const hasInquiry = interactionStatus?.hasInquiry ?? localHasInquiry
+  const hasConversation = interactionStatus?.hasConversation ?? localHasConversation
+  const conversationId = interactionStatus?.conversationId
+  
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
   const authModal = useAuthModal()
@@ -71,47 +86,37 @@ export function StudioCardActions({
   const isInBasket = isStudioInBasket(studio.id)
 
   const handleViewConversation = async () => {
-    if (!profile) return
+    if (conversationId) {
+      router.push(`/connect/chat?conversation=${conversationId}`)
+    } else if (!interactionStatus) {
+      // Only fetch if interaction status wasn't provided
+      try {
+        const { data: conversation } = await createClient()
+          .from('conversations')
+          .select('id')
+          .eq('studio_id', studio.id)
+          .eq('customer_id', profile.id)
+          .single()
 
-    try {
-      // Find the conversation for this studio and creator
-      const { data: conversation, error } = await createClient()
-        .from('conversations')
-        .select('id')
-        .eq('studio_id', studio.id)
-        .eq('customer_id', profile.id)
-        .single()
-
-      if (error) {
+        if (conversation) {
+          router.push(`/connect/chat?conversation=${conversation.id}`)
+        } else {
+          router.push('/discover/studios')
+        }
+      } catch (error) {
         console.error('Error finding conversation:', error)
-        // If no conversation exists, route to creator dashboard instead
-        router.push('/dashboard/creator')
-        return
+        router.push('/discover/studios')
       }
-
-      if (!conversation) {
-        // If no conversation exists, route to creator dashboard instead
-        router.push('/dashboard/creator')
-        return
-      }
-
-      // Navigate to messages page with conversation selected
-      router.push(`/profile/messages?conversation=${conversation.id}`)
-    } catch (error) {
-      console.error('Error navigating to conversation:', error)
-      // Fallback to creator dashboard
-      router.push('/dashboard/creator')
+    } else {
+      router.push('/discover/studios')
     }
   }
 
   const checkInquiryStatus = async (profileData: Profile) => {
-    // Check if user has any creator-type role (not studio owner)
-    const hasCreatorRole = professionalRoles.some(pr => 
-      ['musician', 'podcaster', 'voice-actor', 'a-and-r', 'engineer', 'manager'].includes(pr.role.slug)
-    )
-    if (!hasCreatorRole) return
+    const supabase = createClient()
     
-    const { data: inquiryCheck } = await createClient()
+    // Check for existing inquiries
+    const { data: inquiryCheck, error } = await supabase
       .from('inquiry_recipients')
       .select(`
         inquiry_id,
@@ -121,15 +126,40 @@ export function StudioCardActions({
       .eq('inquiries.creator_id', profileData.id)
       .limit(1)
 
-    setHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
+    setLocalHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
+    
+    // Check for existing conversations with this studio
+    // First get all conversations for this user
+    const { data: userConversations } = await supabase
+      .from('chat_participants')
+      .select(`
+        conversation_id,
+        chat_conversations!inner(
+          id,
+          title,
+          chat_participants!inner(user_id)
+        )
+      `)
+      .eq('user_id', profileData.user_id)
+    
+    if (userConversations) {
+      // Check if any conversation has the studio name as title
+      const hasStudioConversation = userConversations.some(item => {
+        const conv = item.chat_conversations
+        // Check if conversation title matches studio name (case insensitive)
+        return conv.title?.toLowerCase() === studio.name.toLowerCase()
+      })
+      
+      setLocalHasConversation(hasStudioConversation)
+    }
   }
 
-  // OPTIMIZED: Check inquiry status when profile is available
+  // OPTIMIZED: Check inquiry status when profile is available and status not provided
   useEffect(() => {
-    if (profile && !loading) {
+    if (profile && !loading && !interactionStatus) {
       checkInquiryStatus(profile)
     }
-  }, [profile, loading, studio.id])
+  }, [profile, loading, studio.id, interactionStatus])
   
   // Listen for inquiry submissions in a separate effect
   useEffect(() => {
@@ -153,22 +183,22 @@ export function StudioCardActions({
     )
   }
 
-  // If user is not logged in - show creator actions (two buttons)
+  // If user is not logged in - show both buttons that prompt login
   if (!profile) {
     return (
-      <div className="flex gap-1 h-8">
+      <div className="flex gap-2 w-full">
         <Button 
           variant="outline" 
           size="sm" 
-          className="flex-1 text-xs px-2"
+          className="flex-1 text-xs"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            authModal.open("Sign in to save studios", "Create an account to save studios to your lists and organize your favorites.")
+            authModal.open("Sign in to message studios", "Create an account to start conversations with studio owners.")
           }}
         >
-          <BookmarkPlus className="h-4 w-4 mr-1" />
-          List
+          <MessageSquare className="h-4 w-4 mr-1" />
+          Enquire
         </Button>
         <Button
           size="sm"
@@ -177,8 +207,7 @@ export function StudioCardActions({
             e.stopPropagation()
             authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")
           }}
-          className="flex-1 text-xs px-2"
-          variant="default"
+          className="flex-1 text-xs bg-black hover:bg-gray-800 text-white"
         >
           <Plus className="h-4 w-4 mr-1" />
           Quote
@@ -192,53 +221,47 @@ export function StudioCardActions({
     return null
   }
 
-  // For creators - show list, and either "View Conversation" or "Add to Quote" (two buttons)
+  // For creators - show both Enquire and Quote buttons
   return (
-    <div className="flex gap-1 h-8">
-      <AddToListDropdown
-        studioId={studio.id.toString()}
-        studioName={studio.name}
-        initialMemberships={memberships}
-        sharedLists={sharedLists}
-        listsLoading={listsLoading}
-        onSuccess={onListsChange}
-        trigger={
-          <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
-            <BookmarkPlus className="h-4 w-4 mr-1" />
-            List
-          </Button>
-        }
-      />
-      {hasInquiry ? (
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
+    <div className="flex gap-2 w-full">
+      <Button
+        size="sm"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (hasConversation) {
+            // If conversation exists, navigate to it
             handleViewConversation()
-          }}
-          className="flex-1 text-xs px-2"
-          variant="outline"
-        >
-          <MessageSquare className="h-4 w-4 mr-1" />
-          Chat
-        </Button>
-      ) : (
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            addStudio(studio)
-          }}
-          className="flex-1 text-xs px-2"
-          disabled={isInBasket}
-          variant={isInBasket ? "secondary" : "default"}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          {isInBasket ? 'Quote' : 'Quote'}
-        </Button>
-      )}
+          } else {
+            // Navigate to chat with studio context
+            router.push(`/connect/chat?studio=${studio.slug || studio.id}`)
+          }
+        }}
+        className="flex-1 text-xs"
+        variant="outline"
+      >
+        {hasConversation ? <Eye className="h-4 w-4 mr-1" /> : <MessageSquare className="h-4 w-4 mr-1" />}
+        {hasConversation ? 'View Chat' : 'Enquire'}
+      </Button>
+      
+      <Button
+        size="sm"
+        onClick={async (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (hasInquiry) {
+            // Navigate to quotes page with studio slug
+            router.push(`/connect/quotes?studio=${studio.slug || studio.id}`)
+            return
+          }
+          await addStudio(studio)
+        }}
+        className="flex-1 text-xs bg-black hover:bg-gray-800 text-white"
+        disabled={isInBasket}
+      >
+        {hasInquiry ? <Eye className="h-4 w-4 mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+        {hasInquiry ? 'View Quote' : isInBasket ? 'In Basket' : 'Quote'}
+      </Button>
     </div>
   )
 } 

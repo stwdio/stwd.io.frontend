@@ -52,23 +52,23 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
 
       if (error) {
         console.error('Error finding conversation:', error)
-        // If no conversation exists, route to creator dashboard instead
-        router.push('/dashboard/creator')
+        // If no conversation exists, route to discover page instead
+        router.push('/discover/studios')
         return
       }
 
       if (!conversation) {
-        // If no conversation exists, route to creator dashboard instead
-        router.push('/dashboard/creator')
+        // If no conversation exists, route to discover page instead
+        router.push('/discover/studios')
         return
       }
 
       // Navigate to messages page with conversation selected
-      router.push(`/profile/messages?conversation=${conversation.id}`)
+      router.push(`/connect/chat?conversation=${conversation.id}`)
     } catch (error) {
       console.error('Error navigating to conversation:', error)
-      // Fallback to creator dashboard
-      router.push('/dashboard/creator')
+      // Fallback to discover page
+      router.push('/discover/studios')
     }
   }
 
@@ -153,7 +153,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
           onClick={() => authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add to Quote
+          Quote
         </Button>
       </>
     )
@@ -165,7 +165,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
       <Button 
         className="w-full" 
         size="lg"
-        onClick={() => router.push(`/dashboard/studios/${studio.id}/edit`)}
+        onClick={() => router.push(`/workspace/studios/${studio.id}/edit`)}
       >
         <Edit className="h-4 w-4 mr-2" />
         Edit Studio
@@ -173,10 +173,10 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
     )
   }
 
-  // For creators - show contact and either "View Inquiry" or "Add to Quote"
+  // For creators - show contact and either "View Inquiry" or "Quote"
   return (
     <>
-      <Button className="w-full" size="lg">
+      <Button className="flex-1" size="lg">
         <MessageCircle className="h-4 w-4 mr-2" />
         Contact Studio
       </Button>
@@ -184,7 +184,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
       {hasInquiry ? (
         <Button 
           variant="outline" 
-          className="w-full"
+          className="flex-1"
           onClick={handleViewConversation}
         >
           <MessageSquare className="h-4 w-4 mr-2" />
@@ -193,12 +193,12 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
       ) : (
         <Button 
           variant="outline" 
-          className="w-full"
-          onClick={() => addStudio(studio)}
+          className="flex-1"
+          onClick={async () => await addStudio(studio)}
           disabled={isInBasket}
         >
           <Plus className="h-4 w-4 mr-2" />
-          {isInBasket ? 'In Quote Basket' : 'Add to Quote'}
+          {isInBasket ? 'In Quote Basket' : 'Quote'}
         </Button>
       )}
     </>

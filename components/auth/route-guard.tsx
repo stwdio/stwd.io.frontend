@@ -1,6 +1,6 @@
 'use client'
 
-import { useAuth, isPublicRoute, getDefaultDashboard } from '@/lib/auth/auth-context'
+import { useAuth, isPublicRoute } from '@/lib/auth/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { MinimalAuthLoading } from '@/components/skeletons'
@@ -41,10 +41,10 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
     // User is logged in with professional roles and tries to access onboarding
     if (user && profile && professionalRoles.length > 0 && pathname === '/onboarding') {
-      console.log('RouteGuard: User with professional roles on onboarding, redirecting to dashboard')
+      console.log('RouteGuard: User with professional roles on onboarding, redirecting to appropriate page')
       // Determine dashboard based on whether they own studios
       const isStudioOwner = professionalRoles.some(pr => pr.role?.slug === 'studio-owner')
-      router.replace(isStudioOwner ? '/profile/dashboard' : '/dashboard')
+      router.replace(isStudioOwner ? '/workspace' : '/discover/studios')
       return
     }
 
@@ -53,7 +53,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       console.log('RouteGuard: Authenticated user on auth page, redirecting')
       if (professionalRoles.length > 0) {
         const isStudioOwner = professionalRoles.some(pr => pr.role?.slug === 'studio-owner')
-        router.replace(isStudioOwner ? '/profile/dashboard' : '/dashboard')
+        router.replace(isStudioOwner ? '/workspace' : '/discover/studios')
       } else {
         router.replace('/onboarding')
       }

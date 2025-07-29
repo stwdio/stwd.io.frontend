@@ -1,6 +1,4 @@
 'use client'
-
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Dialog,
@@ -26,7 +24,6 @@ export function AuthModal({
   description = "You need to be signed in to perform this action."
 }: AuthModalProps) {
   const router = useRouter()
-  const [redirectPath, setRedirectPath] = useState<string | null>(null)
 
   const handleSignIn = () => {
     // Store current path for redirect after auth

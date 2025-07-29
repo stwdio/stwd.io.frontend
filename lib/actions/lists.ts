@@ -26,7 +26,7 @@ export type CreateListData = {
 }
 
 // Error types for better error handling
-export type ActionResult<T = any> = {
+export type ActionResult<T = unknown> = {
   success: boolean
   data?: T
   error?: string
@@ -194,7 +194,7 @@ export async function addStudioToList(
 
     revalidatePath('/lists')
     revalidatePath(`/lists/${listId}`)
-    revalidatePath('/browse')
+    revalidatePath('/discover')
     
     return { success: true }
   } catch (error) {
@@ -230,7 +230,7 @@ export async function removeStudioFromList(
 
     revalidatePath('/lists')
     revalidatePath(`/lists/${listId}`)
-    revalidatePath('/browse')
+    revalidatePath('/discover')
     
     return { success: true }
   } catch (error) {

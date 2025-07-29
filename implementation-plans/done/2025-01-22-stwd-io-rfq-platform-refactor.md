@@ -154,7 +154,7 @@ CREATE TABLE public.inquiry_recipients (
 - ❌ **MISSING** - Quote basket functionality and state management
 
 **Frontend User Flow**:
-1. **Studio Cards Enhancement**: Add "Add to Quote" button using Zustand state store
+1. **Studio Cards Enhancement**: Add "Quote" button using Zustand state store
 2. **Header Quote Basket**: Shopping cart icon with count badge, opens Dialog
 3. **Universal Inquiry Form**: Single form capturing all inquiry details
 4. **Submission Flow**: Creates one inquiry + multiple inquiry_recipients

@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Music, Mic, Radio, Briefcase, Wrench, Users, Building, ChevronRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
 
 const roleIcons = {
   'musician': Music,
@@ -35,7 +34,6 @@ interface OnboardingContentProps {
 export function OnboardingContent({ roles, profileId }: OnboardingContentProps) {
   const [loading, setLoading] = useState(false)
   const [selectedRole, setSelectedRole] = useState<number | null>(null)
-  const router = useRouter()
   const { toast } = useToast()
   const supabase = createClient()
 
@@ -97,12 +95,9 @@ export function OnboardingContent({ roles, profileId }: OnboardingContentProps) 
         description: "Your professional role has been set.",
       })
 
-      // Determine dashboard based on role
-      const selectedRoleData = roles.find(r => r.id === selectedRole)
-      const isStudioOwner = selectedRoleData?.slug === 'studio-owner'
-      
+      // Redirect to chat hub after onboarding
       // Force a hard navigation to refresh auth context
-      window.location.href = isStudioOwner ? '/profile/dashboard' : '/dashboard'
+      window.location.href = '/chat'
     } catch (err) {
       console.error("Unexpected error:", err)
       toast({

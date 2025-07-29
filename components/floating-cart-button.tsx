@@ -7,12 +7,12 @@ import { ShoppingCart } from 'lucide-react'
 import { QuoteBasketDialog } from '@/components/quote-basket-dialog'
 
 export function FloatingCartButton() {
-  const { user, profile, loading, professionalRoles } = useAuth()
+  const { profile, loading, professionalRoles } = useAuth()
   const { studios: basketStudios, toggleBasket } = useQuoteBasket()
   const pathname = usePathname()
 
-  // Hide on profile pages
-  if (loading || pathname.startsWith('/profile')) {
+  // Only show on studios discover page
+  if (loading || !pathname?.includes('/discover/studios')) {
     return null
   }
   
@@ -29,7 +29,7 @@ export function FloatingCartButton() {
 
   return (
     <>
-      <div className="fixed bottom-6 right-4 z-[100]">
+      <div className="fixed bottom-6 right-4 z-40">
         <div className="relative">
           <button
             onClick={toggleBasket}

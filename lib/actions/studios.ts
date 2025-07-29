@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createServerActionClient } from '@/lib/supabase/server'
 
 // Types for studio operations
@@ -11,7 +10,7 @@ export type Studio = {
   description: string | null
   hourly_rate: number
   published: boolean
-  gear: any
+  gear: Record<string, unknown> | null
   location: string | null
   photo_urls: string[]
   owner_id: number
@@ -26,7 +25,7 @@ export type CreateDraftStudioData = {
   hourly_rate?: number
 }
 
-export type ActionResult<T = any> = {
+export type ActionResult<T = unknown> = {
   success: boolean
   data?: T
   error?: string
@@ -82,7 +81,7 @@ export async function createDraftStudio(data: CreateDraftStudioData): Promise<Ac
       return { success: false, error: 'Failed to create studio draft' }
     }
 
-    revalidatePath('/profile/dashboard')
+    revalidatePath('/workspace')
     return { success: true, data: newStudio }
   } catch (error) {
     console.error('Unexpected error creating draft studio:', error)
@@ -146,7 +145,7 @@ export async function uploadStudioImage(
     const filePath = `studios/${studioId}/${fileName}`
 
     // Upload file to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('studio-photos')
       .upload(filePath, file, {
         contentType: file.type,
@@ -182,9 +181,9 @@ export async function uploadStudioImage(
       return { success: false, error: 'Failed to save image reference' }
     }
 
-    revalidatePath(`/dashboard/studios/${studioId}/edit`)
-    revalidatePath('/profile/dashboard')
-    revalidatePath('/browse')
+    revalidatePath(`/workspace/studios/${studioId}/edit`)
+    revalidatePath('/workspace')
+    revalidatePath('/discover')
     
     return { success: true, data: publicUrl }
   } catch (error) {
@@ -272,9 +271,9 @@ export async function deleteStudioImage(
       // The cleanup job will handle orphaned storage files
     }
 
-    revalidatePath(`/dashboard/studios/${studioId}/edit`)
-    revalidatePath('/profile/dashboard')
-    revalidatePath('/browse')
+    revalidatePath(`/workspace/studios/${studioId}/edit`)
+    revalidatePath('/workspace')
+    revalidatePath('/discover')
     
     return { success: true }
   } catch (error) {

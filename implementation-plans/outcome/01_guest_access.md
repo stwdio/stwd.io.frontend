@@ -118,7 +118,7 @@ CREATE POLICY "Profiles viewable by all" ON profiles
 | View Studio Details | ✅ Full | - |
 | View User Profiles | ✅ Full | - |
 | Contact Studio | ❌ Prompt | ✅ |
-| Add to Quote | ❌ Prompt | ✅ |
+| Quote | ❌ Prompt | ✅ |
 | Create Lists | ❌ Prompt | ✅ |
 
 ## Code Examples
@@ -135,7 +135,7 @@ if (!user) {
       </Button>
       <Button onClick={() => openAuthModal()}>
         <IconShoppingCart className="h-4 w-4 mr-2" />
-        Add to Quote
+        Quote
       </Button>
     </>
   )

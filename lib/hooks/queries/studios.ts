@@ -4,7 +4,7 @@ import { useQuery } from '@supabase-cache-helpers/postgrest-react-query'
 import { useInfiniteQuery, useQuery as useReactQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { CACHE_TIMES } from '@/lib/react-query/client'
-import type { Database, StudioWithDetails } from '@/lib/types/database'
+import type { Database } from '@/lib/types/database'
 
 // Re-export createClient with proper typing for consistency
 const getSupabaseClient = () => createClient()
@@ -117,6 +117,7 @@ export function useStudio(studioId: number | null) {
  */
 export function useStudiosInfinite(filters?: {
   location?: string
+  search?: string
   minRate?: number
   maxRate?: number
   priceTiers?: number[]
@@ -158,6 +159,10 @@ export function useStudiosInfinite(filters?: {
         query = query.ilike('location', `%${filters.location}%`)
       }
       
+      if (filters?.search) {
+        query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+      }
+      
       if (filters?.minRate) {
         query = query.gte('hourly_rate', filters.minRate)
       }
@@ -183,7 +188,7 @@ export function useStudiosInfinite(filters?: {
         if (amenityError) {
           throw amenityError
         } else if (studioIds && studioIds.length > 0) {
-          const ids = studioIds.map(row => row.studio_id)
+          const ids = studioIds.map((row: { studio_id: number }) => row.studio_id)
           query = query.filter('id', 'in', `(${ids.join(',')})`)
         } else {
           // No studios match the amenity criteria - return empty result
@@ -200,7 +205,7 @@ export function useStudiosInfinite(filters?: {
         if (gearError) {
           throw gearError
         } else if (studioIds && studioIds.length > 0) {
-          const ids = studioIds.map(row => row.studio_id)
+          const ids = studioIds.map((row: { studio_id: number }) => row.studio_id)
           query = query.filter('id', 'in', `(${ids.join(',')})`)
         } else {
           // No studios match the gear criteria - return empty result
@@ -328,7 +333,6 @@ export function useListStudios(listId: number | null, userProfileId: number | nu
 export function useStudiosNearLocation(
   lat: number | null, 
   lng: number | null, 
-  radiusKm: number = 50
 ) {
   // This will be implemented when you add PostGIS geographic functions
   // For now, returning a disabled query

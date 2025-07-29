@@ -20,10 +20,10 @@ interface AddListToQuoteButtonProps {
 export function AddListToQuoteButton({ studios }: AddListToQuoteButtonProps) {
   const { addStudio } = useQuoteBasket()
 
-  const handleAddToQuote = () => {
+  const handleAddToQuote = async () => {
     let addedCount = 0
     
-    studios.forEach(studio => {
+    for (const studio of studios) {
       // Transform the studio object to match the quote basket interface
       const studioForBasket = {
         id: studio.id,
@@ -35,9 +35,9 @@ export function AddListToQuoteButton({ studios }: AddListToQuoteButtonProps) {
       }
       
       // Add studio to basket (addStudio handles duplicates)
-      addStudio(studioForBasket)
+      await addStudio(studioForBasket)
       addedCount++
-    })
+    }
     
     // Additional success toast for the list operation
     if (addedCount > 0) {
@@ -50,8 +50,8 @@ export function AddListToQuoteButton({ studios }: AddListToQuoteButtonProps) {
   return (
     <Button onClick={handleAddToQuote} size="sm" className="gap-2 md:h-10 md:px-4 md:py-2">
       <Quote className="h-4 w-4" />
-      <span className="hidden sm:inline">Add To Quote Basket</span>
-      <span className="sm:hidden">Add To Quote Basket</span>
+      <span className="hidden sm:inline">Quote Basket</span>
+      <span className="sm:hidden">Quote Basket</span>
     </Button>
   )
 } 

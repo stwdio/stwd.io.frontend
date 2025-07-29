@@ -7,7 +7,7 @@ import {
   useUpsertMutation 
 } from '@supabase-cache-helpers/postgrest-react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { Database, TablesInsert, TablesUpdate } from '@/lib/types/database'
+import type { Database } from '@/lib/types/database'
 
 const getSupabaseClient = () => createClient()
 
@@ -66,10 +66,10 @@ export function useDeleteStudio() {
     ['id'],
     '*',
     {
-      onSuccess: (data: any) => {
+      onSuccess: (data: unknown) => {
         console.log('Studio deleted successfully:', data)
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         console.error('Failed to delete studio:', error)
       },
       // Revalidate related tables after deletion
@@ -117,7 +117,7 @@ export function useRemoveStudioFromList() {
     ['list_id', 'studio_id'],
     '*',
     {
-      onSuccess: (data: any) => {
+      onSuccess: (data: unknown) => {
         console.log('Studio removed from list:', data)
       },
       revalidateTables: [
@@ -240,7 +240,7 @@ export function useClaimStudio() {
   // since it uses your RPC function rather than direct table operations
   // For now, returning a placeholder that can be replaced with the actual implementation
   return {
-    mutate: async (data: { studio_id: number; verification_docs: any }) => {
+    mutate: async (data: { studio_id: number; verification_docs: Record<string, unknown> }) => {
       const client = getSupabaseClient()
       return await client.rpc('claim_studio', {
         studio_id_param: data.studio_id,

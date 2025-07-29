@@ -1,7 +1,7 @@
 import { createServerComponentClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { IconBuilding, IconSearch, IconStar } from "@tabler/icons-react"
 
@@ -12,8 +12,8 @@ export default async function LandingPage() {
   const { data: { user } } = await supabase.auth.getUser()
   
   if (user) {
-    // User is authenticated, redirect to browse
-    redirect('/browse')
+    // User is authenticated, redirect to discover
+    redirect('/discover')
   }
 
   return (
@@ -50,10 +50,10 @@ export default async function LandingPage() {
             Connect with top-tier facilities and bring your creative vision to life.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/browse">
+            <Link href="/discover">
               <Button size="lg" className="text-lg px-8">
                 <IconSearch className="mr-2 h-5 w-5" />
-                Browse Studios
+                Discover Studios
               </Button>
             </Link>
             <Link href="/auth/login?signup=true">

@@ -133,7 +133,7 @@ export const STWDMessageItem = ({ message, isOwnMessage, showHeader }: STWDMessa
 interface STWDChatAreaProps {
   messages: STWDMessage[]
   currentUserId: number
-  onSendMessage: (content: string, messageType?: 'text' | 'quote', additionalData?: any) => void
+  onSendMessage: (content: string, messageType?: 'text' | 'quote', additionalData?: Record<string, unknown>) => void
   isConnected: boolean
   conversationTitle: string
   onBack?: () => void

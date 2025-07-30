@@ -193,7 +193,7 @@ export function ConversationList({
               )}
             >
               <Avatar className="h-10 w-10 shrink-0">
-                <AvatarImage src={avatarUrl} alt={isEnquiry ? conversation.title : displayName} />
+                <AvatarImage src={avatarUrl} alt={isEnquiry ? (conversation.title || undefined) : displayName} />
                 <AvatarFallback>
                   {isEnquiry && conversation.title ? conversation.title.charAt(0) : displayName.charAt(0)}
                 </AvatarFallback>

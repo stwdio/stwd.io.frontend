@@ -27,7 +27,7 @@ export function ConnectLayout({
       {/* Desktop Layout */}
       <div className="hidden md:flex h-full min-h-0">
         {/* Sidebar */}
-        <div className="w-96 border-r bg-muted/10 flex flex-col h-full">
+        <div className="min-w-[24rem] max-w-md border-r bg-muted/10 flex flex-col h-full">
           <div className="flex-1 overflow-hidden min-h-0 h-full">
             {sidebar}
           </div>

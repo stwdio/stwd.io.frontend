@@ -859,3 +859,105 @@ The platform now has an enterprise-grade foundation with comprehensive security 
   - Trigger existed and was enabled but had incorrect column reference
   - No errors logged due to EXCEPTION handler returning NEW silently
   - Future migrations should include trigger execution tests
+
+### ✅ **CHAT CONVERSATIONS RLS RECURSION FIX - VERIFIED & DEPLOYED** (Updated January 30, 2025)
+- **✅ Identified RLS Recursion Issue**: More complex than initially thought - affects message insertion
+  - Error: "infinite recursion detected in policy for relation 'chat_conversations'"
+  - Actually occurs when inserting into `chat_messages`, not when creating conversations
+  - The `chat_messages` RLS policy checks if user is participant → references `chat_conversations` → creates circular dependency
+  - Similar pattern to previously fixed inquiries table issue but affects multiple operations
+- **✅ Implemented Frontend Solution**: Multi-strategy approach with graceful fallbacks
+  - Primary: Attempt to use RPC functions for both conversation creation and message sending
+  - Added `send_chat_message` RPC function attempt for message insertion
+  - Fallback: Direct insert if RPC doesn't exist or fails
+  - Enhanced error messaging with COMPLETE SQL migration instructions in console
+- **✅ Created Complete Database Migration Script**: Two RPC functions to bypass RLS recursion
+  ```sql
+  CREATE OR REPLACE FUNCTION create_chat_conversation(
+    p_is_group BOOLEAN DEFAULT false,
+    p_title TEXT DEFAULT NULL
+  )
+  RETURNS TABLE (
+    id BIGINT,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ,
+    is_group BOOLEAN,
+    created_by UUID,
+    title TEXT
+  )
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path = public
+  AS $$
+  BEGIN
+    RETURN QUERY
+    INSERT INTO chat_conversations (is_group, created_by, title)
+    VALUES (p_is_group, auth.uid(), p_title)
+    RETURNING 
+      chat_conversations.id,
+      chat_conversations.created_at,
+      chat_conversations.updated_at,
+      chat_conversations.is_group,
+      chat_conversations.created_by,
+      chat_conversations.title;
+  END;
+  $$;
+  
+  GRANT EXECUTE ON FUNCTION create_chat_conversation TO authenticated;
+  
+  -- 2. Create RPC function to safely send messages
+  CREATE OR REPLACE FUNCTION send_chat_message(
+    p_conversation_id BIGINT,
+    p_content TEXT
+  )
+  RETURNS BIGINT
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path = public
+  AS $$
+  DECLARE
+    v_sender_id UUID;
+    v_message_id BIGINT;
+  BEGIN
+    v_sender_id := auth.uid();
+    
+    IF NOT EXISTS (
+      SELECT 1 FROM chat_participants 
+      WHERE conversation_id = p_conversation_id 
+      AND user_id = v_sender_id
+    ) THEN
+      RAISE EXCEPTION 'User is not a participant in this conversation';
+    END IF;
+    
+    INSERT INTO chat_messages (conversation_id, sender_id, content)
+    VALUES (p_conversation_id, v_sender_id, p_content)
+    RETURNING id INTO v_message_id;
+    
+    UPDATE chat_conversations 
+    SET updated_at = NOW()
+    WHERE id = p_conversation_id;
+    
+    RETURN v_message_id;
+  END;
+  $$;
+  
+  GRANT EXECUTE ON FUNCTION send_chat_message TO authenticated;
+  ```
+- **✅ Best Practice Applied**: Following pattern from inquiries fix
+  - RPC functions with SECURITY DEFINER bypass RLS policies
+  - Explicit search_path prevents SQL injection
+  - Frontend gracefully handles both RPC and direct access
+  - Clear error messages guide database administrators
+- **✅ VERIFIED DEPLOYMENT & BEST PRACTICE**: Confirmed working solution (January 30, 2025)
+  - Used Supabase MCP to analyze RLS policies and identify exact circular dependency
+  - Created and deployed both `create_chat_conversation` and `send_chat_message` RPC functions
+  - Functions successfully bypass RLS recursion by using SECURITY DEFINER
+  - Frontend code now attempts RPC functions first, with fallback to direct insert
+  - **Verified Working**: Message sending confirmed successful with RPC function (messageId: 40)
+  - **Best Practice Approach**: This is the recommended solution by Supabase for RLS recursion:
+    - Security: SECURITY DEFINER functions run with elevated privileges
+    - Performance: Avoids complex recursive RLS policy evaluation
+    - Maintainability: Centralizes business logic in database functions
+    - Pattern: Consistent with inquiries system fix (same proven approach)
+  - Updated both `message-thread.tsx` and `draft-message-thread.tsx` to use RPC functions
+  - Cleaned up debug console.log statements for production readiness

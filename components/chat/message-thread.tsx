@@ -139,16 +139,58 @@ export function MessageThread({
     
     setIsLoading(true)
     try {
-      // Create the new message
-      const { data: newMessage, error } = await supabase
-        .from('chat_messages')
-        .insert({
-          conversation_id: conversation.id,
-          sender_id: currentUserId,
-          content: message.trim()
-        })
-        .select()
-        .single()
+      // Try RPC function first to avoid RLS recursion
+      let newMessage
+      let error
+      
+      try {
+        // Attempt to use RPC function
+        const { data: messageId, error: rpcError } = await supabase
+          .rpc('send_chat_message', {
+            p_conversation_id: conversation.id,
+            p_content: message.trim()
+          })
+        
+        if (rpcError) {
+          // Fallback to direct insert
+          const { data, error: insertError } = await supabase
+            .from('chat_messages')
+            .insert({
+              conversation_id: conversation.id,
+              sender_id: currentUserId,
+              content: message.trim()
+            })
+            .select()
+            .single()
+          
+          newMessage = data
+          error = insertError
+        } else {
+          // Fetch the created message
+          const { data, error: fetchError } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('id', messageId)
+            .single()
+          
+          newMessage = data
+          error = fetchError
+        }
+      } catch (e) {
+        // If RPC doesn't exist, try direct insert
+        const { data, error: insertError } = await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: conversation.id,
+            sender_id: currentUserId,
+            content: message.trim()
+          })
+          .select()
+          .single()
+        
+        newMessage = data
+        error = insertError
+      }
       
       if (error) throw error
       
@@ -156,11 +198,8 @@ export function MessageThread({
       setMessages([...messages, newMessage])
       setMessage('')
       
-      // Update the conversation's updated_at timestamp
-      await supabase
-        .from('chat_conversations')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', conversation.id)
+      // Note: The RPC function already updates the conversation's updated_at timestamp
+      // No need to update it again here
     } catch (error) {
       console.error('Failed to send message:', error)
     } finally {

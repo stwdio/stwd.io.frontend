@@ -2,13 +2,15 @@
 
 import React, { useEffect, useState } from 'react'
 import { GenericCard } from '@/components/cards/generic-card'
-import { IconMessage, IconUserPlus } from '@tabler/icons-react'
+import { IconMessage, IconUserPlus, IconUserCheck } from '@tabler/icons-react'
 import { Database } from '@/types/supabase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 import { imagePresets } from '@/lib/utils/image-transformations'
 import { createClient } from '@/lib/supabase/client'
+import { useIsFollowingUser } from '@/lib/hooks/queries/social'
+import { useFollowUser, useUnfollowUser } from '@/lib/hooks/mutations/social'
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   profile_roles?: Array<{
@@ -32,6 +34,12 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
   const isAuthenticated = !!user
   const supabase = createClient()
   const [followers, setFollowers] = useState<Array<{ id: string, name: string, avatar: string | null }>>([])
+  
+  // Follow functionality
+  const { data: isFollowing } = useIsFollowingUser(profile.user_id)
+  const { mutate: followUser, isPending: isFollowingPending } = useFollowUser()
+  const { mutate: unfollowUser, isPending: isUnfollowingPending } = useUnfollowUser()
+  const isCurrentUser = user?.id === profile.user_id
 
   const displayName = profile.first_name && profile.last_name
     ? `${profile.first_name} ${profile.last_name}`
@@ -92,8 +100,13 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
       return
     }
     
-    // TODO: Implement follow functionality
-    console.log('Follow user:', profile.username)
+    if (!profile.user_id) return
+    
+    if (isFollowing) {
+      unfollowUser({ followingUserId: profile.user_id })
+    } else {
+      followUser({ followingUserId: profile.user_id })
+    }
   }
 
   const handleMessage = (e: React.MouseEvent) => {
@@ -128,12 +141,13 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
         icon: <IconMessage className="h-4 w-4 mr-1" />,
         onClick: handleMessage
       }}
-      secondaryAction={{
-        label: 'Follow',
-        icon: <IconUserPlus className="h-4 w-4 mr-1" />,
+      secondaryAction={isCurrentUser ? undefined : {
+        label: isFollowing ? 'Following' : 'Follow',
+        icon: isFollowing ? <IconUserCheck className="h-4 w-4 mr-1" /> : <IconUserPlus className="h-4 w-4 mr-1" />,
         onClick: handleFollow,
-        variant: 'default',
-        className: 'bg-black hover:bg-gray-800 text-white hover:text-white border-black'
+        variant: isFollowing ? 'secondary' : 'default',
+        className: isFollowing ? '' : 'bg-black hover:bg-gray-800 text-white hover:text-white border-black',
+        disabled: isFollowingPending || isUnfollowingPending
       }}
     />
   )

@@ -13,18 +13,21 @@ import { IconBuilding, IconMessage, IconFilter, IconSearch } from '@tabler/icons
 import type { Database } from '@/lib/types/database'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
-type Conversation = Database['public']['Tables']['conversations']['Row'] & {
-  conversation_participants: Array<{
-    profile_id: number
-    profiles: Profile
+type Conversation = {
+  id: number
+  created_at: string | null
+  updated_at: string | null
+  title?: string | null
+  chat_participants: Array<{
+    user_id: string
+    profiles: Profile | null
   }>
-  messages: Array<{
+  chat_messages: Array<{
     id: number
     content: string
     created_at: string
-    sender_id: number
+    sender_id: string
   }>
-  title?: string
 }
 
 interface ConversationListProps {
@@ -85,10 +88,10 @@ export function ConversationList({
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       const title = (conversation.title || '').toLowerCase()
-      const otherUser = conversation.conversation_participants.find((p: { profile_id: number; profiles: Profile }) => p.profiles.user_id !== currentUserId)?.profiles
+      const otherUser = conversation.chat_participants.find(p => p.user_id !== currentUserId)?.profiles
       const userName = otherUser ? 
         `${otherUser.first_name || ''} ${otherUser.last_name || ''} ${otherUser.username || ''}`.toLowerCase() : ''
-      const lastMessage = conversation.messages[0]?.content?.toLowerCase() || ''
+      const lastMessage = conversation.chat_messages[0]?.content?.toLowerCase() || ''
       
       return title.includes(query) || userName.includes(query) || lastMessage.includes(query)
     }
@@ -159,13 +162,10 @@ export function ConversationList({
       <ScrollArea className="flex-1">
         <div className="p-2">
           {filteredConversations.map((conversation) => {
-          const currentUserParticipant = conversation.conversation_participants.find(
-            (p: { profile_id: number; profiles: Profile }) => p.profiles.user_id === currentUserId
+          const otherParticipants = conversation.chat_participants.filter(
+            p => p.user_id !== currentUserId
           )
-          const otherParticipants = conversation.conversation_participants.filter(
-            (p: { profile_id: number; profiles: Profile }) => p.profiles.user_id !== currentUserId
-          )
-          const lastMessage = conversation.messages[0]
+          const lastMessage = conversation.chat_messages[0]
           const otherUser = otherParticipants[0]?.profiles
           
           // Check if this is a studio enquiry
@@ -235,7 +235,7 @@ export function ConversationList({
                 
                 {lastMessage ? (
                   <p className="text-sm text-muted-foreground truncate mt-1">
-                    {lastMessage.sender_id === currentUserParticipant?.profile_id ? 'You: ' : ''}
+                    {lastMessage.sender_id === currentUserId ? 'You: ' : ''}
                     {lastMessage.content}
                   </p>
                 ) : conversation.id === -1 ? (

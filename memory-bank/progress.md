@@ -36,7 +36,7 @@
     - Group chat creation from connections page with multi-select
     - Updated profile pages with Connect button showing proper states
   - **✅ Phase 4 - Concierge & Enquiry System**:
-    - Created Studio Concierge database functions and profile setup
+    - Created Concierge database functions and profile setup
     - Refactored quote basket to create group chats instead of inquiries
     - Each enquiry creates group chat with creator, studio team, and concierge
     - Initial message contains project details, concierge sends welcome
@@ -58,7 +58,7 @@
   - Profile/card components updated for connection support
   - Workspace components updated for team access
 - **Next Steps (Manual Tasks)**:
-  - Create Studio Concierge auth user (email: concierge@stwd.io)
+  - Create Concierge auth user (email: concierge@stwd.io)
   - Test all new features thoroughly
   - Consider data migration for existing inquiries
   - Create team management UI for studios

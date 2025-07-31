@@ -180,9 +180,9 @@ To refactor the stwd.io platform based on the findings of the February 2025 Audi
 
 ### **Phase 4: The Concierge-Led Enquiry System**
 
-**Goal:** Integrate the quote submission process with the chat system and introduce the Studio Concierge role.
+**Goal:** Integrate the quote submission process with the chat system and introduce the Concierge role.
 
-*   **Task 4.1: Create Studio Concierge User**
+*   **Task 4.1: Create Concierge User**
     *   **User Story:** "As a platform, we want a dedicated concierge user to facilitate all formal studio enquiries."
     *   **Current State:** Not Present - no concierge role exists.
     *   **Implementation Steps (Supabase MCP):**

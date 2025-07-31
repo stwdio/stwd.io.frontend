@@ -2,7 +2,16 @@
 
 ## Current Work Session
 **Date**: February 2025
-**Focus**: Settings Navigation Refactor - COMPLETED ✅
+**Focus**: Chat Interface Improvements - Enquiry Chat Display
+
+### Current Work: Chat Interface Improvements (February 2025)
+- **Problem**: Enquiry chats were showing repeated studio names in the chat header (e.g., "Studio Enquiry: Grunge Garden Studios")
+- **Solution**: Updated the chat header in message-thread.tsx to display participant names instead of studio names, matching the conversation list pattern
+- **Implementation**:
+  - Modified message-thread.tsx header to show participant names (e.g., "chantal_adam, Concierge")
+  - Added special handling for Studio Concierge to display as "Concierge"
+  - Maintained "Studio Enquiry" as subtitle with "View Studio" link
+  - Unified display logic between conversation list and chat header
 
 ## Recent Completions
 
@@ -102,7 +111,7 @@
 - Created group chat functionality from connections page
 
 #### Phase 4: Concierge & Enquiry System ✅
-- Created Studio Concierge database functions and profile setup
+- Created Concierge database functions and profile setup
 - Refactored quote basket to create group chats instead of inquiries:
   - Each studio enquiry creates a group chat
   - Participants: creator, all studio team members, studio concierge
@@ -129,7 +138,7 @@
 - Workspace components updated for team access
 
 #### Next Steps (Manual Tasks)
-1. Create Studio Concierge auth user via Supabase Dashboard (email: concierge@stwd.io)
+1. Create Concierge auth user via Supabase Dashboard (email: concierge@stwd.io)
 2. Test all new features thoroughly
 3. Consider data migration strategy for existing inquiries
 4. Create team management UI for studios (add/remove members)

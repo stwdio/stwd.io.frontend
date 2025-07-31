@@ -158,14 +158,14 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
               // Send welcome message from concierge using RPC function
               const conciergeMessage = `Hello! 👋
 
-I'm the stwd.io Studio Concierge, and I'm here to help facilitate your enquiry with ${studioData.name}.
+I'm the stwd.io Concierge, and I'm here to help facilitate your enquiry with ${studioData.name}.
 
 Feel free to ask any questions about the studio, discuss your project needs, or share any specific requirements you have.
 
 The studio team has been notified and will respond soon.
 
 Best regards,
-Studio Concierge`
+Concierge`
               
               await supabase
                 .rpc('send_message_as_concierge', {

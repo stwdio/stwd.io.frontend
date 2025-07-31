@@ -67,11 +67,14 @@ export function MessageThread({
     }
     
     const loadStudioImage = async () => {
-      if (conversation.title) {
+      if (conversation.title && conversation.title.includes('Studio Enquiry:')) {
+        // Extract studio name from "Studio Enquiry: Name" format
+        const studioName = conversation.title.replace('Studio Enquiry: ', '')
+        
         const { data: studio } = await supabase
           .from('studios')
           .select('photo_urls, slug')
-          .eq('name', conversation.title)
+          .eq('name', studioName)
           .single()
         
         if (studio) {
@@ -219,62 +222,110 @@ export function MessageThread({
       {/* Header */}
       <div className="h-[73px] p-4 border-b flex items-center">
         <div className="flex items-center gap-3">
-          {otherParticipants.map(participant => {
-            const profile = participant.profiles
-            const displayName = profile.first_name && profile.last_name 
-              ? `${profile.first_name} ${profile.last_name}`.trim()
-              : profile.username || 'Unknown User'
+          {(() => {
             const isEnquiry = conversation.title && conversation.title.trim() !== ''
-            const avatarUrl = isEnquiry && studioImage 
-              ? studioImage 
-              : profile.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
+            const isGroupChat = conversation.is_group === true && !isEnquiry
             
-            return (
-              <div key={participant.user_id} className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={avatarUrl} alt={isEnquiry ? conversation.title : displayName} />
-                  <AvatarFallback>
-                    {isEnquiry && conversation.title ? conversation.title.charAt(0) : displayName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h2 className="font-semibold">
-                    {conversation.title ? (
-                      studioSlug ? (
-                        <>
-                          {' '}
-                          <Link href={`/discover/studios/${studioSlug}`} className="hover:underline">
-                            {conversation.title}
-                          </Link>
-                        </>
-                      ) : (
-                        `${conversation.title}`
-                      )
-                    ) : (
-                      profile.username ? (
-                        <Link href={`/profiles/${profile.username}`} className="hover:underline">
-                          {displayName}
+            // For studio enquiries, show studio info
+            if (isEnquiry) {
+              const studioName = conversation.title.replace('Studio Enquiry: ', '')
+              const avatarUrl = studioImage || undefined
+              
+              return (
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={avatarUrl} alt={studioName} />
+                    <AvatarFallback>
+                      {studioName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="font-semibold">
+                      {studioSlug ? (
+                        <Link href={`/discover/studios/${studioSlug}`} className="hover:underline">
+                          {studioName}
                         </Link>
                       ) : (
-                        displayName
-                      )
-                    )}
-                  </h2>
-                  {conversation.title && (
-                    <p className="text-sm text-muted-foreground">
-                      {profile.username ? (
-                        <Link href={`/profiles/${profile.username}`} className="hover:underline">
-                          {displayName}
-                        </Link>
-                      ) : (
-                        displayName
+                        studioName
                       )}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Studio Enquiry
                     </p>
-                  )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            } else if (isGroupChat) {
+              // For regular group chats, show participant names
+              const participantNames = otherParticipants
+                .map(p => {
+                  const profile = p.profiles
+                  return profile?.first_name || profile?.username || 'Unknown'
+                })
+                .filter(Boolean)
+              
+              let displayName = 'Group Chat'
+              if (participantNames.length <= 2) {
+                displayName = participantNames.join(', ')
+              } else {
+                const firstTwo = participantNames.slice(0, 2).join(', ')
+                const othersCount = participantNames.length - 2
+                displayName = `${firstTwo} & ${othersCount} ${othersCount === 1 ? 'Other' : 'Others'}`
+              }
+              
+              const avatarUrl = otherParticipants[0]?.profiles?.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${conversation.id}-group&backgroundColor=ffffff&shapeColor=000000`
+              
+              return (
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={avatarUrl} alt="Group" />
+                    <AvatarFallback>
+                      G
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="font-semibold">
+                      {displayName}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Group Chat
+                    </p>
+                  </div>
+                </div>
+              )
+            } else {
+              // For 1-on-1 chats, show single participant
+              return otherParticipants.map(participant => {
+                const profile = participant.profiles
+                const displayName = profile.first_name && profile.last_name 
+                  ? `${profile.first_name} ${profile.last_name}`.trim()
+                  : profile.username || 'Unknown User'
+                const avatarUrl = profile.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
+                
+                return (
+                  <div key={participant.user_id} className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={avatarUrl} alt={displayName} />
+                      <AvatarFallback>
+                        {displayName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h2 className="font-semibold">
+                        {profile.username ? (
+                          <Link href={`/profiles/${profile.username}`} className="hover:underline">
+                            {displayName}
+                          </Link>
+                        ) : (
+                          displayName
+                        )}
+                      </h2>
+                    </div>
+                  </div>
+                )
+              })
+            }
+          })()}
         </div>
       </div>
       

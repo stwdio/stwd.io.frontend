@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   description: "Book professional recording studios worldwide",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 /**
  * Root layout now fetches auth data SERVER-SIDE.
  * This is THE KEY to fixing the race condition. It ensures data

@@ -30,9 +30,10 @@ interface ProfileCardProps {
   linkToProfile?: boolean
   hideFollowButton?: boolean
   className?: string
+  customActions?: React.ReactNode
 }
 
-export function ProfileCard({ profile, priority = false, linkToProfile = true, hideFollowButton = false, className }: ProfileCardProps) {
+export function ProfileCard({ profile, priority = false, linkToProfile = true, hideFollowButton = false, className, customActions }: ProfileCardProps) {
   const router = useRouter()
   const { user } = useAuth()
   const authModal = useAuthModal()
@@ -161,7 +162,8 @@ export function ProfileCard({ profile, priority = false, linkToProfile = true, h
       followedBy={followers}
       priority={priority}
       className={className}
-      primaryAction={isCurrentUser ? undefined : 
+      customActions={customActions}
+      primaryAction={customActions || isCurrentUser ? undefined : 
         connectionStatus?.status === 'accepted' ? {
           label: 'Message',
           icon: <IconMessage className="h-4 w-4 mr-1" />,
@@ -178,7 +180,7 @@ export function ProfileCard({ profile, priority = false, linkToProfile = true, h
           disabled: isRequestPending,
         }
       }
-      secondaryAction={isCurrentUser || hideFollowButton ? undefined : {
+      secondaryAction={customActions || isCurrentUser || hideFollowButton ? undefined : {
         label: isFollowing ? 'Following' : 'Follow',
         icon: isFollowing ? <IconUserCheck className="h-4 w-4 mr-1" /> : <IconUserPlus className="h-4 w-4 mr-1" />,
         onClick: handleFollow,

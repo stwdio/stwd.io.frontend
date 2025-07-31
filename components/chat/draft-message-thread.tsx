@@ -375,28 +375,25 @@ GRANT EXECUTE ON FUNCTION send_chat_message TO authenticated;
               getDisplayName(targetProfile)
             )}
           </h3>
-          <p className="text-sm text-muted-foreground">
-            {studio ? (
-              targetProfile.username ? (
+          {studio && (
+            <p className="text-sm text-muted-foreground">
+              {targetProfile.username ? (
                 <Link href={`/profiles/${targetProfile.username}`} className="hover:underline">
                   {getDisplayName(targetProfile)}
                 </Link>
               ) : (
                 getDisplayName(targetProfile)
-              )
-            ) : (
-              targetProfile.username ? (
-                <>
-                  @
-                  <Link href={`/profiles/${targetProfile.username}`} className="hover:underline">
-                    {targetProfile.username}
-                  </Link>
-                </>
-              ) : (
-                'Direct message'
-              )
-            )}
-          </p>
+              )}
+            </p>
+          )}
+          {!studio && targetProfile.username && (
+            <p className="text-sm text-muted-foreground">
+              @
+              <Link href={`/profiles/${targetProfile.username}`} className="hover:underline">
+                {targetProfile.username}
+              </Link>
+            </p>
+          )}
         </div>
       </div>
 

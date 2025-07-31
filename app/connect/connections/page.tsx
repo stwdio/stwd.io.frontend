@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerComponentClient } from '@/lib/supabase/server'
-import { ConnectionsHub } from '@/components/connections/connections-hub'
+import { ConnectionsHubV2 } from '@/components/connections/connections-hub-v2'
 
 export default async function ConnectionsPage() {
   const supabase = await createServerComponentClient()
@@ -20,5 +20,5 @@ export default async function ConnectionsPage() {
     redirect('/auth/login')
   }
 
-  return <ConnectionsHub />
+  return <ConnectionsHubV2 />
 }

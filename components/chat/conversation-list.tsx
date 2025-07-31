@@ -161,7 +161,7 @@ export function ConversationList({
       </div>
       
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="p-2 space-y-2">
           {filteredConversations.map((conversation) => {
           const otherParticipants = conversation.chat_participants.filter(
             p => p.user_id !== currentUserId
@@ -178,11 +178,21 @@ export function ConversationList({
           let avatarUrl: string | undefined
           
           if (isGroupChat) {
-            // For group chats, show participant names
+            // For group chats, show participant names (limit to 2)
             const participantNames = otherParticipants
               .map(p => p.profiles?.first_name || p.profiles?.username || 'Unknown')
               .filter(Boolean)
-            displayName = participantNames.length > 0 ? participantNames.join(', ') : 'Group Chat'
+            
+            if (participantNames.length === 0) {
+              displayName = 'Group Chat'
+            } else if (participantNames.length <= 2) {
+              displayName = participantNames.join(', ')
+            } else {
+              const firstTwo = participantNames.slice(0, 2).join(', ')
+              const othersCount = participantNames.length - 2
+              displayName = `${firstTwo} & ${othersCount} ${othersCount === 1 ? 'Other' : 'Others'}`
+            }
+            
             // Use a group icon or first participant's avatar
             avatarUrl = otherUser?.avatar_url || (otherUser ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${conversation.id}-group&backgroundColor=ffffff&shapeColor=000000` : undefined)
           } else {

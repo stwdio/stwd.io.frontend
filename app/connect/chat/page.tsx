@@ -1,12 +1,14 @@
 import { redirect } from 'next/navigation'
 import { createServerComponentClient } from '@/lib/supabase/server'
 import { ChatHub } from '@/components/chat/chat-hub'
+import { Suspense } from 'react'
+import { ChatHubSkeleton } from '@/components/chat/chat-hub-skeleton'
 
 interface ChatPageProps {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined }
 }
 
-export default async function ChatPage({ searchParams }: ChatPageProps) {
+async function ChatPageContent({ searchParams }: ChatPageProps) {
   // Handle both async and sync searchParams
   const params = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {}
   console.log('Raw search params:', params)
@@ -16,17 +18,14 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
   
   const supabase = await createServerComponentClient()
   
+  // User is already validated in parent
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/auth/login')
-  }
-  
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', user!.id)
     .single()
-  
+    
   if (!profile) {
     redirect('/auth/login')
   }
@@ -174,24 +173,8 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
     selectedConversationId = parseInt(conversationId)
   }
   
-  // If no target user or conversation specified and there are conversations, redirect to the first one
-  if (!targetUsername && !conversationId && conversations.length > 0) {
-    const firstConversation = conversations[0]
-    
-    // If it's a group chat, use conversation ID
-    if (firstConversation.is_group) {
-      redirect(`/connect/chat?conversation=${firstConversation.id}`)
-    } else {
-      // Find the other participant for 1-on-1 chats
-      const otherParticipant = firstConversation.chat_participants?.find(
-        (p: any) => p.user_id !== user.id
-      )
-      
-      if (otherParticipant?.profiles?.username) {
-        redirect(`/connect/chat?user=${otherParticipant.profiles.username}`)
-      }
-    }
-  }
+  // Don't redirect server-side - let the client handle it to show skeleton
+  const shouldRedirectToFirstConversation = !targetUsername && !conversationId && conversations.length > 0
 
   return (
     <ChatHub 
@@ -200,6 +183,24 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
       initialConversations={conversations || []}
       targetUserId={isConnected && !selectedConversationId ? targetUserId : undefined}
       initialSelectedConversationId={selectedConversationId}
+      shouldRedirectToFirst={shouldRedirectToFirstConversation}
     />
+  )
+}
+
+export default async function ChatPage({ searchParams }: ChatPageProps) {
+  // Do minimal auth check here
+  const supabase = await createServerComponentClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    redirect('/auth/login')
+  }
+
+  // Show skeleton immediately while heavy data loads
+  return (
+    <Suspense fallback={<ChatHubSkeleton />}>
+      <ChatPageContent searchParams={searchParams} />
+    </Suspense>
   )
 }

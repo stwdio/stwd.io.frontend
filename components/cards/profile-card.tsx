@@ -44,16 +44,20 @@ export function ProfileCard({ profile, priority = false, linkToProfile = true, h
   const isAuthenticated = !!user
   const supabase = createClient()
   const [followers, setFollowers] = useState<Array<{ id: string, name: string, avatar: string | null }>>([])
+  const [followersLoading, setFollowersLoading] = useState(true)
   
   // Follow functionality (only query if we're showing the button)
-  const { data: isFollowing } = useIsFollowingUser(hideFollowButton ? null : profile.user_id)
+  const { data: isFollowing, isLoading: isFollowingLoading } = useIsFollowingUser(hideFollowButton ? null : profile.user_id)
   const { mutate: followUser, isPending: isFollowingPending } = useFollowUser()
   const { mutate: unfollowUser, isPending: isUnfollowingPending } = useUnfollowUser()
   const isCurrentUser = user?.id === profile.user_id
   
   // Connection functionality
-  const { data: connectionStatus } = useConnectionStatus(profile.user_id)
+  const { data: connectionStatus, isLoading: isConnectionLoading } = useConnectionStatus(profile.user_id)
   const { mutate: sendConnectionRequest, isPending: isRequestPending } = useSendConnectionRequest()
+  
+  // Determine if actions are still loading
+  const isActionsLoading = !customActions && !isCurrentUser && (isConnectionLoading || (!hideFollowButton && isFollowingLoading))
 
   const displayName = profile.first_name && profile.last_name
     ? `${profile.first_name} ${profile.last_name}`
@@ -71,31 +75,36 @@ export function ProfileCard({ profile, priority = false, linkToProfile = true, h
 
   useEffect(() => {
     async function fetchFollowers() {
-      // First get the follower connections
-      const { data: connections } = await supabase
-        .from('social_connections')
-        .select('follower_id')
-        .eq('following_user_id', profile.user_id)
-        .limit(4)
-        .order('created_at', { ascending: false })
+      setFollowersLoading(true)
+      try {
+        // First get the follower connections
+        const { data: connections } = await supabase
+          .from('social_connections')
+          .select('follower_id')
+          .eq('following_user_id', profile.user_id)
+          .limit(4)
+          .order('created_at', { ascending: false })
 
-      if (connections && connections.length > 0) {
-        // Then fetch the profile data for those followers
-        const followerIds = connections.map(c => c.follower_id)
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, username, first_name, last_name, avatar_url')
-          .in('user_id', followerIds)
-        
-        if (profiles) {
-          setFollowers(profiles.map(follower => ({
-            id: follower.user_id,
-            name: follower.first_name && follower.last_name 
-              ? `${follower.first_name} ${follower.last_name}` 
-              : follower.username,
-            avatar: follower.avatar_url
-          })))
+        if (connections && connections.length > 0) {
+          // Then fetch the profile data for those followers
+          const followerIds = connections.map(c => c.follower_id)
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, username, first_name, last_name, avatar_url')
+            .in('user_id', followerIds)
+          
+          if (profiles) {
+            setFollowers(profiles.map(follower => ({
+              id: follower.user_id,
+              name: follower.first_name && follower.last_name 
+                ? `${follower.first_name} ${follower.last_name}` 
+                : follower.username,
+              avatar: follower.avatar_url
+            })))
+          }
         }
+      } finally {
+        setFollowersLoading(false)
       }
     }
 
@@ -168,6 +177,8 @@ export function ProfileCard({ profile, priority = false, linkToProfile = true, h
       className={className}
       customActions={customActions}
       statusBadge={statusBadge}
+      isActionsLoading={isActionsLoading}
+      isFollowersLoading={followersLoading}
       primaryAction={customActions || isCurrentUser ? undefined : 
         connectionStatus?.status === 'accepted' ? {
           label: 'Message',

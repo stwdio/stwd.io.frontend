@@ -60,6 +60,51 @@ export function GroupChatBasketDialog() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      // Check for existing group chat with the same members
+      // First, get all group conversations where the current user is a participant
+      const { data: userConversations } = await supabase
+        .from('chat_participants')
+        .select('conversation_id')
+        .eq('user_id', user.id)
+
+      if (userConversations && userConversations.length > 0) {
+        const conversationIds = userConversations.map(c => c.conversation_id)
+        
+        // Get all group conversations from those IDs
+        const { data: groupConversations } = await supabase
+          .from('chat_conversations')
+          .select('id')
+          .in('id', conversationIds)
+          .eq('is_group', true)
+
+        if (groupConversations && groupConversations.length > 0) {
+          // For each group conversation, check if it has the exact same participants
+          for (const conv of groupConversations) {
+            const { data: participants } = await supabase
+              .from('chat_participants')
+              .select('user_id')
+              .eq('conversation_id', conv.id)
+              .order('user_id')
+
+            if (participants) {
+              const participantIds = participants.map(p => p.user_id).sort()
+              const targetIds = [...userIds, user.id].sort()
+              
+              // Check if arrays are equal
+              if (participantIds.length === targetIds.length &&
+                  participantIds.every((id, index) => id === targetIds[index])) {
+                toast.error('A group chat with these exact members already exists')
+                // Navigate to the existing conversation
+                router.push(`/connect/chat?conversation=${conv.id}`)
+                toggleBasket()
+                clearBasket()
+                return
+              }
+            }
+          }
+        }
+      }
+
       // Create a new conversation with type 'group'
       const { data: conversation, error: convError } = await supabase
         .from('chat_conversations')

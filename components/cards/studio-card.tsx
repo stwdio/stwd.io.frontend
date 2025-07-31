@@ -93,7 +93,7 @@ export function StudioCard({
   const { user } = useAuth()
 
   // Fetch real followers for the studio
-  const { data: followers = [] } = useQuery({
+  const { data: followers = [], isLoading: isFollowersLoading } = useQuery({
     queryKey: ['studio-followers', studio.id],
     queryFn: async () => {
       const supabase = createClient()
@@ -168,6 +168,7 @@ export function StudioCard({
       additionalContent={additionalContent}
       className={className}
       priority={priority}
+      isFollowersLoading={isFollowersLoading}
       customActions={customActions || (
         <StudioCardActions
           studio={studio}

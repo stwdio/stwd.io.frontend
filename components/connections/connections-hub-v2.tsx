@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Users, MessageSquare, Filter, Search } from 'lucide-react'
+import { Users, MessageSquare, Filter, Search, Plus } from 'lucide-react'
 import { IconFilter, IconSearch } from '@tabler/icons-react'
 import { useMyConnections, usePendingRequests, useSentRequests } from '@/lib/hooks/queries/connections'
 import { useAcceptConnectionRequest, useDeclineConnectionRequest, useCancelConnectionRequest } from '@/lib/hooks/mutations/connections'
@@ -54,7 +54,7 @@ function ProfileCardCustomActions({ profile, isInBasket, onToggleGroupChat }: Pr
           isInBasket ? 'bg-gray-600 hover:bg-gray-700' : 'bg-black hover:bg-gray-800'
         } text-white`}
       >
-        <Users className="h-4 w-4 mr-1" />
+        <Plus className="h-4 w-4 mr-1" />
         {isInBasket ? 'Added' : 'Group Chat'}
       </Button>
     </div>

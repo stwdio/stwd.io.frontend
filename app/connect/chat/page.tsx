@@ -75,8 +75,34 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
           console.log('Found existing enquiry conversation:', enquiryConversation.conversation_id)
           selectedConversationId = enquiryConversation.conversation_id
         } else {
-          // Create a new enquiry conversation
-          console.log('Creating new studio enquiry conversation')
+          // Check if user already has an active enquiry with this studio through the basket system
+          const { data: existingInquiry } = await supabase
+            .from('inquiry_recipients')
+            .select(`
+              inquiry_id,
+              inquiries!inner(creator_id)
+            `)
+            .eq('studio_id', studioData.id)
+            .eq('inquiries.creator_id', profile.id)
+            .limit(1)
+          
+          if (existingInquiry && existingInquiry.length > 0) {
+            // User already has an inquiry with this studio - don't create duplicate
+            console.log('User already has an inquiry with this studio')
+            // Try to find the conversation associated with this inquiry
+            const studioEnquiryConv = existingConversations.find(conv => {
+              const c = conv.chat_conversations
+              return c.is_group && 
+                c.title?.toLowerCase().includes('studio enquiry:') && 
+                c.title?.toLowerCase().includes(studioData.name.toLowerCase())
+            })
+            
+            if (studioEnquiryConv) {
+              selectedConversationId = studioEnquiryConv.conversation_id
+            }
+          } else {
+            // Create a new enquiry conversation
+            console.log('Creating new studio enquiry conversation')
           
           // Get concierge user ID
           const { data: conciergeId } = await supabase.rpc('get_studio_concierge_id')
@@ -123,7 +149,7 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
                 .from('chat_participants')
                 .insert(participants)
               
-              // Send welcome message from concierge
+              // Send welcome message from concierge using RPC function
               const conciergeMessage = `Hello! 👋
 
 I'm the stwd.io Studio Concierge, and I'm here to help facilitate your enquiry with ${studioData.name}.
@@ -136,11 +162,9 @@ Best regards,
 Studio Concierge`
               
               await supabase
-                .from('chat_messages')
-                .insert({
-                  conversation_id: newConversation.id,
-                  sender_id: conciergeId,
-                  content: conciergeMessage
+                .rpc('send_message_as_concierge', {
+                  p_conversation_id: newConversation.id,
+                  p_content: conciergeMessage
                 })
               
               selectedConversationId = newConversation.id
@@ -148,6 +172,7 @@ Studio Concierge`
           }
         }
       }
+    }
     }
   } else if (targetUsername) {
     const { data: targetProfile, error: profileError } = await supabase

@@ -29,16 +29,8 @@ export function useStudioInteractionStatuses(studioIds: number[], userId: string
       
       if (!profile) return {}
 
-      // Fetch all inquiries for these studios in one query
-      const { data: inquiries } = await supabase
-        .from('inquiry_recipients')
-        .select(`
-          studio_id,
-          inquiry_id,
-          inquiries!inner(creator_id)
-        `)
-        .in('studio_id', studioIds)
-        .eq('inquiries.creator_id', profile.id)
+      // We no longer track inquiries through the old system, only through chat enquiries
+      const inquiries = null
 
       // Fetch all studios to get owner information
       const { data: studios } = await supabase

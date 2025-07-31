@@ -130,6 +130,35 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           
           // For each studio, create a group chat enquiry
           for (const studio of studios) {
+            // Check if there's already an enquiry conversation for this studio
+            const { data: existingConversations } = await supabase
+              .from('chat_participants')
+              .select(`
+                conversation_id,
+                chat_conversations!inner(
+                  id,
+                  title,
+                  is_group
+                )
+              `)
+              .eq('user_id', user.id)
+            
+            let existingEnquiryId = null
+            if (existingConversations) {
+              const enquiryConversation = existingConversations.find(conv => {
+                const c = conv.chat_conversations
+                return c.is_group && 
+                  c.title?.toLowerCase().includes('studio enquiry:') && 
+                  c.title?.toLowerCase().includes(studio.name.toLowerCase())
+              })
+              
+              if (enquiryConversation) {
+                existingEnquiryId = enquiryConversation.conversation_id
+                console.log(`Found existing enquiry for ${studio.name}, skipping creation`)
+                continue // Skip creating a new conversation
+              }
+            }
+            
             // Create a new conversation
             const { data: conversation, error: convError } = await supabase
               .from('chat_conversations')
@@ -146,6 +175,31 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
               continue
             }
             
+            // Verify creator was added as participant by trigger
+            const { data: creatorParticipant } = await supabase
+              .from('chat_participants')
+              .select('*')
+              .eq('conversation_id', conversation.id)
+              .eq('user_id', user.id)
+              .single()
+            
+            console.log('Creator participant check after conversation creation:', creatorParticipant)
+            
+            // If trigger didn't add creator, add them manually
+            if (!creatorParticipant) {
+              console.log('Trigger did not add creator, adding manually')
+              const { error: addCreatorError } = await supabase
+                .from('chat_participants')
+                .insert({
+                  conversation_id: conversation.id,
+                  user_id: user.id
+                })
+              
+              if (addCreatorError) {
+                console.error('Failed to add creator as participant:', addCreatorError)
+              }
+            }
+            
             // Get all studio team members
             const { data: studioMembers, error: membersError } = await supabase
               .from('studio_members')
@@ -157,7 +211,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
             }
             
             // Add participants: studio team members and concierge
-            // Note: creator is automatically added by database trigger
+            // Note: creator should be automatically added by database trigger
             const participants = [
               { conversation_id: conversation.id, user_id: conciergeId } // Concierge
             ]
@@ -176,14 +230,25 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
               })
             }
             
+            console.log('Adding participants:', participants)
+            
             const { error: partError } = await supabase
               .from('chat_participants')
               .insert(participants)
             
             if (partError) {
               console.error('Failed to add participants:', partError)
+              console.error('Participants details:', JSON.stringify(participants, null, 2))
               continue
             }
+            
+            // Double-check all participants were added
+            const { data: allParticipants } = await supabase
+              .from('chat_participants')
+              .select('user_id')
+              .eq('conversation_id', conversation.id)
+            
+            console.log('All participants after insert:', allParticipants)
             
             // Send initial message from creator with inquiry details
             const messageContent = `
@@ -201,19 +266,45 @@ ${inquiryData.custom_message ? `**Message:**\n${inquiryData.custom_message}` : '
 *This is an official studio enquiry facilitated by stwd.io Studio Concierge.*
             `.trim()
             
-            const { error: messageError } = await supabase
+            console.log('Attempting to send message with:', {
+              conversation_id: conversation.id,
+              sender_id: user.id,
+              contentLength: messageContent.length
+            })
+            
+            const { data: messageData, error: messageError } = await supabase
               .from('chat_messages')
               .insert({
                 conversation_id: conversation.id,
                 sender_id: user.id,
                 content: messageContent
               })
+              .select()
+              .single()
+            
+            console.log('Message insert result:', { data: messageData, error: messageError })
             
             if (messageError) {
               console.error('Failed to send initial message:', messageError)
+              console.error('Full error object:', JSON.stringify(messageError, null, 2))
+              console.error('Message details:', {
+                conversation_id: conversation.id,
+                sender_id: user.id,
+                contentLength: messageContent.length
+              })
+              
+              // Check if user is a participant
+              const { data: participantCheck } = await supabase
+                .from('chat_participants')
+                .select('*')
+                .eq('conversation_id', conversation.id)
+                .eq('user_id', user.id)
+                .single()
+              
+              console.log('User participant check:', participantCheck)
             }
             
-            // Send welcome message from concierge
+            // Send welcome message from concierge using RPC function
             const conciergeMessage = `
 Hello ${profile.first_name || profile.username}! 👋
 
@@ -225,16 +316,18 @@ Best regards,
 Studio Concierge
             `.trim()
             
-            const { error: conciergeMessageError } = await supabase
-              .from('chat_messages')
-              .insert({
-                conversation_id: conversation.id,
-                sender_id: conciergeId,
-                content: conciergeMessage
+            const { data: conciergeMessageId, error: conciergeMessageError } = await supabase
+              .rpc('send_message_as_concierge', {
+                p_conversation_id: conversation.id,
+                p_content: conciergeMessage
               })
             
             if (conciergeMessageError) {
               console.error('Failed to send concierge message:', conciergeMessageError)
+              console.error('Concierge message details:', {
+                conversation_id: conversation.id,
+                contentLength: conciergeMessage.length
+              })
             }
           }
           
@@ -247,7 +340,7 @@ Studio Concierge
           // Notify components that inquiries were submitted
           get()._notifyInquirySubmitted(submittedStudioIds)
           
-          toast.success(`Enquiry sent to ${studios.length} studio${studios.length > 1 ? 's' : ''}! Check your messages.`)
+          toast.success(`Enquiries processed! Check your messages.`)
           return true
           
         } catch (error) {

@@ -12,7 +12,7 @@ export default async function AccountSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full p-6 lg:p-8">
       <Card>
         <CardHeader>
           <CardTitle>Account Settings</CardTitle>

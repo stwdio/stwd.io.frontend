@@ -49,6 +49,10 @@ export function ConversationList({
   const [studioImages, setStudioImages] = useState<Record<string, string>>({})
   const supabase = createClient()
   
+  // Truncate function for sidebar - shorter limit for consistent display
+  const truncate = (input: string) =>
+    input?.length > 50 ? `${input.substring(0, 47)}...` : input
+  
   // Fetch studio images for enquiries
   useEffect(() => {
     const fetchStudioImages = async () => {
@@ -234,16 +238,20 @@ export function ConversationList({
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <h3 className="font-medium truncate">
-                      {conversation.title || displayName}
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <h3 className="font-medium">
+                      {truncate(
+                        isEnquiry && conversation.title 
+                          ? conversation.title.replace('Studio Enquiry: ', '') 
+                          : conversation.title || displayName
+                      )}
                     </h3>
                     {(isEnquiry || conversation.id === -1) && (
                       <Badge variant="secondary" className="shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                         {conversation.id === -1 ? 'Draft' : 'Enquiry'}
                       </Badge>
                     )}
-                    {isGroupChat && (
+                    {isGroupChat && !isEnquiry && (
                       <Badge variant="secondary" className="shrink-0">
                         Group
                       </Badge>
@@ -272,12 +280,12 @@ export function ConversationList({
                 </div>
                 
                 {lastMessage ? (
-                  <p className="text-sm text-muted-foreground truncate mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {lastMessage.sender_id === currentUserId ? 'You: ' : ''}
-                    {lastMessage.content}
+                    {truncate(lastMessage.content)}
                   </p>
                 ) : conversation.id === -1 ? (
-                  <p className="text-sm text-muted-foreground truncate mt-1 italic">
+                  <p className="text-sm text-muted-foreground mt-1 italic">
                     Start typing to begin conversation...
                   </p>
                 ) : null}

@@ -1,12 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createServerComponentClient } from '@/lib/supabase/server'
-import { SettingsNav } from '@/components/settings/settings-nav'
-import { UnifiedLayout } from '@/components/layouts/unified-layout'
+import { MainSectionNavigation } from '@/components/navigation/main-section-navigation'
+import { SettingsPageContent } from '@/components/settings/settings-page-content'
+import { ReactNode } from 'react'
 
 export default async function SettingsLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode
 }) {
   const supabase = await createServerComponentClient()
   
@@ -26,25 +27,16 @@ export default async function SettingsLayout({
   }
 
   return (
-    <UnifiedLayout>
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your account and profile settings
-          </p>
-        </div>
-        
-        <div className="flex gap-8">
-          <aside className="w-64 shrink-0">
-            <SettingsNav />
-          </aside>
-          
-          <main className="flex-1 min-w-0">
-            {children}
-          </main>
-        </div>
+    <div className="flex flex-col h-full">
+      {/* Main navigation header */}
+      <MainSectionNavigation />
+      
+      {/* Dynamic content area with mobile support */}
+      <div className="flex-1 overflow-hidden">
+        <SettingsPageContent>
+          {children}
+        </SettingsPageContent>
       </div>
-    </UnifiedLayout>
+    </div>
   )
 }

@@ -73,7 +73,7 @@ export function GroupChatBasketDialog() {
         // Get all group conversations from those IDs
         const { data: groupConversations } = await supabase
           .from('chat_conversations')
-          .select('id')
+          .select('id, uuid')
           .in('id', conversationIds)
           .eq('is_group', true)
 
@@ -95,7 +95,7 @@ export function GroupChatBasketDialog() {
                   participantIds.every((id, index) => id === targetIds[index])) {
                 toast.error('A group chat with these exact members already exists')
                 // Navigate to the existing conversation
-                router.push(`/connect/chat?conversation=${conv.id}`)
+                router.push(`/connect/chat?c=${conv.uuid}`)
                 toggleBasket()
                 clearBasket()
                 return
@@ -136,7 +136,7 @@ export function GroupChatBasketDialog() {
       toggleBasket()
       
       // Navigate to the new group chat
-      router.push(`/connect/chat?conversation=${conversation.id}`)
+      router.push(`/connect/chat?c=${conversation.uuid}`)
       
       toast.success('Group chat created successfully')
     } catch (error: any) {

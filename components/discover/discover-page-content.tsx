@@ -174,7 +174,9 @@ export function DiscoverPageContent() {
             <div className="hidden lg:block" />
             
             {/* Navigation actions */}
-            {navActions}
+            <div className="flex items-center gap-3">
+              {navActions}
+            </div>
           </div>
         </div>
       </div>

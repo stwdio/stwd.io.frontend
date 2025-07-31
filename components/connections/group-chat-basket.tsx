@@ -34,9 +34,9 @@ export function GroupChatBasket({ selectedUsers, connections, onClear }: GroupCh
 
       // Create a new conversation with type 'group'
       const { data: conversation, error: convError } = await supabase
-        .from('conversations')
+        .from('chat_conversations')
         .insert({
-          type: 'group',
+          is_group: true,
           created_by: user.id
         })
         .select()
@@ -44,25 +44,24 @@ export function GroupChatBasket({ selectedUsers, connections, onClear }: GroupCh
 
       if (convError) throw convError
 
-      // Add all selected users plus current user as participants
-      const participants = [
-        { conversation_id: conversation.id, user_id: user.id },
-        ...selectedUsers.map(userId => ({
-          conversation_id: conversation.id,
-          user_id: userId
-        }))
-      ]
+      // Add selected users as participants (creator is added automatically by trigger)
+      const participants = selectedUsers.map(userId => ({
+        conversation_id: conversation.id,
+        user_id: userId
+      }))
 
-      const { error: partError } = await supabase
-        .from('conversation_participants')
-        .insert(participants)
+      if (participants.length > 0) {
+        const { error: partError } = await supabase
+          .from('chat_participants')
+          .insert(participants)
 
-      if (partError) throw partError
+        if (partError) throw partError
+      }
 
       return conversation.id
     },
     onSuccess: (conversationId) => {
-      router.push(`/dashboard/messages?conversation=${conversationId}`)
+      router.push(`/connect/chat?conversation=${conversationId}`)
     }
   })
 

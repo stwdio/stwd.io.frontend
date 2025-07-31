@@ -11,7 +11,8 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
   const params = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {}
   console.log('Raw search params:', params)
   const targetUsername = params?.user as string | undefined
-  console.log('Chat page loaded with target username:', targetUsername)
+  const conversationId = params?.conversation as string | undefined
+  console.log('Chat page loaded with target username:', targetUsername, 'conversation:', conversationId)
   
   const supabase = await createServerComponentClient()
   
@@ -168,16 +169,27 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
   console.log('Target user ID:', targetUserId)
   console.log('Is connected:', isConnected)
 
-  // If no target user specified and there are conversations, redirect to the first one
-  if (!targetUsername && conversations.length > 0) {
+  // If conversation ID is provided, use it
+  if (conversationId) {
+    selectedConversationId = parseInt(conversationId)
+  }
+  
+  // If no target user or conversation specified and there are conversations, redirect to the first one
+  if (!targetUsername && !conversationId && conversations.length > 0) {
     const firstConversation = conversations[0]
-    // Find the other participant
-    const otherParticipant = firstConversation.chat_participants?.find(
-      (p: any) => p.user_id !== user.id
-    )
     
-    if (otherParticipant?.profiles?.username) {
-      redirect(`/connect/chat?user=${otherParticipant.profiles.username}`)
+    // If it's a group chat, use conversation ID
+    if (firstConversation.is_group) {
+      redirect(`/connect/chat?conversation=${firstConversation.id}`)
+    } else {
+      // Find the other participant for 1-on-1 chats
+      const otherParticipant = firstConversation.chat_participants?.find(
+        (p: any) => p.user_id !== user.id
+      )
+      
+      if (otherParticipant?.profiles?.username) {
+        redirect(`/connect/chat?user=${otherParticipant.profiles.username}`)
+      }
     }
   }
 

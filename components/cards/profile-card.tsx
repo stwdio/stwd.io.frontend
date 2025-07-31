@@ -31,9 +31,13 @@ interface ProfileCardProps {
   hideFollowButton?: boolean
   className?: string
   customActions?: React.ReactNode
+  statusBadge?: {
+    label: string
+    variant: 'default' | 'secondary' | 'outline' | 'destructive'
+  } | null
 }
 
-export function ProfileCard({ profile, priority = false, linkToProfile = true, hideFollowButton = false, className, customActions }: ProfileCardProps) {
+export function ProfileCard({ profile, priority = false, linkToProfile = true, hideFollowButton = false, className, customActions, statusBadge }: ProfileCardProps) {
   const router = useRouter()
   const { user } = useAuth()
   const authModal = useAuthModal()
@@ -163,6 +167,7 @@ export function ProfileCard({ profile, priority = false, linkToProfile = true, h
       priority={priority}
       className={className}
       customActions={customActions}
+      statusBadge={statusBadge}
       primaryAction={customActions || isCurrentUser ? undefined : 
         connectionStatus?.status === 'accepted' ? {
           label: 'Message',

@@ -56,6 +56,12 @@ export interface GenericCardProps {
   }
   customActions?: ReactNode
   
+  // Status badge
+  statusBadge?: {
+    label: string
+    variant: 'default' | 'secondary' | 'outline' | 'destructive'
+  } | null
+  
   // Additional content
   additionalContent?: ReactNode
   notes?: string
@@ -82,6 +88,7 @@ export function GenericCard({
   primaryAction,
   secondaryAction,
   customActions,
+  statusBadge,
   additionalContent,
   notes,
   className = '',
@@ -146,6 +153,11 @@ export function GenericCard({
               )}
             </div>
           </div>
+          {statusBadge && (
+            <Badge variant={statusBadge.variant} className="ml-2 shrink-0">
+              {statusBadge.label}
+            </Badge>
+          )}
         </div>
         
         {/* Location */}

@@ -5,6 +5,7 @@ import { ProfileCard } from '@/components/cards/profile-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Users, MessageSquare, Filter, Search } from 'lucide-react'
 import { IconFilter, IconSearch } from '@tabler/icons-react'
 import { useMyConnections, usePendingRequests, useSentRequests } from '@/lib/hooks/queries/connections'
@@ -65,34 +66,44 @@ function ReceivedRequestActions({ requestId }: { requestId: number }) {
   const { mutate: declineRequest, isPending: isDeclining } = useDeclineConnectionRequest()
   
   return (
-    <div className="flex gap-2 w-full">
-      <Button
-        size="sm"
-        className="flex-1 text-xs"
-        variant="default"
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          acceptRequest(requestId)
-        }}
-        disabled={isAccepting || isDeclining}
-      >
-        {isAccepting ? 'Accepting...' : 'Accept'}
-      </Button>
-      <Button
-        size="sm"
-        className="flex-1 text-xs"
-        variant="outline"
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          declineRequest(requestId)
-        }}
-        disabled={isAccepting || isDeclining}
-      >
-        {isDeclining ? 'Declining...' : 'Decline'}
-      </Button>
-    </div>
+    <TooltipProvider>
+      <div className="flex gap-1 w-full">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              className="flex-1 text-xs"
+              variant="default"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                acceptRequest(requestId)
+              }}
+              disabled={isAccepting || isDeclining}
+            >
+              {isAccepting ? 'Accepting...' : 'Accept'}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Accept connection request</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <Button
+          size="sm"
+          className="flex-1 text-xs bg-red-600 hover:bg-red-700 text-white border-red-600"
+          variant="destructive"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            declineRequest(requestId)
+          }}
+          disabled={isAccepting || isDeclining}
+        >
+          {isDeclining ? 'Rejecting...' : 'Reject'}
+        </Button>
+      </div>
+    </TooltipProvider>
   )
 }
 
@@ -100,21 +111,46 @@ function SentRequestActions({ requestId }: { requestId: number }) {
   const { mutate: cancelRequest, isPending: isCanceling } = useCancelConnectionRequest()
   
   return (
-    <div className="flex gap-2 w-full justify-center">
-      <Button
-        size="sm"
-        className="text-xs"
-        variant="outline"
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          cancelRequest(requestId)
-        }}
-        disabled={isCanceling}
-      >
-        {isCanceling ? 'Canceling...' : 'Cancel Request'}
-      </Button>
-    </div>
+    <TooltipProvider>
+      <div className="flex gap-2 w-full">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex-1">
+              <Button
+                size="sm"
+                className="w-full text-xs"
+                variant="outline"
+                disabled={true}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Message
+              </Button>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Connection request pending</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <Button
+          size="sm"
+          className="flex-1 text-xs bg-red-600 hover:bg-red-700 text-white border-red-600"
+          variant="destructive"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            cancelRequest(requestId)
+          }}
+          disabled={isCanceling}
+        >
+          {isCanceling ? 'Canceling...' : 'Cancel Request'}
+        </Button>
+      </div>
+    </TooltipProvider>
   )
 }
 
@@ -127,6 +163,10 @@ export function ConnectionsHubV2() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'connected' | 'sent' | 'received'>('all')
+  
+  // Create maps for quick lookup of pending states
+  const sentRequestsMap = new Map(sentRequests?.map(req => [req.receiver?.user_id, req]) || [])
+  const receivedRequestsMap = new Map(pendingRequests?.map(req => [req.requester?.user_id, req]) || [])
 
   // Debounce search query
   useEffect(() => {
@@ -145,20 +185,39 @@ export function ConnectionsHubV2() {
     }
   }, [addUser, removeUser, isUserInBasket])
 
-  // Filter connections based on search and filter type
-  const filteredConnections = connections?.filter(connection => {
+  // Get all unique users (connections + pending)
+  const allUsers = [...(connections || [])]
+  
+  // Add sent request recipients if showing all
+  if (filterType === 'all') {
+    sentRequests?.forEach(req => {
+      if (req.receiver && !allUsers.find(u => u.user_id === req.receiver!.user_id)) {
+        allUsers.push(req.receiver)
+      }
+    })
+    
+    // Add received request senders if showing all
+    pendingRequests?.forEach(req => {
+      if (req.requester && !allUsers.find(u => u.user_id === req.requester!.user_id)) {
+        allUsers.push(req.requester)
+      }
+    })
+  }
+  
+  // Filter users based on search and filter type
+  const filteredUsers = allUsers.filter(user => {
     // Search filter
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase()
-      const fullName = `${connection.first_name || ''} ${connection.last_name || ''}`.toLowerCase()
-      const username = (connection.username || '').toLowerCase()
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase()
+      const username = (user.username || '').toLowerCase()
       if (!fullName.includes(query) && !username.includes(query)) {
         return false
       }
     }
     
     return true
-  }) || []
+  })
 
   // Calculate active filter count
   const activeFilters = filterType !== 'all' ? 1 : 0
@@ -314,23 +373,65 @@ export function ConnectionsHubV2() {
                 }
               />
             ))
-          ) : filterType === 'connected' || filterType === 'all' ? (
-            // Show connected users
-            filteredConnections.map((connection) => (
-              <ProfileCard
-                key={connection.user_id}
-                profile={connection}
-                linkToProfile={true}
-                hideFollowButton={true}
-                customActions={
+          ) : filterType === 'connected' ? (
+            // Show only connected users
+            filteredUsers
+              .filter(user => connections?.some(c => c.user_id === user.user_id))
+              .map((user) => (
+                <ProfileCard
+                  key={user.user_id}
+                  profile={user}
+                  linkToProfile={true}
+                  hideFollowButton={true}
+                  customActions={
+                    <ProfileCardCustomActions
+                      profile={user}
+                      isInBasket={isUserInBasket(user.user_id)}
+                      onToggleGroupChat={() => handleGroupChatToggle(user.user_id)}
+                    />
+                  }
+                />
+              ))
+          ) : filterType === 'all' ? (
+            // Show all users with appropriate actions based on status
+            filteredUsers.map((user) => {
+              const isConnected = connections?.some(c => c.user_id === user.user_id)
+              const sentRequest = sentRequestsMap.get(user.user_id)
+              const receivedRequest = receivedRequestsMap.get(user.user_id)
+              
+              let customActions
+              let statusBadge = null
+              
+              if (receivedRequest) {
+                customActions = <ReceivedRequestActions requestId={receivedRequest.id} />
+                statusBadge = { label: 'Pending', variant: 'secondary' as const }
+              } else if (sentRequest) {
+                customActions = <SentRequestActions requestId={sentRequest.id} />
+                statusBadge = { label: 'Requested', variant: 'outline' as const }
+              } else if (isConnected) {
+                customActions = (
                   <ProfileCardCustomActions
-                    profile={connection}
-                    isInBasket={isUserInBasket(connection.user_id)}
-                    onToggleGroupChat={() => handleGroupChatToggle(connection.user_id)}
+                    profile={user}
+                    isInBasket={isUserInBasket(user.user_id)}
+                    onToggleGroupChat={() => handleGroupChatToggle(user.user_id)}
                   />
-                }
-              />
-            ))
+                )
+              } else {
+                // This shouldn't happen in the current logic
+                customActions = null
+              }
+              
+              return (
+                <ProfileCard
+                  key={user.user_id}
+                  profile={user}
+                  linkToProfile={true}
+                  hideFollowButton={true}
+                  customActions={customActions}
+                  statusBadge={statusBadge}
+                />
+              )
+            })
           ) : null}
         </div>
       </div>

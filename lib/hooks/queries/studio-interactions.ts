@@ -5,7 +5,9 @@ interface StudioInteractionStatus {
   studioId: number
   hasInquiry: boolean
   hasConversation: boolean
+  hasEnquiry: boolean
   conversationId?: number
+  enquiryConversationId?: number
 }
 
 export function useStudioInteractionStatuses(studioIds: number[], userId: string | null) {
@@ -38,25 +40,92 @@ export function useStudioInteractionStatuses(studioIds: number[], userId: string
         .in('studio_id', studioIds)
         .eq('inquiries.creator_id', profile.id)
 
+      // Fetch all studios to get owner information
+      const { data: studios } = await supabase
+        .from('studios')
+        .select('id, name, owner_id')
+        .in('id', studioIds)
+      
       // Fetch all conversations for this user
-      const { data: conversations } = await supabase
-        .from('conversations')
-        .select('id, studio_id')
-        .in('studio_id', studioIds)
-        .eq('customer_id', profile.id)
+      const { data: userConversations } = await supabase
+        .from('chat_participants')
+        .select(`
+          conversation_id,
+          chat_conversations!inner(
+            id,
+            title,
+            is_group
+          )
+        `)
+        .eq('user_id', userId)
+      
+      // For each conversation, get all participants
+      const conversationParticipants: Record<number, string[]> = {}
+      if (userConversations) {
+        const conversationIds = userConversations.map(uc => uc.conversation_id)
+        
+        const { data: allParticipants } = await supabase
+          .from('chat_participants')
+          .select('conversation_id, user_id')
+          .in('conversation_id', conversationIds)
+        
+        if (allParticipants) {
+          allParticipants.forEach(p => {
+            if (!conversationParticipants[p.conversation_id]) {
+              conversationParticipants[p.conversation_id] = []
+            }
+            conversationParticipants[p.conversation_id].push(p.user_id)
+          })
+        }
+      }
+      
+      // Match conversations to studios
+      const studioConversations: Record<number, number> = {}
+      const studioEnquiries: Record<number, number> = {}
+      
+      if (userConversations && studios) {
+        userConversations.forEach(item => {
+          const conv = item.chat_conversations
+          const participants = conversationParticipants[conv.id] || []
+          
+          // Check each studio to see if this conversation matches
+          studios.forEach(studio => {
+            // Check if it's an enquiry conversation (group chat with specific title format)
+            const isEnquiry = conv.is_group && 
+              conv.title?.toLowerCase().includes('studio enquiry:') && 
+              conv.title?.toLowerCase().includes(studio.name.toLowerCase())
+            
+            if (isEnquiry && !studioEnquiries[studio.id]) {
+              studioEnquiries[studio.id] = conv.id
+            }
+            
+            // Check if conversation title matches studio name (for direct chats)
+            if (!studioConversations[studio.id]) {
+              const titleMatch = conv.title?.toLowerCase() === studio.name.toLowerCase()
+              
+              if (titleMatch) {
+                studioConversations[studio.id] = conv.id
+              }
+            }
+          })
+        })
+      }
 
       // Build the status map
       const statusMap: Record<number, StudioInteractionStatus> = {}
       
       studioIds.forEach(studioId => {
         const hasInquiry = inquiries?.some(inq => inq.studio_id === studioId) || false
-        const conversation = conversations?.find(conv => conv.studio_id === studioId)
+        const conversationId = studioConversations[studioId]
+        const enquiryConversationId = studioEnquiries[studioId]
         
         statusMap[studioId] = {
           studioId,
           hasInquiry,
-          hasConversation: !!conversation,
-          conversationId: conversation?.id
+          hasConversation: !!conversationId,
+          hasEnquiry: !!enquiryConversationId,
+          conversationId,
+          enquiryConversationId
         }
       })
 

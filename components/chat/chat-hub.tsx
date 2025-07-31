@@ -234,7 +234,7 @@ export function ChatHub({
       supabase
         .from('studios')
         .select('*')
-        .eq('id', parseInt(draftStudioId))
+        .eq('slug', draftStudioId)
         .single()
         .then(({ data }) => {
           if (data) setDraftStudio(data)
@@ -377,7 +377,7 @@ export function ChatHub({
       currentUserId={userId}
       currentProfile={profile}
     />
-  ) : draftTargetUserId ? (
+  ) : draftTargetUserId || draftStudioId ? (
     <DraftMessageThread
       currentUserId={userId}
       currentProfile={profile}

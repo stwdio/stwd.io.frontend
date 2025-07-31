@@ -18,7 +18,7 @@ type Studio = Database['public']['Tables']['studios']['Row']
 interface DraftMessageThreadProps {
   currentUserId: string
   currentProfile: Profile
-  targetUserId: string
+  targetUserId?: string
   studioId?: string
   onConversationCreated: (conversationId: number) => void
 }
@@ -56,18 +56,33 @@ export function DraftMessageThread({
         })
     }
 
-    // Fetch studio details if provided
+    // Fetch studio details if provided (studioId is actually a slug)
     if (studioId) {
       supabase
         .from('studios')
         .select('*')
-        .eq('id', parseInt(studioId))
+        .eq('slug', studioId)
         .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error fetching studio:', error)
-          } else if (data) {
-            setStudio(data)
+        .then(async ({ data: studioData, error: studioError }) => {
+          if (studioError) {
+            console.error('Error fetching studio:', studioError)
+          } else if (studioData) {
+            setStudio(studioData)
+            // If we don't have a targetUserId, fetch the owner profile
+            if (!targetUserId && studioData.owner_id) {
+              const { data: ownerProfile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('user_id', studioData.owner_id)
+                .single()
+              
+              if (profileError) {
+                console.error('Error fetching studio owner profile:', profileError)
+                setError('Unable to load studio owner profile.')
+              } else if (ownerProfile) {
+                setTargetProfile(ownerProfile)
+              }
+            }
           }
         })
     }
@@ -140,11 +155,17 @@ export function DraftMessageThread({
       const finalConversation = conversation
 
       // Add the other participant (creator is added automatically by trigger)
+      // Use targetUserId if available, otherwise get from targetProfile
+      const participantUserId = targetUserId || targetProfile?.user_id
+      if (!participantUserId) {
+        throw new Error('No recipient user ID available')
+      }
+      
       const { error: participantsError } = await supabase
         .from('chat_participants')
         .insert({ 
           conversation_id: finalConversation.id, 
-          user_id: targetUserId 
+          user_id: participantUserId 
         })
 
       if (participantsError) {

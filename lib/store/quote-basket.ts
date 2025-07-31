@@ -130,12 +130,12 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           
           // For each studio, create a group chat enquiry
           for (const studio of studios) {
-            // Create a new conversation with type 'enquiry'
+            // Create a new conversation
             const { data: conversation, error: convError } = await supabase
-              .from('conversations')
+              .from('chat_conversations')
               .insert({
-                type: 'enquiry',
-                name: `Studio Enquiry: ${studio.name}`,
+                is_group: true,
+                title: `Studio Enquiry: ${studio.name}`,
                 created_by: user.id
               })
               .select()
@@ -156,24 +156,28 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
               console.error('Failed to get studio members:', membersError)
             }
             
-            // Add participants: creator, studio team members, and concierge
+            // Add participants: studio team members and concierge
+            // Note: creator is automatically added by database trigger
             const participants = [
-              { conversation_id: conversation.id, user_id: user.id }, // Creator
               { conversation_id: conversation.id, user_id: conciergeId } // Concierge
             ]
             
-            // Add studio team members
+            // Add studio team members (avoiding duplicates)
+            const addedUserIds = new Set([user.id, conciergeId]) // Track who's already added
             if (studioMembers) {
               studioMembers.forEach(member => {
-                participants.push({
-                  conversation_id: conversation.id,
-                  user_id: member.user_id
-                })
+                if (!addedUserIds.has(member.user_id)) {
+                  participants.push({
+                    conversation_id: conversation.id,
+                    user_id: member.user_id
+                  })
+                  addedUserIds.add(member.user_id)
+                }
               })
             }
             
             const { error: partError } = await supabase
-              .from('conversation_participants')
+              .from('chat_participants')
               .insert(participants)
             
             if (partError) {
@@ -198,7 +202,7 @@ ${inquiryData.custom_message ? `**Message:**\n${inquiryData.custom_message}` : '
             `.trim()
             
             const { error: messageError } = await supabase
-              .from('messages')
+              .from('chat_messages')
               .insert({
                 conversation_id: conversation.id,
                 sender_id: user.id,
@@ -222,7 +226,7 @@ Studio Concierge
             `.trim()
             
             const { error: conciergeMessageError } = await supabase
-              .from('messages')
+              .from('chat_messages')
               .insert({
                 conversation_id: conversation.id,
                 sender_id: conciergeId,

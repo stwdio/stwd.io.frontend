@@ -4,11 +4,10 @@ import { useState } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Star, MapPin, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search } from "lucide-react"
+import { Star, MapPin, ChevronDown, ChevronUp, Search } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { StudioImage } from "@/components/studio-image-placeholder"
+import { StudioImageCarousel } from "@/components/studio-image-carousel"
 import { StudioDetailActions } from "@/components/studio-detail-actions"
-import { imagePresets } from "@/lib/utils/image-transformations"
 // Price tier imports removed for healthier discovery experience
 import { BackButton } from "@/components/back-button"
 import { cn } from "@/lib/utils"
@@ -56,7 +55,6 @@ interface StudioDetailContentProps {
 }
 
 export function StudioDetailContent({ studio, amenities, reviews, averageRating, ownerProfile, currentUserProfile }: StudioDetailContentProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showAllReviews, setShowAllReviews] = useState(false)
   const [gearOpen, setGearOpen] = useState(true)
   const [gearSearchQuery, setGearSearchQuery] = useState('')
@@ -79,14 +77,6 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
     ? studio.photo_urls 
     : [null] // Show at least one placeholder
 
-  const handlePreviousImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
-  }
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % allImages.length)
-  }
-
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Fixed Header */}
@@ -99,37 +89,10 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
       {/* Main Content Area - Two Column Grid */}
       <div className="flex-1 grid grid-cols-[45%_55%] overflow-hidden">
         {/* Left Column - Full Height Image Carousel */}
-        <div className="relative bg-black overflow-hidden h-full">
-          <div className="relative h-full w-full overflow-hidden">
-            <StudioImage
-              src={allImages[currentImageIndex] ? imagePresets.galleryLarge(allImages[currentImageIndex]) : null}
-              alt={`${studio.name} ${currentImageIndex + 1}`}
-              fill
-              sizes="45vw"
-              className="!h-full !w-full object-cover"
-              style={{ position: 'absolute', height: '100%', width: '100%' }}
-              priority={currentImageIndex === 0}
-            />
-            {allImages.length > 1 && (
-              <>
-                <button
-                  onClick={handlePreviousImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white transition-colors flex items-center justify-center"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white transition-colors flex items-center justify-center"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+        <StudioImageCarousel 
+          images={allImages}
+          studioName={studio.name}
+        />
 
         {/* Right Column - Scrollable Content */}
         <div className="h-full overflow-y-auto">

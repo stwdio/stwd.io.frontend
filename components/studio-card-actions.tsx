@@ -51,7 +51,9 @@ interface StudioCardActionsProps {
   interactionStatus?: {
     hasInquiry: boolean
     hasConversation: boolean
+    hasEnquiry: boolean
     conversationId?: number
+    enquiryConversationId?: number
   }
 }
 
@@ -74,10 +76,12 @@ export function StudioCardActions({
   // Use passed interaction status or fetch if not provided
   const [localHasInquiry, setLocalHasInquiry] = useState(false)
   const [localHasConversation, setLocalHasConversation] = useState(false)
+  const [localConversationId, setLocalConversationId] = useState<number | null>(null)
   
   const hasInquiry = interactionStatus?.hasInquiry ?? localHasInquiry
   const hasConversation = interactionStatus?.hasConversation ?? localHasConversation
-  const conversationId = interactionStatus?.conversationId
+  const hasEnquiry = interactionStatus?.hasEnquiry ?? false
+  const conversationId = interactionStatus?.conversationId ?? localConversationId
   
   const { addStudio, isStudioInBasket, onInquirySubmitted } = useQuoteBasket()
   const router = useRouter()
@@ -85,30 +89,13 @@ export function StudioCardActions({
 
   const isInBasket = isStudioInBasket(studio.id)
 
-  const handleViewConversation = async () => {
+  const handleViewConversation = () => {
     if (conversationId) {
       router.push(`/connect/chat?conversation=${conversationId}`)
-    } else if (!interactionStatus) {
-      // Only fetch if interaction status wasn't provided
-      try {
-        const { data: conversation } = await createClient()
-          .from('conversations')
-          .select('id')
-          .eq('studio_id', studio.id)
-          .eq('customer_id', profile.id)
-          .single()
-
-        if (conversation) {
-          router.push(`/connect/chat?conversation=${conversation.id}`)
-        } else {
-          router.push('/discover/studios')
-        }
-      } catch (error) {
-        console.error('Error finding conversation:', error)
-        router.push('/discover/studios')
-      }
     } else {
-      router.push('/discover/studios')
+      // If we don't have a conversation ID, navigate to chat with studio context
+      // This should create a new draft
+      router.push(`/connect/chat?studio=${studio.slug || studio.id}`)
     }
   }
 
@@ -136,21 +123,52 @@ export function StudioCardActions({
         conversation_id,
         chat_conversations!inner(
           id,
-          title,
-          chat_participants!inner(user_id)
+          title
         )
       `)
       .eq('user_id', profileData.user_id)
     
     if (userConversations) {
-      // Check if any conversation has the studio name as title
+      // Get all participants for these conversations
+      const conversationIds = userConversations.map(uc => uc.conversation_id)
+      const { data: allParticipants } = await supabase
+        .from('chat_participants')
+        .select('conversation_id, user_id')
+        .in('conversation_id', conversationIds)
+      
+      // Group participants by conversation
+      const conversationParticipants: Record<number, string[]> = {}
+      if (allParticipants) {
+        allParticipants.forEach(p => {
+          if (!conversationParticipants[p.conversation_id]) {
+            conversationParticipants[p.conversation_id] = []
+          }
+          conversationParticipants[p.conversation_id].push(p.user_id)
+        })
+      }
+      
+      // Check if any conversation matches this studio
+      let foundConversationId = null
       const hasStudioConversation = userConversations.some(item => {
         const conv = item.chat_conversations
+        const participants = conversationParticipants[conv.id] || []
+        
         // Check if conversation title matches studio name (case insensitive)
-        return conv.title?.toLowerCase() === studio.name.toLowerCase()
+        const titleMatch = conv.title?.toLowerCase() === studio.name.toLowerCase()
+        
+        // Only match based on title to ensure it's a studio enquiry
+        if (titleMatch) {
+          foundConversationId = conv.id
+          return true
+        }
+        return false
       })
       
       setLocalHasConversation(hasStudioConversation)
+      // Store the conversation ID for navigation
+      if (foundConversationId) {
+        setLocalConversationId(foundConversationId)
+      }
     }
   }
 
@@ -205,12 +223,12 @@ export function StudioCardActions({
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")
+            authModal.open("Sign in to add studios", "Create an account to add studios to your basket and send enquiries.")
           }}
           className="flex-1 text-xs bg-black hover:bg-gray-800 text-white"
         >
           <Plus className="h-4 w-4 mr-1" />
-          Quote
+          Add
         </Button>
       </div>
     )
@@ -249,18 +267,15 @@ export function StudioCardActions({
         onClick={async (e) => {
           e.preventDefault()
           e.stopPropagation()
-          if (hasInquiry) {
-            // Navigate to quotes page with studio slug
-            router.push(`/connect/quotes?studio=${studio.slug || studio.id}`)
-            return
+          if (!isInBasket && !hasEnquiry) {
+            await addStudio(studio)
           }
-          await addStudio(studio)
         }}
-        className="flex-1 text-xs bg-black hover:bg-gray-800 text-white"
-        disabled={isInBasket}
+        className="flex-1 text-xs bg-black hover:bg-gray-800 text-white disabled:opacity-50"
+        disabled={isInBasket || hasEnquiry}
       >
-        {hasInquiry ? <Eye className="h-4 w-4 mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-        {hasInquiry ? 'View Quote' : isInBasket ? 'In Basket' : 'Quote'}
+        <Plus className="h-4 w-4 mr-1" />
+        {hasEnquiry ? 'Enquiry Sent' : isInBasket ? 'Added' : 'Add'}
       </Button>
     </div>
   )

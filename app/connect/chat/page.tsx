@@ -14,7 +14,8 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
   console.log('Raw search params:', params)
   const targetUsername = params?.user as string | undefined
   const conversationId = params?.conversation as string | undefined
-  console.log('Chat page loaded with target username:', targetUsername, 'conversation:', conversationId)
+  const studioId = params?.studio as string | undefined
+  console.log('Chat page loaded with target username:', targetUsername, 'conversation:', conversationId, 'studio:', studioId)
   
   const supabase = await createServerComponentClient()
   
@@ -35,7 +36,120 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
   let selectedConversationId: number | undefined
   let isConnected = false
   
-  if (targetUsername) {
+  // If studio is provided, check for existing enquiry conversation
+  if (studioId) {
+    console.log('Looking up studio enquiry for:', studioId)
+    
+    // First get the studio details
+    const { data: studioData } = await supabase
+      .from('studios')
+      .select('id, name, owner_id')
+      .eq('slug', studioId)
+      .single()
+    
+    if (studioData) {
+      // Check if there's already a group enquiry conversation for this studio
+      const { data: existingConversations } = await supabase
+        .from('chat_participants')
+        .select(`
+          conversation_id,
+          chat_conversations!inner(
+            id,
+            title,
+            is_group
+          )
+        `)
+        .eq('user_id', user.id)
+      
+      if (existingConversations) {
+        // Look for an enquiry conversation with this studio
+        const enquiryConversation = existingConversations.find(conv => {
+          const c = conv.chat_conversations
+          return c.is_group && 
+            c.title?.toLowerCase().includes('studio enquiry:') && 
+            c.title?.toLowerCase().includes(studioData.name.toLowerCase())
+        })
+        
+        if (enquiryConversation) {
+          // Redirect to existing enquiry conversation
+          console.log('Found existing enquiry conversation:', enquiryConversation.conversation_id)
+          selectedConversationId = enquiryConversation.conversation_id
+        } else {
+          // Create a new enquiry conversation
+          console.log('Creating new studio enquiry conversation')
+          
+          // Get concierge user ID
+          const { data: conciergeId } = await supabase.rpc('get_studio_concierge_id')
+          
+          if (conciergeId) {
+            // Create group conversation
+            const { data: newConversation } = await supabase
+              .from('chat_conversations')
+              .insert({
+                is_group: true,
+                title: `Studio Enquiry: ${studioData.name}`,
+                created_by: user.id
+              })
+              .select()
+              .single()
+            
+            if (newConversation) {
+              // Get studio team members
+              const { data: studioMembers } = await supabase
+                .from('studio_members')
+                .select('user_id')
+                .eq('studio_id', studioData.id)
+              
+              // Add participants (creator is added automatically by trigger)
+              const participants = [
+                { conversation_id: newConversation.id, user_id: conciergeId }
+              ]
+              
+              // Add studio team members
+              const addedUserIds = new Set([user.id, conciergeId])
+              if (studioMembers) {
+                studioMembers.forEach(member => {
+                  if (!addedUserIds.has(member.user_id)) {
+                    participants.push({
+                      conversation_id: newConversation.id,
+                      user_id: member.user_id
+                    })
+                    addedUserIds.add(member.user_id)
+                  }
+                })
+              }
+              
+              await supabase
+                .from('chat_participants')
+                .insert(participants)
+              
+              // Send welcome message from concierge
+              const conciergeMessage = `Hello! 👋
+
+I'm the stwd.io Studio Concierge, and I'm here to help facilitate your enquiry with ${studioData.name}.
+
+Feel free to ask any questions about the studio, discuss your project needs, or share any specific requirements you have.
+
+The studio team has been notified and will respond soon.
+
+Best regards,
+Studio Concierge`
+              
+              await supabase
+                .from('chat_messages')
+                .insert({
+                  conversation_id: newConversation.id,
+                  sender_id: conciergeId,
+                  content: conciergeMessage
+                })
+              
+              selectedConversationId = newConversation.id
+            }
+          }
+        }
+      }
+    }
+  } else if (targetUsername) {
     const { data: targetProfile, error: profileError } = await supabase
       .from('profiles')
       .select('user_id')
@@ -174,7 +288,7 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
   }
   
   // Don't redirect server-side - let the client handle it to show skeleton
-  const shouldRedirectToFirstConversation = !targetUsername && !conversationId && conversations.length > 0
+  const shouldRedirectToFirstConversation = !targetUsername && !conversationId && !studioId && conversations.length > 0
 
   return (
     <ChatHub 
@@ -184,6 +298,7 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
       targetUserId={isConnected && !selectedConversationId ? targetUserId : undefined}
       initialSelectedConversationId={selectedConversationId}
       shouldRedirectToFirst={shouldRedirectToFirstConversation}
+      studioId={studioId}
     />
   )
 }

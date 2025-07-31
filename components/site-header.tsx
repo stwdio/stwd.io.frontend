@@ -96,7 +96,7 @@ export function SiteHeader({ className }: SiteHeaderProps) {
                     href="/connect/chat" 
                     className={cn(
                       "text-6xl tracking-tight transition-all",
-                      pathname?.startsWith('/connect') 
+                      pathname?.startsWith('/connect')
                         ? "font-bold underline" 
                         : "font-light text-muted-foreground hover:text-foreground"
                     )}

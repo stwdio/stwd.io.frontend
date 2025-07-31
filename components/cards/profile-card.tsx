@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { GenericCard } from '@/components/cards/generic-card'
-import { IconMessage, IconUserPlus, IconUserCheck } from '@tabler/icons-react'
+import { IconMessage, IconUserPlus, IconUserCheck, IconPlugConnected } from '@tabler/icons-react'
 import { Database } from '@/types/supabase'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
@@ -11,6 +11,8 @@ import { imagePresets } from '@/lib/utils/image-transformations'
 import { createClient } from '@/lib/supabase/client'
 import { useIsFollowingUser } from '@/lib/hooks/queries/social'
 import { useFollowUser, useUnfollowUser } from '@/lib/hooks/mutations/social'
+import { useConnectionStatus } from '@/lib/hooks/queries/connections'
+import { useSendConnectionRequest } from '@/lib/hooks/mutations/connections'
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   profile_roles?: Array<{
@@ -25,9 +27,17 @@ type Profile = Database['public']['Tables']['profiles']['Row'] & {
 interface ProfileCardProps {
   profile: Profile
   priority?: boolean
+  linkToProfile?: boolean
+  hideFollowButton?: boolean
+  className?: string
+  customActions?: React.ReactNode
+  statusBadge?: {
+    label: string
+    variant: 'default' | 'secondary' | 'outline' | 'destructive'
+  } | null
 }
 
-export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
+export function ProfileCard({ profile, priority = false, linkToProfile = true, hideFollowButton = false, className, customActions, statusBadge }: ProfileCardProps) {
   const router = useRouter()
   const { user } = useAuth()
   const authModal = useAuthModal()
@@ -35,11 +45,15 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
   const supabase = createClient()
   const [followers, setFollowers] = useState<Array<{ id: string, name: string, avatar: string | null }>>([])
   
-  // Follow functionality
-  const { data: isFollowing } = useIsFollowingUser(profile.user_id)
+  // Follow functionality (only query if we're showing the button)
+  const { data: isFollowing } = useIsFollowingUser(hideFollowButton ? null : profile.user_id)
   const { mutate: followUser, isPending: isFollowingPending } = useFollowUser()
   const { mutate: unfollowUser, isPending: isUnfollowingPending } = useUnfollowUser()
   const isCurrentUser = user?.id === profile.user_id
+  
+  // Connection functionality
+  const { data: connectionStatus } = useConnectionStatus(profile.user_id)
+  const { mutate: sendConnectionRequest, isPending: isRequestPending } = useSendConnectionRequest()
 
   const displayName = profile.first_name && profile.last_name
     ? `${profile.first_name} ${profile.last_name}`
@@ -109,6 +123,21 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
     }
   }
 
+  const handleConnect = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!isAuthenticated) {
+      authModal.open(
+        'Sign in to connect',
+        'Create an account or sign in to connect with other users.'
+      )
+      return
+    }
+    
+    sendConnectionRequest(profile.user_id)
+  }
+
   const handleMessage = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -122,7 +151,7 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
     }
     
     // Navigate to messages with user context
-    router.push(`/chat?user=${profile.username}`)
+    router.push(`/connect/chat?user=${profile.username}`)
   }
 
   return (
@@ -132,16 +161,31 @@ export function ProfileCard({ profile, priority = false }: ProfileCardProps) {
       subtitle={primaryRole ? `${primaryRole} • @${profile.username}` : `@${profile.username}`}
       description={profile.bio || undefined}
       imageUrl={avatarUrl}
-      link={`/profiles/${profile.username}`}
+      link={linkToProfile ? `/profiles/${profile.username}` : undefined}
       tags={roles}
       followedBy={followers}
       priority={priority}
-      primaryAction={{
-        label: 'Message',
-        icon: <IconMessage className="h-4 w-4 mr-1" />,
-        onClick: handleMessage
-      }}
-      secondaryAction={isCurrentUser ? undefined : {
+      className={className}
+      customActions={customActions}
+      statusBadge={statusBadge}
+      primaryAction={customActions || isCurrentUser ? undefined : 
+        connectionStatus?.status === 'accepted' ? {
+          label: 'Message',
+          icon: <IconMessage className="h-4 w-4 mr-1" />,
+          onClick: handleMessage,
+        } : connectionStatus?.status === 'pending' ? {
+          label: 'Requested',
+          icon: <IconPlugConnected className="h-4 w-4 mr-1" />,
+          onClick: () => {},
+          disabled: true,
+        } : {
+          label: 'Connect',
+          icon: <IconPlugConnected className="h-4 w-4 mr-1" />,
+          onClick: handleConnect,
+          disabled: isRequestPending,
+        }
+      }
+      secondaryAction={customActions || isCurrentUser || hideFollowButton ? undefined : {
         label: isFollowing ? 'Following' : 'Follow',
         icon: isFollowing ? <IconUserCheck className="h-4 w-4 mr-1" /> : <IconUserPlus className="h-4 w-4 mr-1" />,
         onClick: handleFollow,

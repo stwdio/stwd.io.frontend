@@ -24,7 +24,9 @@ import {
   Search,
   MessageSquare,
   UserCheck,
-  UserPlus
+  UserPlus,
+  UserX,
+  Clock
 } from 'lucide-react'
 import type { Database } from '@/lib/types/database'
 import { FollowersList } from '@/components/social/followers-list'
@@ -35,6 +37,8 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 import { useFollowUser, useUnfollowUser } from '@/lib/hooks/mutations/social'
 import { useIsFollowingUser } from '@/lib/hooks/queries/social'
+import { useConnectionStatus } from '@/lib/hooks/queries/connections'
+import { useSendConnectionRequest, useAcceptConnectionRequest, useCancelConnectionRequest } from '@/lib/hooks/mutations/connections'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Role = Database['public']['Tables']['roles']['Row']
@@ -85,6 +89,12 @@ export function ProfileContent({ profile }: ProfileContentProps) {
   const { mutate: followUser, isPending: isFollowingPending } = useFollowUser()
   const { mutate: unfollowUser, isPending: isUnfollowingPending } = useUnfollowUser()
   const isCurrentUser = user?.id === profile.user_id
+  
+  // Connection functionality
+  const { data: connectionStatus } = useConnectionStatus(profile.user_id)
+  const { mutate: sendConnectionRequest, isPending: isSendingRequest } = useSendConnectionRequest()
+  const { mutate: acceptConnectionRequest, isPending: isAcceptingRequest } = useAcceptConnectionRequest()
+  const { mutate: cancelConnectionRequest, isPending: isCancelingRequest } = useCancelConnectionRequest()
 
   const avatarSrc = profile.avatar_url && profile.avatar_url.trim() !== '' 
     ? profile.avatar_url 
@@ -126,7 +136,8 @@ export function ProfileContent({ profile }: ProfileContentProps) {
       )
       return
     }
-    router.push(`/chat?user=${profile.username}`)
+    
+    router.push(`/connect/chat?user=${profile.username}`)
   }
   
   const handleFollow = () => {
@@ -144,6 +155,74 @@ export function ProfileContent({ profile }: ProfileContentProps) {
       unfollowUser({ followingUserId: profile.user_id })
     } else {
       followUser({ followingUserId: profile.user_id })
+    }
+  }
+  
+  const handleConnection = () => {
+    if (!isAuthenticated) {
+      authModal.open(
+        'Sign in to connect',
+        'Create an account or sign in to connect with other users.'
+      )
+      return
+    }
+    
+    if (!profile.user_id) return
+    
+    if (connectionStatus?.status === 'pending' && connectionStatus.isReceiver) {
+      // Accept the request
+      acceptConnectionRequest(connectionStatus.id)
+    } else if (connectionStatus?.status === 'pending' && connectionStatus.isSender) {
+      // Cancel the request
+      cancelConnectionRequest(connectionStatus.id)
+    } else if (!connectionStatus || connectionStatus.status === 'rejected') {
+      // Send new request
+      sendConnectionRequest(profile.user_id)
+    }
+  }
+  
+  const getConnectionButtonProps = () => {
+    if (!connectionStatus || connectionStatus.status === 'rejected') {
+      return {
+        label: 'Connect',
+        icon: UserPlus,
+        variant: 'default' as const,
+        disabled: isSendingRequest
+      }
+    }
+    
+    if (connectionStatus.status === 'pending' && connectionStatus.isSender) {
+      return {
+        label: 'Pending',
+        icon: Clock,
+        variant: 'secondary' as const,
+        disabled: isCancelingRequest
+      }
+    }
+    
+    if (connectionStatus.status === 'pending' && connectionStatus.isReceiver) {
+      return {
+        label: 'Accept Request',
+        icon: UserCheck,
+        variant: 'default' as const,
+        disabled: isAcceptingRequest
+      }
+    }
+    
+    if (connectionStatus.status === 'accepted') {
+      return {
+        label: 'Connected',
+        icon: UserCheck,
+        variant: 'secondary' as const,
+        disabled: true
+      }
+    }
+    
+    return {
+      label: 'Connect',
+      icon: UserPlus,
+      variant: 'default' as const,
+      disabled: false
     }
   }
 
@@ -237,12 +316,38 @@ export function ProfileContent({ profile }: ProfileContentProps) {
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 w-full">
-            <Button onClick={handleMessage} className="flex-1" size="lg">
-              <MessageSquare className="h-5 w-5 mr-2" />
-              Message
-            </Button>
-            {!isCurrentUser && (
+          {!isCurrentUser && (
+            <div className="flex gap-3 w-full">
+              {connectionStatus?.status === 'accepted' ? (
+                <Button 
+                  onClick={handleMessage} 
+                  className="flex-1" 
+                  size="lg"
+                >
+                  <MessageSquare className="h-5 w-5 mr-2" />
+                  Message
+                </Button>
+              ) : connectionStatus?.status === 'pending' && connectionStatus.isSender ? (
+                <Button 
+                  className="flex-1" 
+                  size="lg"
+                  variant="secondary"
+                  disabled
+                >
+                  <Clock className="h-5 w-5 mr-2" />
+                  Requested
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleConnection} 
+                  className="flex-1" 
+                  size="lg"
+                  disabled={isSendingRequest}
+                >
+                  <UserPlus className="h-5 w-5 mr-2" />
+                  Connect
+                </Button>
+              )}
               <Button 
                 variant={isFollowing ? "secondary" : "outline"} 
                 size="lg"
@@ -261,8 +366,8 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                   </>
                 )}
               </Button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Skills Section - Collapsible with Search */}
           {skills.length > 0 && (

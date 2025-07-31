@@ -20,7 +20,7 @@ export function UnifiedLayout({ children, secondaryNav, navActions, fullHeight =
   
   // Determine which main navigation to show
   const isDiscoverSection = pathname?.startsWith('/discover') || pathname === '/'
-  const isChatSection = pathname?.startsWith('/chat')
+  const isChatSection = pathname?.startsWith('/connect/chat')
   const isWorkspaceSection = pathname?.startsWith('/workspace')
   const isSettingsSection = pathname?.startsWith('/settings')
   const isProfileSection = pathname?.startsWith('/profiles')
@@ -70,7 +70,7 @@ export function UnifiedLayout({ children, secondaryNav, navActions, fullHeight =
                   
                   <span className="text-muted-foreground">|</span>
                   <Link
-                    href="/chat"
+                    href="/connect/chat"
                     className={cn(
                       "font-medium transition-all",
                       isChatActive 

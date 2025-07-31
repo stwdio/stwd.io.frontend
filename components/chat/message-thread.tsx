@@ -260,19 +260,17 @@ export function MessageThread({
                       )
                     )}
                   </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {conversation.title ? (
-                      profile.username ? (
+                  {conversation.title && (
+                    <p className="text-sm text-muted-foreground">
+                      {profile.username ? (
                         <Link href={`/profiles/${profile.username}`} className="hover:underline">
                           {displayName}
                         </Link>
                       ) : (
                         displayName
-                      )
-                    ) : (
-                      'Direct message'
-                    )}
-                  </p>
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
             )

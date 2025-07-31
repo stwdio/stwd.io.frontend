@@ -11,6 +11,58 @@
 - **Data Fetching**: React Query v5 with Supabase integration
 - **Caching Layer**: Intelligent cache management with different TTLs per data type
 
+### ✅ **PROFESSIONAL NETWORK REFACTOR - COMPLETED** (February 2025)
+- **Status**: ✅ **COMPLETED** - Transformed platform from marketplace to professional network
+- **Scope**: Complete implementation of 13-task plan transforming social model, studio model, communication system, and discovery experience
+- **Major Achievement**: ✅ **SUCCESSFULLY TRANSITIONED TO PROFESSIONAL NETWORK MODEL**
+- **Implementation Details**:
+  - **✅ Phase 1 - Backend Changes**: 
+    - Created `connections` table with pending/accepted/rejected status tracking
+    - Created `studio_members` table for team-based studio management
+    - Updated RLS policies to support studio team member access
+    - Migrated all existing studio owners to studio_members table
+  - **✅ Phase 2 - Frontend UI Updates**:
+    - Removed all follower/following counts from UI components
+    - Removed price displays from discovery (cards, filters, detail pages)
+    - Created `/connections` page with three-tab interface:
+      - My Connections tab with group chat selection mode
+      - Pending Requests tab with accept/decline functionality
+      - Sent Requests tab with cancel functionality
+    - Created `ConnectionRequestCard` and `GroupChatBasket` components
+  - **✅ Phase 3 - Communication Updates**:
+    - Built complete connection request system with send/accept/decline/cancel
+    - Implemented gated 1-on-1 chat requiring accepted connections
+    - Message buttons disabled with tooltips when not connected
+    - Group chat creation from connections page with multi-select
+    - Updated profile pages with Connect button showing proper states
+  - **✅ Phase 4 - Concierge & Enquiry System**:
+    - Created Studio Concierge database functions and profile setup
+    - Refactored quote basket to create group chats instead of inquiries
+    - Each enquiry creates group chat with creator, studio team, and concierge
+    - Initial message contains project details, concierge sends welcome
+    - Updated workspace to support studio team member access
+    - Modified studio queries to show studios where user is owner OR member
+- **Technical Implementation**:
+  - **Connection System**: Two-way professional connections alongside one-way follows
+  - **Studio Teams**: Multi-member studios with role-based access
+  - **Gated Messaging**: Connection required for 1-on-1 messages
+  - **Enquiry Chats**: Formal enquiries via group chats with concierge
+  - **Price-Free Discovery**: All pricing removed from browsing
+- **Files Created/Modified**:
+  - Backend: Multiple migrations via Supabase MCP
+  - `/components/connections/` - New connection management components
+  - `/lib/hooks/queries/connections.ts` - Connection query hooks
+  - `/lib/hooks/mutations/connections.ts` - Connection mutations
+  - `/app/(discover)/connections/page.tsx` - Connections page
+  - `/lib/store/quote-basket.ts` - Refactored for chat enquiries
+  - Profile/card components updated for connection support
+  - Workspace components updated for team access
+- **Next Steps (Manual Tasks)**:
+  - Create Studio Concierge auth user (email: concierge@stwd.io)
+  - Test all new features thoroughly
+  - Consider data migration for existing inquiries
+  - Create team management UI for studios
+
 ### ✅ **ENTERPRISE SECURITY IMPLEMENTATION - PRODUCTION READY** (Updated January 31, 2025)
 - **✅ COMPLETE RLS POLICY COVERAGE**: All 19 database tables secured with Row Level Security
   - `add_on_services`, `booking_add_ons`, `conversations`, `conversation_participants`

@@ -13,17 +13,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { IconSearch } from "@tabler/icons-react"
-import { PRICE_TIERS } from "@/lib/constants/currencies"
+// Price tier imports removed for healthier discovery experience
 import { useAmenities, useAvailableGear } from "@/lib/hooks/queries/studios"
 
 interface FilterState {
   location: string
-  priceRange: [number, number]
-  selectedPriceTiers: number[]
   selectedAmenities: string[]
   selectedGear: string[]
   selectedRoles: string[]
@@ -99,8 +96,6 @@ export function FilterPanel({
   const handleClear = () => {
     const clearedFilters: FilterState = {
       location: '',
-      priceRange: [0, 1000],
-      selectedPriceTiers: [],
       selectedAmenities: [],
       selectedGear: [],
       selectedRoles: []
@@ -111,11 +106,9 @@ export function FilterPanel({
 
   const activeFilterCount = [
     localFilters.location,
-    localFilters.selectedPriceTiers.length,
     localFilters.selectedAmenities.length,
     localFilters.selectedGear.length,
-    localFilters.selectedRoles.length,
-    localFilters.priceRange[0] > 0 || localFilters.priceRange[1] < 1000
+    localFilters.selectedRoles.length
   ].filter(Boolean).length
 
   return (
@@ -164,56 +157,7 @@ export function FilterPanel({
 
             {type === 'studios' ? (
               <>
-                {/* Price Range Filter */}
-                <div className="space-y-2">
-                  <Label>Daily Rate Range</Label>
-                  <div className="px-2 pb-2">
-                    <Slider
-                      min={0}
-                      max={1000}
-                      step={50}
-                      value={localFilters.priceRange}
-                      onValueChange={(value) => 
-                        setLocalFilters({...localFilters, priceRange: value as [number, number]})
-                      }
-                    />
-                    <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                      <span>${localFilters.priceRange[0]}</span>
-                      <span>${localFilters.priceRange[1]}+</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Price Tier Filter */}
-                <div className="space-y-2">
-                  <Label>Price Tiers</Label>
-                  <div className="space-y-2">
-                    {Object.entries(PRICE_TIERS).map(([value, tier]) => (
-                      <div key={value} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`tier-${value}`}
-                          checked={localFilters.selectedPriceTiers.includes(Number(value))}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setLocalFilters({
-                                ...localFilters,
-                                selectedPriceTiers: [...localFilters.selectedPriceTiers, Number(value)]
-                              })
-                            } else {
-                              setLocalFilters({
-                                ...localFilters,
-                                selectedPriceTiers: localFilters.selectedPriceTiers.filter(t => t !== Number(value))
-                              })
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`tier-${value}`} className="cursor-pointer">
-                          {tier.symbol} {tier.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                {/* Price filters removed for healthier discovery experience */}
 
                 {/* Amenities Filter */}
                 <div className="space-y-2">

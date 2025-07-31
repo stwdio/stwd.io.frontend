@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { cn, getAvatarImageUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import { IconBuilding, IconMessage, IconFilter, IconSearch } from '@tabler/icons-react'
+import { IconBuilding, IconMessage, IconFilter, IconSearch, IconUsers } from '@tabler/icons-react'
 import type { Database } from '@/lib/types/database'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -18,6 +18,7 @@ type Conversation = {
   created_at: string | null
   updated_at: string | null
   title?: string | null
+  is_group?: boolean
   chat_participants: Array<{
     user_id: string
     profiles: Profile | null
@@ -160,7 +161,7 @@ export function ConversationList({
       </div>
       
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="p-2 space-y-2">
           {filteredConversations.map((conversation) => {
           const otherParticipants = conversation.chat_participants.filter(
             p => p.user_id !== currentUserId
@@ -171,16 +172,42 @@ export function ConversationList({
           // Check if this is a studio enquiry
           const isEnquiry = conversation.title && conversation.title.trim() !== ''
           
-          const displayName = otherUser
-            ? (otherUser.first_name && otherUser.last_name 
-                ? `${otherUser.first_name} ${otherUser.last_name}`.trim()
-                : otherUser.username || 'Unknown User')
-            : 'Unknown User'
+          // Handle group chat display
+          const isGroupChat = conversation.is_group === true
+          let displayName = 'Unknown User'
+          let avatarUrl: string | undefined
           
-          // Use studio image for enquiries, profile picture for messages
-          const avatarUrl = isEnquiry && conversation.title && studioImages[conversation.title]
-            ? studioImages[conversation.title]
-            : otherUser?.avatar_url || (otherUser ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${otherUser.user_id}&backgroundColor=ffffff&shapeColor=000000` : undefined)
+          if (isGroupChat) {
+            // For group chats, show participant names (limit to 2)
+            const participantNames = otherParticipants
+              .map(p => p.profiles?.first_name || p.profiles?.username || 'Unknown')
+              .filter(Boolean)
+            
+            if (participantNames.length === 0) {
+              displayName = 'Group Chat'
+            } else if (participantNames.length <= 2) {
+              displayName = participantNames.join(', ')
+            } else {
+              const firstTwo = participantNames.slice(0, 2).join(', ')
+              const othersCount = participantNames.length - 2
+              displayName = `${firstTwo} & ${othersCount} ${othersCount === 1 ? 'Other' : 'Others'}`
+            }
+            
+            // Use a group icon or first participant's avatar
+            avatarUrl = otherUser?.avatar_url || (otherUser ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${conversation.id}-group&backgroundColor=ffffff&shapeColor=000000` : undefined)
+          } else {
+            // For 1-on-1 chats
+            displayName = otherUser
+              ? (otherUser.first_name && otherUser.last_name 
+                  ? `${otherUser.first_name} ${otherUser.last_name}`.trim()
+                  : otherUser.username || 'Unknown User')
+              : 'Unknown User'
+            
+            // Use studio image for enquiries, profile picture for messages
+            avatarUrl = isEnquiry && conversation.title && studioImages[conversation.title]
+              ? studioImages[conversation.title]
+              : otherUser?.avatar_url || (otherUser ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${otherUser.user_id}&backgroundColor=ffffff&shapeColor=000000` : undefined)
+          }
 
           return (
             <button
@@ -195,7 +222,13 @@ export function ConversationList({
               <Avatar className="h-10 w-10 shrink-0">
                 <AvatarImage src={avatarUrl} alt={isEnquiry ? (conversation.title || undefined) : displayName} />
                 <AvatarFallback>
-                  {isEnquiry && conversation.title ? conversation.title.charAt(0) : displayName.charAt(0)}
+                  {isGroupChat ? (
+                    <IconUsers className="h-5 w-5" />
+                  ) : isEnquiry && conversation.title ? (
+                    conversation.title.charAt(0)
+                  ) : (
+                    displayName.charAt(0)
+                  )}
                 </AvatarFallback>
               </Avatar>
               
@@ -208,6 +241,11 @@ export function ConversationList({
                     {(isEnquiry || conversation.id === -1) && (
                       <Badge variant="secondary" className="shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                         {conversation.id === -1 ? 'Draft' : 'Enquiry'}
+                      </Badge>
+                    )}
+                    {isGroupChat && (
+                      <Badge variant="secondary" className="shrink-0">
+                        Group
                       </Badge>
                     )}
                   </div>

@@ -22,7 +22,7 @@ export function AppLayout({ children, showSubNav, subNavContent }: AppLayoutProp
       if (pathname.includes('/people')) return 'people'
       return 'studios'
     }
-    if (pathname?.startsWith('/chat')) return 'chat'
+    if (pathname?.startsWith('/connect/chat')) return 'chat'
     if (pathname?.startsWith('/workspace')) return 'workspace'
     if (pathname?.startsWith('/settings')) return 'settings'
     if (pathname?.startsWith('/profiles')) return 'profile'
@@ -75,7 +75,7 @@ export function AppLayout({ children, showSubNav, subNavContent }: AppLayoutProp
                   
                   <span className="text-muted-foreground">|</span>
                   <Link
-                    href="/chat"
+                    href="/connect/chat"
                     className={cn(
                       "font-medium transition-all",
                       activeNav === 'chat' 

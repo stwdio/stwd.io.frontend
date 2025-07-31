@@ -13,12 +13,27 @@ interface WorkspaceStudiosProps {
 export async function WorkspaceStudios({ userId }: WorkspaceStudiosProps) {
   const supabase = await createServerComponentClient()
   
-  // Get user's studios
-  const { data: studios } = await supabase
+  // Get studios where user is either owner or team member
+  const { data: ownedStudios } = await supabase
     .from('studios')
     .select('*')
     .eq('owner_id', userId)
-    .order('created_at', { ascending: false })
+  
+  const { data: memberStudios } = await supabase
+    .from('studio_members')
+    .select('studio_id, studios(*)')
+    .eq('user_id', userId)
+  
+  // Combine and deduplicate studios
+  const allStudios = [
+    ...(ownedStudios || []),
+    ...(memberStudios?.map(m => m.studios).filter(Boolean) || [])
+  ]
+  
+  // Remove duplicates and sort
+  const studios = Array.from(
+    new Map(allStudios.map(studio => [studio.id, studio])).values()
+  ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   
   return (
     <div className="space-y-6">

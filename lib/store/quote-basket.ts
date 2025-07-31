@@ -59,33 +59,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           return
         }
         
-        // Check if user already has a quote for this studio
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('user_id', user.id)
-            .single()
-          
-          if (profile) {
-            const { data: existingInquiry } = await supabase
-              .from('inquiry_recipients')
-              .select(`
-                inquiry_id,
-                inquiries!inner(creator_id)
-              `)
-              .eq('studio_id', studio.id)
-              .eq('inquiries.creator_id', profile.id)
-              .limit(1)
-            
-            if (existingInquiry && existingInquiry.length > 0) {
-              toast.error(`You already have a quote request for ${studio.name}`)
-              return
-            }
-          }
-        }
+        // We no longer check for existing inquiries since we're using chat-based enquiries
         
         set({ studios: [...studios, studio] })
         toast.success(`${studio.name} added to quote basket`)
@@ -135,7 +109,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           
           const { data: profile } = await supabase
             .from('profiles')
-            .select('id')
+            .select('*')
             .eq('user_id', user.id)
             .single()
           
@@ -144,70 +118,124 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
             return false
           }
           
-          // Check for existing quotes for these studios
-          const studioIds = studios.map(s => s.id)
-          const { data: existingInquiries } = await supabase
-            .from('inquiry_recipients')
-            .select(`
-              studio_id,
-              inquiries!inner(creator_id)
-            `)
-            .in('studio_id', studioIds)
-            .eq('inquiries.creator_id', profile.id)
+          // Get the studio concierge user ID
+          const { data: conciergeId, error: conciergeError } = await supabase
+            .rpc('get_studio_concierge_id')
           
-          let studiosToSubmit = studios
-          
-          if (existingInquiries && existingInquiries.length > 0) {
-            const existingStudioIds = existingInquiries.map(i => i.studio_id)
-            const existingStudioNames = studios
-              .filter(s => existingStudioIds.includes(s.id))
-              .map(s => s.name)
-              .join(', ')
-            
-            toast.error(`You already have pending quotes for: ${existingStudioNames}`)
-            
-            // Remove studios with existing quotes from the basket
-            studiosToSubmit = studios.filter(s => !existingStudioIds.includes(s.id))
-            
-            if (studiosToSubmit.length === 0) {
-              return false
-            }
-            
-            // Update studios to only include those without existing quotes
-            set({ studios: studiosToSubmit })
+          if (conciergeError || !conciergeId) {
+            console.error('Failed to get concierge user:', conciergeError)
+            toast.error('Failed to connect with Studio Concierge')
+            return false
           }
           
-          // Create the inquiry
-          const { data: inquiry, error: inquiryError } = await supabase
-            .from('inquiries')
-            .insert({
-              creator_id: profile.id,
-              project_type: inquiryData.project_type,
-              genre: inquiryData.genre,
-              budget_range: inquiryData.budget_range,
-              preferred_dates: inquiryData.preferred_dates,
-              location_preference: inquiryData.location_preference,
-              custom_message: inquiryData.custom_message
-            })
-            .select()
-            .single()
-          
-          if (inquiryError) throw inquiryError
-          
-          // Create inquiry recipients for each studio
-          const recipients = studiosToSubmit.map(studio => ({
-            inquiry_id: inquiry.id,
-            studio_id: studio.id
-          }))
-          
-          const { error: recipientsError } = await supabase
-            .from('inquiry_recipients')
-            .insert(recipients)
-          
-          if (recipientsError) throw recipientsError
+          // For each studio, create a group chat enquiry
+          for (const studio of studios) {
+            // Create a new conversation with type 'enquiry'
+            const { data: conversation, error: convError } = await supabase
+              .from('conversations')
+              .insert({
+                type: 'enquiry',
+                name: `Studio Enquiry: ${studio.name}`,
+                created_by: user.id
+              })
+              .select()
+              .single()
+            
+            if (convError) {
+              console.error('Failed to create conversation:', convError)
+              continue
+            }
+            
+            // Get all studio team members
+            const { data: studioMembers, error: membersError } = await supabase
+              .from('studio_members')
+              .select('user_id')
+              .eq('studio_id', studio.id)
+            
+            if (membersError) {
+              console.error('Failed to get studio members:', membersError)
+            }
+            
+            // Add participants: creator, studio team members, and concierge
+            const participants = [
+              { conversation_id: conversation.id, user_id: user.id }, // Creator
+              { conversation_id: conversation.id, user_id: conciergeId } // Concierge
+            ]
+            
+            // Add studio team members
+            if (studioMembers) {
+              studioMembers.forEach(member => {
+                participants.push({
+                  conversation_id: conversation.id,
+                  user_id: member.user_id
+                })
+              })
+            }
+            
+            const { error: partError } = await supabase
+              .from('conversation_participants')
+              .insert(participants)
+            
+            if (partError) {
+              console.error('Failed to add participants:', partError)
+              continue
+            }
+            
+            // Send initial message from creator with inquiry details
+            const messageContent = `
+🎵 **New Studio Enquiry**
+
+**Project Type:** ${inquiryData.project_type}
+${inquiryData.genre ? `**Genre:** ${inquiryData.genre}` : ''}
+${inquiryData.budget_range ? `**Budget Range:** ${inquiryData.budget_range}` : ''}
+${inquiryData.preferred_dates ? `**Preferred Dates:** ${inquiryData.preferred_dates}` : ''}
+${inquiryData.location_preference ? `**Location Preference:** ${inquiryData.location_preference}` : ''}
+
+${inquiryData.custom_message ? `**Message:**\n${inquiryData.custom_message}` : ''}
+
+---
+*This is an official studio enquiry facilitated by stwd.io Studio Concierge.*
+            `.trim()
+            
+            const { error: messageError } = await supabase
+              .from('messages')
+              .insert({
+                conversation_id: conversation.id,
+                sender_id: user.id,
+                content: messageContent
+              })
+            
+            if (messageError) {
+              console.error('Failed to send initial message:', messageError)
+            }
+            
+            // Send welcome message from concierge
+            const conciergeMessage = `
+Hello ${profile.first_name || profile.username}! 👋
+
+I'm the stwd.io Studio Concierge, and I'm here to help facilitate this enquiry with ${studio.name}.
+
+The studio team has been notified and will respond to your enquiry soon. In the meantime, feel free to ask any questions or provide additional details about your project.
+
+Best regards,
+Studio Concierge
+            `.trim()
+            
+            const { error: conciergeMessageError } = await supabase
+              .from('messages')
+              .insert({
+                conversation_id: conversation.id,
+                sender_id: conciergeId,
+                content: conciergeMessage
+              })
+            
+            if (conciergeMessageError) {
+              console.error('Failed to send concierge message:', conciergeMessageError)
+            }
+          }
           
           // Get studio IDs before clearing basket
-          const submittedStudioIds = studiosToSubmit.map(s => s.id)
+          const submittedStudioIds = studios.map(s => s.id)
           
           // Clear the basket after successful submission
           set({ studios: [], isOpen: false })
@@ -215,7 +243,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           // Notify components that inquiries were submitted
           get()._notifyInquirySubmitted(submittedStudioIds)
           
-          toast.success(`Inquiry sent to ${studiosToSubmit.length} studio${studiosToSubmit.length > 1 ? 's' : ''}!`)
+          toast.success(`Enquiry sent to ${studios.length} studio${studios.length > 1 ? 's' : ''}! Check your messages.`)
           return true
           
         } catch (error) {

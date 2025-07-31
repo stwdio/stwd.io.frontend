@@ -124,7 +124,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           
           if (conciergeError || !conciergeId) {
             console.error('Failed to get concierge user:', conciergeError)
-            toast.error('Failed to connect with Studio Concierge')
+            toast.error('Failed to connect with Concierge')
             return false
           }
           
@@ -263,7 +263,7 @@ ${inquiryData.location_preference ? `**Location Preference:** ${inquiryData.loca
 ${inquiryData.custom_message ? `**Message:**\n${inquiryData.custom_message}` : ''}
 
 ---
-*This is an official studio enquiry facilitated by stwd.io Studio Concierge.*
+*This is an official studio enquiry facilitated by stwd.io Concierge.*
             `.trim()
             
             console.log('Attempting to send message with:', {
@@ -308,12 +308,12 @@ ${inquiryData.custom_message ? `**Message:**\n${inquiryData.custom_message}` : '
             const conciergeMessage = `
 Hello ${profile.first_name || profile.username}! 👋
 
-I'm the stwd.io Studio Concierge, and I'm here to help facilitate this enquiry with ${studio.name}.
+I'm the stwd.io Concierge, and I'm here to help facilitate this enquiry with ${studio.name}.
 
 The studio team has been notified and will respond to your enquiry soon. In the meantime, feel free to ask any questions or provide additional details about your project.
 
 Best regards,
-Studio Concierge
+Concierge
             `.trim()
             
             const { data: conciergeMessageId, error: conciergeMessageError } = await supabase

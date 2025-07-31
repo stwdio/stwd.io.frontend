@@ -71,14 +71,14 @@ export function SiteHeader({ className }: SiteHeaderProps) {
             </Button>
 
             {/* Logo or DISCOVER text based on route */}
-            {pathname?.startsWith('/discover') || pathname?.startsWith('/connect') || pathname?.startsWith('/profiles') ? (
+            {pathname?.startsWith('/discover') || pathname?.startsWith('/connect') || pathname?.startsWith('/profiles') || pathname?.startsWith('/settings') ? (
               <>
                 {/* Mobile version - show logo */}
                 <Link href="/" className="lg:hidden text-xl font-bold">
                   stwd.io
                 </Link>
                 
-                {/* Desktop version - full DISCOVER | CONNECT */}
+                {/* Desktop version - full DISCOVER | CONNECT | SETTINGS */}
                 <div className="hidden lg:flex items-center gap-4">
                   <Link 
                     href="/discover/studios" 
@@ -103,6 +103,21 @@ export function SiteHeader({ className }: SiteHeaderProps) {
                   >
                     CONNECT
                   </Link>
+                  {/* Dynamically show settings when in settings section */}
+                  {pathname?.startsWith('/settings') && (
+                    <>
+                      <span className="text-6xl font-light text-muted-foreground">|</span>
+                      <Link 
+                        href="/settings"
+                        className={cn(
+                          "text-6xl tracking-tight transition-all",
+                          "font-bold underline"
+                        )}
+                      >
+                        SETTINGS
+                      </Link>
+                    </>
+                  )}
                 </div>
               </>
             ) : (

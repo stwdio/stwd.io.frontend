@@ -198,7 +198,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         disabled={isInBasket || hasEnquiry}
       >
         <Plus className="h-4 w-4 mr-2" />
-        {hasEnquiry ? 'Enquiry Sent' : isInBasket ? 'Added' : 'Add to Basket'}
+        {hasEnquiry ? 'Already Quoted' : isInBasket ? 'Added' : 'Add to Basket'}
       </Button>
       
       <Button 

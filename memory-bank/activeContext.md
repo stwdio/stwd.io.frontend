@@ -2,7 +2,82 @@
 
 ## Current Work Session
 **Date**: February 2025
-**Focus**: Professional Network Refactor - COMPLETED ✅
+**Focus**: Chat Interface Improvements - Enquiry Chat Display
+
+### Current Work: Chat Interface Improvements (February 2025)
+- **Problem**: Enquiry chats were showing repeated studio names in the chat header (e.g., "Studio Enquiry: Grunge Garden Studios")
+- **Solution**: Updated the chat header in message-thread.tsx to display participant names instead of studio names, matching the conversation list pattern
+- **Implementation**:
+  - Modified message-thread.tsx header to show participant names (e.g., "chantal_adam, Concierge")
+  - Added special handling for Studio Concierge to display as "Concierge"
+  - Maintained "Studio Enquiry" as subtitle with "View Studio" link
+  - Unified display logic between conversation list and chat header
+
+## Recent Completions
+
+### ✅ Settings Navigation Refactor - COMPLETED (February 2025)
+- **Status**: COMPLETED
+- **Goal**: Integrate settings pages into the unified navigation system used by /discover and /connect sections
+
+#### Implementation Details:
+1. **Updated MainSectionNavigation Component**:
+   - Added dynamic SETTINGS link that appears only when in settings section
+   - Shows "DISCOVER | CONNECT | SETTINGS" when in settings
+   - Shows "DISCOVER | CONNECT" when outside settings
+   - Added sub-navigation for settings: "ACCOUNT | PROFILE | PROFESSIONAL"
+
+2. **Refactored Settings Layout**:
+   - Removed UnifiedLayout wrapper
+   - Added MainSectionNavigation component
+   - Created SettingsPageContent wrapper for mobile support
+   - Maintains consistent structure with discover/connect sections
+
+3. **Mobile Support**:
+   - Created SettingsPageContent component with mobile headers
+   - Shows "SETTINGS" title with current subsection on mobile
+   - Consistent with discover/connect mobile patterns
+
+4. **Navigation Flow**:
+   - /settings redirects to /settings/account
+   - /connect redirects to /connect/chat
+   - /discover redirects to /discover/studios
+   - All main sections have proper default routes
+
+#### Files Modified:
+- `/components/navigation/main-section-navigation.tsx` - Added settings support
+- `/app/settings/layout.tsx` - Refactored to use unified navigation
+- `/components/settings/settings-page-content.tsx` - Created for mobile support
+- `/app/connect/page.tsx` - Created redirect page
+
+#### Bug Fixes Applied:
+1. **Removed Duplicate Headers**:
+   - Removed mobile "CONNECT" header from ChatHub component
+   - Fixed duplicate navigation headers appearing in connect pages
+
+2. **Fixed SiteHeader Display**:
+   - Updated ClientLayout to hide SiteHeader on pages with their own navigation
+   - Settings, discover, connect, and profiles pages no longer show "stwd.io" header
+
+3. **Improved Settings Layout**:
+   - Removed width constraints from settings content
+   - Added proper padding and centering for settings cards
+   - Settings content now uses full available space below navigation
+
+#### Final Implementation:
+- **Main Navigation**: Always shows "DISCOVER | CONNECT" with dynamic "| SETTINGS" when in settings
+- **Sub Navigation**: Shows relevant sub-links based on current section
+- **Profile Dropdown**: Large avatar (72px) with name and role badge on desktop
+- **Hydration Fix**: Sub-navigation hidden on redirect paths to prevent mismatches
+
+#### Files Modified:
+- `/components/navigation/main-section-navigation.tsx` - Added settings support with main nav
+- `/components/navigation/user-profile-dropdown.tsx` - Created large profile dropdown component
+- `/app/settings/layout.tsx` - Refactored to use unified navigation
+- `/components/settings/settings-page-content.tsx` - Created for mobile support
+- `/app/connect/page.tsx` - Created redirect page
+- `/components/chat/chat-hub.tsx` - Removed duplicate mobile header
+- `/components/client-layout.tsx` - Hide SiteHeader on pages with navigation
+- `/app/settings/*/page.tsx` - Updated all settings pages for consistent layout
 
 ## Recent Completions
 
@@ -36,7 +111,7 @@
 - Created group chat functionality from connections page
 
 #### Phase 4: Concierge & Enquiry System ✅
-- Created Studio Concierge database functions and profile setup
+- Created Concierge database functions and profile setup
 - Refactored quote basket to create group chats instead of inquiries:
   - Each studio enquiry creates a group chat
   - Participants: creator, all studio team members, studio concierge
@@ -63,7 +138,7 @@
 - Workspace components updated for team access
 
 #### Next Steps (Manual Tasks)
-1. Create Studio Concierge auth user via Supabase Dashboard (email: concierge@stwd.io)
+1. Create Concierge auth user via Supabase Dashboard (email: concierge@stwd.io)
 2. Test all new features thoroughly
 3. Consider data migration strategy for existing inquiries
 4. Create team management UI for studios (add/remove members)

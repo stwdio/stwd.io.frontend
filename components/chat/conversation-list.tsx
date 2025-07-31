@@ -49,6 +49,10 @@ export function ConversationList({
   const [studioImages, setStudioImages] = useState<Record<string, string>>({})
   const supabase = createClient()
   
+  // Truncate function for sidebar - adjusted for names
+  const truncate = (input: string, limit: number = 50) =>
+    input?.length > limit ? `${input.substring(0, limit - 3)}...` : input
+  
   // Fetch studio images for enquiries
   useEffect(() => {
     const fetchStudioImages = async () => {
@@ -57,17 +61,25 @@ export function ConversationList({
       
       if (studioNames.length === 0) return
       
+      // Extract actual studio names from "Studio Enquiry: Name" format
+      const actualStudioNames = studioNames.map(name => 
+        name.replace('Studio Enquiry: ', '')
+      )
+      
       const { data: studios } = await supabase
         .from('studios')
         .select('name, photo_urls')
-        .in('name', studioNames)
+        .in('name', actualStudioNames)
       
       if (studios) {
         const imageMap: Record<string, string> = {}
         studios.forEach(studio => {
           if (studio.photo_urls && studio.photo_urls.length > 0) {
             // Use optimized avatar size for list view (80x80)
-            imageMap[studio.name] = getAvatarImageUrl(studio.photo_urls[0], 80) || studio.photo_urls[0]
+            const imageUrl = getAvatarImageUrl(studio.photo_urls[0], 80) || studio.photo_urls[0]
+            // Map both the studio name and the full enquiry title
+            imageMap[studio.name] = imageUrl
+            imageMap[`Studio Enquiry: ${studio.name}`] = imageUrl
           }
         })
         setStudioImages(imageMap)
@@ -173,14 +185,28 @@ export function ConversationList({
           const isEnquiry = conversation.title && conversation.title.trim() !== ''
           
           // Handle group chat display
-          const isGroupChat = conversation.is_group === true
+          const isGroupChat = conversation.is_group === true && !isEnquiry
           let displayName = 'Unknown User'
           let avatarUrl: string | undefined
           
-          if (isGroupChat) {
-            // For group chats, show participant names (limit to 2)
+          if (isEnquiry) {
+            // For enquiries, show studio name
+            const studioName = conversation.title?.replace('Studio Enquiry: ', '') || 'Studio Enquiry'
+            displayName = studioName
+            
+            // Use studio image for enquiries
+            avatarUrl = studioImages[studioName] || studioImages[conversation.title || '']
+            
+            // If no studio image yet, use a placeholder with studio initial
+            if (!avatarUrl) {
+              avatarUrl = `https://api.dicebear.com/9.x/initials/svg?seed=${studioName}&backgroundColor=0ea5e9&fontSize=50`
+            }
+          } else if (isGroupChat) {
+            // For regular group chats, show participant names (limit to 2)
             const participantNames = otherParticipants
-              .map(p => p.profiles?.first_name || p.profiles?.username || 'Unknown')
+              .map(p => {
+                return p.profiles?.first_name || p.profiles?.username || 'Unknown'
+              })
               .filter(Boolean)
             
             if (participantNames.length === 0) {
@@ -193,7 +219,6 @@ export function ConversationList({
               displayName = `${firstTwo} & ${othersCount} ${othersCount === 1 ? 'Other' : 'Others'}`
             }
             
-            // Use a group icon or first participant's avatar
             avatarUrl = otherUser?.avatar_url || (otherUser ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${conversation.id}-group&backgroundColor=ffffff&shapeColor=000000` : undefined)
           } else {
             // For 1-on-1 chats
@@ -224,8 +249,8 @@ export function ConversationList({
                 <AvatarFallback>
                   {isGroupChat ? (
                     <IconUsers className="h-5 w-5" />
-                  ) : isEnquiry && conversation.title ? (
-                    conversation.title.charAt(0)
+                  ) : isEnquiry ? (
+                    displayName.charAt(0)
                   ) : (
                     displayName.charAt(0)
                   )}
@@ -233,24 +258,66 @@ export function ConversationList({
               </Avatar>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <h3 className="font-medium truncate">
-                      {conversation.title || displayName}
-                    </h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-medium">
+                    {truncate(displayName)}
+                  </h3>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
                     {(isEnquiry || conversation.id === -1) && (
-                      <Badge variant="secondary" className="shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                         {conversation.id === -1 ? 'Draft' : 'Enquiry'}
                       </Badge>
                     )}
-                    {isGroupChat && (
-                      <Badge variant="secondary" className="shrink-0">
+                    {isGroupChat && !isEnquiry && (
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
                         Group
                       </Badge>
                     )}
                   </div>
+                </div>
+                
+                <div className="flex items-end justify-between gap-2 mt-1">
+                  <div className="flex-1 min-w-0">
+                    {lastMessage ? (
+                      <p className="text-sm text-muted-foreground">
+                        {(() => {
+                          // Find the sender's profile
+                          const sender = conversation.chat_participants.find(
+                            p => p.user_id === lastMessage.sender_id
+                          )?.profiles
+                          
+                          let senderName = 'Unknown'
+                          if (lastMessage.sender_id === currentUserId) {
+                            senderName = 'You'
+                          } else if (sender) {
+                            // Special case for Concierge
+                            if (sender.username === 'studio_concierge' || sender.first_name === 'Studio') {
+                              senderName = 'Concierge'
+                            } else {
+                              senderName = sender.first_name || sender.username || 'Unknown'
+                            }
+                          }
+                          
+                          // Truncate message with sender name considered
+                          const prefix = `${senderName}: `
+                          const availableLength = 65 - prefix.length // Increased from 50 to 65 for names
+                          const truncatedContent = truncate(lastMessage.content, availableLength)
+                          
+                          return (
+                            <>
+                              <span className="font-bold">{senderName}:</span> {truncatedContent}
+                            </>
+                          )
+                        })()}
+                      </p>
+                    ) : conversation.id === -1 ? (
+                      <p className="text-sm text-muted-foreground italic">
+                        Start typing to begin conversation...
+                      </p>
+                    ) : null}
+                  </div>
                   {lastMessage && (
-                    <span className="text-xs text-muted-foreground shrink-0 ml-1">
+                    <span className="text-xs text-muted-foreground shrink-0 ml-2">
                       {(() => {
                         const date = new Date(lastMessage.created_at)
                         const now = new Date()
@@ -270,17 +337,6 @@ export function ConversationList({
                     </span>
                   )}
                 </div>
-                
-                {lastMessage ? (
-                  <p className="text-sm text-muted-foreground truncate mt-1">
-                    {lastMessage.sender_id === currentUserId ? 'You: ' : ''}
-                    {lastMessage.content}
-                  </p>
-                ) : conversation.id === -1 ? (
-                  <p className="text-sm text-muted-foreground truncate mt-1 italic">
-                    Start typing to begin conversation...
-                  </p>
-                ) : null}
               </div>
             </button>
           )

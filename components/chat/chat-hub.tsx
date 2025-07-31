@@ -70,22 +70,10 @@ export function ChatHub({
   useEffect(() => {
     if (shouldRedirectToFirst && conversations.length > 0 && !selectedConversationId && !draftTargetUserId) {
       const firstConversation = conversations[0]
-      
-      // If it's a group chat, use conversation ID
-      if (firstConversation.is_group) {
-        router.replace(`/connect/chat?conversation=${firstConversation.id}`)
-      } else {
-        // Find the other participant for 1-on-1 chats
-        const otherParticipant = firstConversation.chat_participants?.find(
-          (p: any) => p.user_id !== userId
-        )
-        
-        if (otherParticipant?.profiles?.username) {
-          router.replace(`/connect/chat?user=${otherParticipant.profiles.username}`)
-        }
-      }
+      // Select the first conversation without changing URL
+      setSelectedConversationId(firstConversation.id)
     }
-  }, [shouldRedirectToFirst, conversations, selectedConversationId, draftTargetUserId, router, userId])
+  }, [shouldRedirectToFirst, conversations, selectedConversationId, draftTargetUserId])
   
   // Subscribe to realtime updates for conversations
   useEffect(() => {
@@ -276,31 +264,8 @@ export function ChatHub({
     setDraftTargetUserId(undefined)
     setDraftStudioId(undefined)
     
-    // Determine URL based on conversation type
-    let url = `/connect/chat?conversation=${conversationId}`
-    
-    // If it's a studio enquiry (has a title), try to get studio info
-    if (conversation.title) {
-      // Try to find studio by name
-      const { data: studio } = await supabase
-        .from('studios')
-        .select('slug')
-        .eq('name', conversation.title)
-        .single()
-      
-      if (studio?.slug) {
-        url = `/connect/chat?studio=${studio.slug}`
-      }
-    } else {
-      // It's a profile message - get the other user's username
-      const otherParticipant = conversation.chat_participants.find(
-        p => p.user_id !== userId
-      )
-      
-      if (otherParticipant?.profiles?.username) {
-        url = `/connect/chat?user=${otherParticipant.profiles.username}`
-      }
-    }
+    // Always use UUID for conversation URLs to avoid collisions
+    const url = `/connect/chat?c=${conversation.uuid}`
     
     // Update URL without full page reload
     window.history.replaceState(null, '', url)
@@ -391,20 +356,6 @@ export function ChatHub({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Mobile header */}
-      <div className="lg:hidden flex-shrink-0 bg-background">
-        <div className="w-full px-4 sm:px-6">
-          <div className="flex items-center justify-between py-4">
-            <div>
-              <h2 className="text-3xl font-bold">CONNECT</h2>
-              <h3 className="text-xl font-medium uppercase text-muted-foreground">
-                Chat
-              </h3>
-            </div>
-          </div>
-        </div>
-      </div>
-      
       {/* Chat content */}
       <div className="flex-1 overflow-hidden">
         <ConnectLayout

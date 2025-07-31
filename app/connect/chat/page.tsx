@@ -13,9 +13,9 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
   const params = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {}
   console.log('Raw search params:', params)
   const targetUsername = params?.user as string | undefined
-  const conversationId = params?.conversation as string | undefined
+  const conversationUuid = params?.c as string | undefined  // Use 'c' for conversation UUID
   const studioId = params?.studio as string | undefined
-  console.log('Chat page loaded with target username:', targetUsername, 'conversation:', conversationId, 'studio:', studioId)
+  console.log('Chat page loaded with target username:', targetUsername, 'conversation UUID:', conversationUuid, 'studio:', studioId)
   
   const supabase = await createServerComponentClient()
   
@@ -87,7 +87,7 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
             .limit(1)
           
           if (existingInquiry && existingInquiry.length > 0) {
-            // User already has an inquiry with this studio - don't create duplicate
+            // User already has an inquiry with this studio - check for existing conversation
             console.log('User already has an inquiry with this studio')
             // Try to find the conversation associated with this inquiry
             const studioEnquiryConv = existingConversations.find(conv => {
@@ -99,9 +99,15 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
             
             if (studioEnquiryConv) {
               selectedConversationId = studioEnquiryConv.conversation_id
+            } else {
+              // Old inquiry exists but no conversation - create new enquiry conversation
+              console.log('Old inquiry exists but no conversation found - creating new enquiry conversation')
+              // Continue to create conversation below
             }
-          } else {
-            // Create a new enquiry conversation
+          }
+          
+          // Create a new enquiry conversation if we don't have one yet
+          if (!selectedConversationId) {
             console.log('Creating new studio enquiry conversation')
           
           // Get concierge user ID
@@ -152,14 +158,14 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
               // Send welcome message from concierge using RPC function
               const conciergeMessage = `Hello! 👋
 
-I'm the stwd.io Studio Concierge, and I'm here to help facilitate your enquiry with ${studioData.name}.
+I'm the stwd.io Concierge, and I'm here to help facilitate your enquiry with ${studioData.name}.
 
 Feel free to ask any questions about the studio, discuss your project needs, or share any specific requirements you have.
 
 The studio team has been notified and will respond soon.
 
 Best regards,
-Studio Concierge`
+Concierge`
               
               await supabase
                 .rpc('send_message_as_concierge', {
@@ -170,9 +176,9 @@ Studio Concierge`
               selectedConversationId = newConversation.id
             }
           }
+          } // Close the if (!selectedConversationId) block
         }
       }
-    }
     }
   } else if (targetUsername) {
     const { data: targetProfile, error: profileError } = await supabase
@@ -307,13 +313,16 @@ Studio Concierge`
   console.log('Target user ID:', targetUserId)
   console.log('Is connected:', isConnected)
 
-  // If conversation ID is provided, use it
-  if (conversationId) {
-    selectedConversationId = parseInt(conversationId)
+  // If conversation UUID is provided, find the conversation
+  if (conversationUuid && conversations.length > 0) {
+    const targetConversation = conversations.find(c => c.uuid === conversationUuid)
+    if (targetConversation) {
+      selectedConversationId = targetConversation.id
+    }
   }
   
   // Don't redirect server-side - let the client handle it to show skeleton
-  const shouldRedirectToFirstConversation = !targetUsername && !conversationId && !studioId && conversations.length > 0
+  const shouldRedirectToFirstConversation = !targetUsername && !conversationUuid && !studioId && conversations.length > 0
 
   return (
     <ChatHub 

@@ -224,20 +224,26 @@ export function ConnectionsHubV2() {
 
   if (connectionsLoading) {
     return (
-      <div className="w-full">
+      <div className="h-full flex flex-col">
         {/* Search and Filter Bar Skeleton */}
-        <div className="w-full px-4 sm:px-6 py-4 border-b">
-          <div className="flex gap-3 items-center justify-end">
-            <div className="h-9 w-[280px] bg-muted animate-pulse rounded-md" />
-            <div className="h-9 w-9 bg-muted animate-pulse rounded-md" />
+        <div className="flex-shrink-0 bg-background">
+          <div className="w-full px-4 sm:px-6 py-4 border-b">
+            <div className="flex gap-3 items-center justify-end">
+              <div className="h-9 w-[280px] bg-muted animate-pulse rounded-md" />
+              <div className="h-9 w-9 bg-muted animate-pulse rounded-md" />
+            </div>
           </div>
         </div>
         
-        <div className="w-full px-4 sm:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 py-6">
-            {[...Array(10)].map((_, i) => (
-              <GenericCardSkeleton key={i} />
-            ))}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full overflow-auto">
+            <div className="w-full px-4 sm:px-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 py-6">
+                {[...Array(10)].map((_, i) => (
+                  <GenericCardSkeleton key={i} />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -246,52 +252,58 @@ export function ConnectionsHubV2() {
 
   if (!connections || connections.length === 0) {
     return (
-      <div className="w-full">
+      <div className="h-full flex flex-col">
         {/* Search and Filter Bar */}
-        <div className="w-full px-4 sm:px-6 py-4 border-b">
-          <div className="flex gap-3 items-center justify-end">
-            {/* Search bar */}
-            <div className="relative">
-              <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                type="search"
-                placeholder="Search connections..."
-                className="pl-10 w-[280px]"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        <div className="flex-shrink-0 bg-background">
+          <div className="w-full px-4 sm:px-6 py-4 border-b">
+            <div className="flex gap-3 items-center justify-end">
+              {/* Search bar */}
+              <div className="relative">
+                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  type="search"
+                  placeholder="Search connections..."
+                  className="pl-10 w-[280px]"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              {/* Filter button */}
+              <Button 
+                variant="default" 
+                size="icon"
+                onClick={() => setFilterPanelOpen(true)}
+                className="relative"
+              >
+                <IconFilter className="h-4 w-4" />
+                {activeFilters > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center"
+                  >
+                    {activeFilters}
+                  </Badge>
+                )}
+              </Button>
             </div>
-            
-            {/* Filter button */}
-            <Button 
-              variant="default" 
-              size="icon"
-              onClick={() => setFilterPanelOpen(true)}
-              className="relative"
-            >
-              <IconFilter className="h-4 w-4" />
-              {activeFilters > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center"
-                >
-                  {activeFilters}
-                </Badge>
-              )}
-            </Button>
           </div>
         </div>
         
-        <div className="w-full px-4 sm:px-6 py-6">
-          <div className="text-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No connections yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start building your professional network by connecting with other users
-            </p>
-            <Button onClick={() => window.location.href = '/discover/people'}>
-              Discover People
-            </Button>
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full overflow-auto">
+            <div className="w-full px-4 sm:px-6 py-6">
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No connections yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Start building your professional network by connecting with other users
+                </p>
+                <Button onClick={() => window.location.href = '/discover/people'}>
+                  Discover People
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -309,10 +321,11 @@ export function ConnectionsHubV2() {
   }
 
   return (
-    <div className="w-full">
+    <div className="h-full flex flex-col">
       {/* Search and Filter Bar */}
-      <div className="w-full px-4 sm:px-6 py-4 border-b">
-        <div className="flex gap-3 items-center justify-end">
+      <div className="flex-shrink-0 bg-background">
+        <div className="w-full px-4 sm:px-6 py-4 border-b">
+          <div className="flex gap-3 items-center justify-end">
           {/* Search bar */}
           <div className="relative">
             <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -344,9 +357,13 @@ export function ConnectionsHubV2() {
           </Button>
         </div>
       </div>
+      </div>
 
-      <div className="w-full px-4 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 py-6">
+      {/* Main content area */}
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full overflow-auto">
+          <div className="w-full px-4 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 py-6">
           {filterType === 'received' && pendingRequests ? (
             // Show received pending requests
             pendingRequests.map((request) => (
@@ -433,6 +450,8 @@ export function ConnectionsHubV2() {
               )
             })
           ) : null}
+            </div>
+          </div>
         </div>
       </div>
       
@@ -442,7 +461,8 @@ export function ConnectionsHubV2() {
         onOpenChange={setFilterPanelOpen}
         filterType={filterType}
         onFilterTypeChange={setFilterType}
-        pendingCount={pendingRequests?.length || 0}
+        receivedCount={pendingRequests?.length || 0}
+        sentCount={sentRequests?.length || 0}
       />
     </div>
   )

@@ -16,7 +16,7 @@ import {
   IconMessage,
   IconSettings,
   IconUsers,
-  IconQuote,
+  IconPlugConnected,
   IconBuildingStore,
   IconUserCircle
 } from '@tabler/icons-react'
@@ -71,7 +71,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
       section: 'Connect',
       items: [
         { href: '/connect/chat', label: 'Messages', icon: IconMessage },
-        { href: '/connect/quotes', label: 'Quotes', icon: IconQuote },
+        { href: '/connect/connections', label: 'Connections', icon: IconPlugConnected },
         { href: `/profiles/${profile?.username}`, label: 'My Profile', icon: IconUserCircle },
       ]
     }] : [])

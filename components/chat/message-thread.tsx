@@ -335,11 +335,17 @@ export function MessageThread({
           {messages.map((msg) => {
             const isCurrentUser = msg.sender_id === currentUserId
             const sender = participantMap.get(msg.sender_id)
-            const displayName = sender 
-              ? (sender.first_name && sender.last_name 
-                  ? `${sender.first_name} ${sender.last_name}`.trim()
-                  : sender.username || 'Unknown')
-              : 'Unknown'
+            let displayName = 'Unknown'
+            if (sender) {
+              // Special handling for Studio Concierge
+              if (sender.username === 'studio_concierge' || sender.first_name === 'Studio') {
+                displayName = 'Concierge'
+              } else if (sender.first_name && sender.last_name) {
+                displayName = `${sender.first_name} ${sender.last_name}`.trim()
+              } else {
+                displayName = sender.username || 'Unknown'
+              }
+            }
             const avatarUrl = sender?.avatar_url || 
               (sender ? `https://api.dicebear.com/9.x/thumbs/svg?seed=${sender.user_id}&backgroundColor=ffffff&shapeColor=000000` : undefined)
             
@@ -360,6 +366,24 @@ export function MessageThread({
                   "flex flex-col gap-1 max-w-[70%]",
                   isCurrentUser && "items-end"
                 )}>
+                  {/* Sender name */}
+                  <div className={cn(
+                    "text-sm font-bold",
+                    isCurrentUser && "text-right"
+                  )}>
+                    {sender?.username ? (
+                      <Link 
+                        href={`/profiles/${sender.username}`} 
+                        className="hover:underline"
+                      >
+                        {displayName}
+                      </Link>
+                    ) : (
+                      <span>{displayName}</span>
+                    )}
+                  </div>
+                  
+                  {/* Message bubble */}
                   <div className={cn(
                     "px-4 py-2 rounded-lg",
                     isCurrentUser
@@ -368,7 +392,12 @@ export function MessageThread({
                   )}>
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  
+                  {/* Timestamp */}
+                  <span className={cn(
+                    "text-xs text-muted-foreground",
+                    isCurrentUser && "text-right"
+                  )}>
                     {format(new Date(msg.created_at), 'p')}
                   </span>
                 </div>

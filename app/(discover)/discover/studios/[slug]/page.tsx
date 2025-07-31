@@ -3,6 +3,8 @@ import { createServerComponentClient } from '@/lib/supabase/server'
 import { StudioDetailContent } from '@/components/studio-detail-content'
 import { Metadata } from 'next'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
+import { Suspense } from 'react'
+import { StudioDetailSkeleton } from '@/components/studio-detail-skeleton'
 
 interface StudioPageProps {
   params: Promise<{
@@ -38,8 +40,7 @@ export async function generateMetadata({ params }: StudioPageProps): Promise<Met
   }
 }
 
-export default async function StudioPage({ params }: StudioPageProps) {
-  const { slug } = await params
+async function StudioPageContent({ slug }: { slug: string }) {
   const supabase = await createServerComponentClient()
   
   // Get current user
@@ -126,5 +127,15 @@ export default async function StudioPage({ params }: StudioPageProps) {
       ownerProfile={ownerProfile}
       currentUserProfile={profile}
     />
+  )
+}
+
+export default async function StudioPage({ params }: StudioPageProps) {
+  const { slug } = await params
+  
+  return (
+    <Suspense fallback={<StudioDetailSkeleton />}>
+      <StudioPageContent slug={slug} />
+    </Suspense>
   )
 }

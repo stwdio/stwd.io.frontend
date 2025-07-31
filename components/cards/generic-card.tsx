@@ -62,6 +62,10 @@ export interface GenericCardProps {
     variant: 'default' | 'secondary' | 'outline' | 'destructive'
   } | null
   
+  // Loading states
+  isActionsLoading?: boolean
+  isFollowersLoading?: boolean
+  
   // Additional content
   additionalContent?: ReactNode
   notes?: string
@@ -89,6 +93,8 @@ export function GenericCard({
   secondaryAction,
   customActions,
   statusBadge,
+  isActionsLoading = false,
+  isFollowersLoading = false,
   additionalContent,
   notes,
   className = '',
@@ -224,7 +230,16 @@ export function GenericCard({
 
         {/* Followed by section */}
         <div className="flex items-center gap-2 mb-3 min-h-[32px]">
-          {followedBy.length > 0 && (
+          {isFollowersLoading ? (
+            <>
+              <span className="text-sm text-muted-foreground">Followed by</span>
+              <div className="flex -space-x-2">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-6 w-6 rounded-full bg-muted animate-pulse border-2 border-background" />
+                ))}
+              </div>
+            </>
+          ) : followedBy.length > 0 ? (
             <>
               <span className="text-sm text-muted-foreground">Followed by</span>
               <div className="flex -space-x-2">
@@ -246,43 +261,48 @@ export function GenericCard({
                 )}
               </div>
             </>
-          )}
+          ) : null}
         </div>
 
         {/* Action buttons */}
-        {(primaryAction || secondaryAction || customActions) && (
-          <div className="mt-auto flex gap-3">
-            {customActions || (
-              <>
-                {primaryAction && (
-                  <Button 
-                    variant="outline" 
-                    size="default" 
-                    className={`flex-1 ${primaryAction.className || ''}`}
-                    onClick={primaryAction.onClick}
-                    disabled={primaryAction.disabled}
-                    title={primaryAction.title}
-                  >
-                    {primaryAction.icon}
-                    {primaryAction.label}
-                  </Button>
-                )}
-                {secondaryAction && (
-                  <Button 
-                    variant={secondaryAction.variant || "outline"} 
-                    size="default"
-                    onClick={secondaryAction.onClick}
-                    className={`flex-1 ${secondaryAction.className || ''}`}
-                    disabled={secondaryAction.disabled}
-                  >
-                    {secondaryAction.icon}
-                    {secondaryAction.label}
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        <div className="mt-auto flex gap-3">
+          {isActionsLoading ? (
+            <>
+              <div className="h-9 bg-muted animate-pulse rounded-md flex-1" />
+              <div className="h-9 bg-muted animate-pulse rounded-md flex-1" />
+            </>
+          ) : customActions ? (
+            customActions
+          ) : (
+            <>
+              {primaryAction && (
+                <Button 
+                  variant="outline" 
+                  size="default" 
+                  className={`flex-1 ${primaryAction.className || ''}`}
+                  onClick={primaryAction.onClick}
+                  disabled={primaryAction.disabled}
+                  title={primaryAction.title}
+                >
+                  {primaryAction.icon}
+                  {primaryAction.label}
+                </Button>
+              )}
+              {secondaryAction && (
+                <Button 
+                  variant={secondaryAction.variant || "outline"} 
+                  size="default"
+                  onClick={secondaryAction.onClick}
+                  className={`flex-1 ${secondaryAction.className || ''}`}
+                  disabled={secondaryAction.disabled}
+                >
+                  {secondaryAction.icon}
+                  {secondaryAction.label}
+                </Button>
+              )}
+            </>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

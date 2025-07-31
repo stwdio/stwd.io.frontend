@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { ConnectLayout } from '@/components/connect/connect-layout'
 import { ConversationList } from './conversation-list'
 import { MessageThread } from './message-thread'
@@ -31,6 +32,7 @@ interface ChatHubProps {
   targetUserId?: string
   studioId?: string
   studioInfo?: { id: number; name: string; slug: string }
+  shouldRedirectToFirst?: boolean
 }
 
 export function ChatHub({ 
@@ -39,7 +41,8 @@ export function ChatHub({
   initialConversations,
   initialSelectedConversationId,
   targetUserId,
-  studioId
+  studioId,
+  shouldRedirectToFirst
 }: ChatHubProps) {
   console.log('ChatHub props:', {
     userId,
@@ -61,6 +64,28 @@ export function ChatHub({
     studioId && !initialSelectedConversationId ? studioId : undefined
   )
   const supabase = createClient()
+  const router = useRouter()
+  
+  // Handle client-side redirect to first conversation
+  useEffect(() => {
+    if (shouldRedirectToFirst && conversations.length > 0 && !selectedConversationId && !draftTargetUserId) {
+      const firstConversation = conversations[0]
+      
+      // If it's a group chat, use conversation ID
+      if (firstConversation.is_group) {
+        router.replace(`/connect/chat?conversation=${firstConversation.id}`)
+      } else {
+        // Find the other participant for 1-on-1 chats
+        const otherParticipant = firstConversation.chat_participants?.find(
+          (p: any) => p.user_id !== userId
+        )
+        
+        if (otherParticipant?.profiles?.username) {
+          router.replace(`/connect/chat?user=${otherParticipant.profiles.username}`)
+        }
+      }
+    }
+  }, [shouldRedirectToFirst, conversations, selectedConversationId, draftTargetUserId, router, userId])
   
   // Subscribe to realtime updates for conversations
   useEffect(() => {
@@ -209,7 +234,7 @@ export function ChatHub({
       supabase
         .from('studios')
         .select('*')
-        .eq('id', parseInt(draftStudioId))
+        .eq('slug', draftStudioId)
         .single()
         .then(({ data }) => {
           if (data) setDraftStudio(data)
@@ -352,7 +377,7 @@ export function ChatHub({
       currentUserId={userId}
       currentProfile={profile}
     />
-  ) : draftTargetUserId ? (
+  ) : draftTargetUserId || draftStudioId ? (
     <DraftMessageThread
       currentUserId={userId}
       currentProfile={profile}

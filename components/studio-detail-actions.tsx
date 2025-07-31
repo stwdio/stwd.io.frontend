@@ -10,6 +10,7 @@ import { useAuthModal } from '@/lib/hooks/use-auth-modal'
 import { useStudioInteractionStatus } from '@/lib/hooks/queries/studio-interactions'
 import { useFollowStudio, useUnfollowStudio } from '@/lib/hooks/mutations/social'
 import { useIsFollowingStudio } from '@/lib/hooks/queries/social'
+import { toast } from 'sonner'
 
 interface Profile {
   id: number
@@ -42,6 +43,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   const { data: interactionStatus } = useStudioInteractionStatus(studio.id, userId)
   const hasInquiry = interactionStatus?.hasInquiry || false
   const hasConversation = interactionStatus?.hasConversation || false
+  const hasEnquiry = interactionStatus?.hasEnquiry || false
   const conversationId = interactionStatus?.conversationId
 
   const isInBasket = isStudioInBasket(studio.id)
@@ -55,7 +57,9 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
     if (conversationId) {
       router.push(`/connect/chat?conversation=${conversationId}`)
     } else {
-      router.push('/discover/studios')
+      // If we don't have a conversation ID, something went wrong
+      // Navigate to chat with studio context to create a new one
+      router.push(`/connect/chat?studio=${studio.slug || studio.id}`)
     }
   }
   
@@ -131,11 +135,11 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
           className="flex-1"
           size="lg"
           onClick={() => {
-            authModal.open("Sign in to get quotes", "Create an account to request quotes from multiple studios at once.")
+            authModal.open("Sign in to add studios", "Create an account to add studios to your basket and send enquiries.")
           }}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Quote
+          Add to Basket
         </Button>
         <Button 
           variant="outline"
@@ -187,17 +191,14 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         className="flex-1"
         size="lg"
         onClick={async () => {
-          if (hasInquiry) {
-            // Navigate to quotes page with studio filter
-            router.push(`/connect/quotes?studio=${studio.slug || studio.id}`)
-          } else {
+          if (!isInBasket && !hasEnquiry) {
             await addStudio(studio)
           }
         }}
-        disabled={isInBasket && !hasInquiry}
+        disabled={isInBasket || hasEnquiry}
       >
-        {hasInquiry ? <Eye className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-        {hasInquiry ? 'View Quote' : isInBasket ? 'In Basket' : 'Quote'}
+        <Plus className="h-4 w-4 mr-2" />
+        {hasEnquiry ? 'Enquiry Sent' : isInBasket ? 'Added' : 'Add to Basket'}
       </Button>
       
       <Button 

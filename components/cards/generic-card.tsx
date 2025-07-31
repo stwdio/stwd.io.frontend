@@ -25,8 +25,6 @@ export interface GenericCardProps {
   rating?: number
   reviewCount?: number
   
-  // Price data
-  priceTier?: string
   
   // Tags/badges
   tags?: string[]
@@ -45,6 +43,8 @@ export interface GenericCardProps {
     icon?: ReactNode
     onClick: (e: React.MouseEvent) => void
     className?: string
+    disabled?: boolean
+    title?: string
   }
   secondaryAction?: {
     label: string
@@ -76,7 +76,6 @@ export function GenericCard({
   location,
   rating,
   reviewCount,
-  priceTier,
   tags = [],
   maxTags = 4,
   followedBy = [],
@@ -146,9 +145,6 @@ export function GenericCard({
                 <p className="text-sm text-muted-foreground">{subtitle}</p>
               )}
             </div>
-          </div>
-          <div className="h-[1.75rem]"> {/* Fixed height for price */}
-            <div className="text-lg text-muted-foreground">{priceTier || ''}</div>
           </div>
         </div>
         
@@ -252,6 +248,8 @@ export function GenericCard({
                     size="default" 
                     className={`flex-1 ${primaryAction.className || ''}`}
                     onClick={primaryAction.onClick}
+                    disabled={primaryAction.disabled}
+                    title={primaryAction.title}
                   >
                     {primaryAction.icon}
                     {primaryAction.label}

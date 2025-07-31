@@ -5,7 +5,6 @@ import { StudioListMembershipIndicators } from '@/components/studio-list-members
 import { StudioCardActions } from '@/components/studio-card-actions'
 import { ReactNode } from 'react'
 import { getStudioPrimaryImageUrl } from '@/lib/utils'
-import { getPriceTierSymbol } from '@/lib/constants/currencies'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
@@ -162,7 +161,7 @@ export function StudioCard({
       location={studio.location}
       rating={studio.average_rating}
       reviewCount={studio.review_count}
-      priceTier={studio.price_tier ? getPriceTierSymbol(studio.price_tier) : '$'}
+      // Price tier removed for healthier discovery experience
       tags={amenityTags}
       followedBy={followers}
       notes={showNotes ? studio.notes : undefined}

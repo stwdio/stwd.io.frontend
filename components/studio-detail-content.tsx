@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { StudioImage } from "@/components/studio-image-placeholder"
 import { StudioDetailActions } from "@/components/studio-detail-actions"
 import { imagePresets } from "@/lib/utils/image-transformations"
-import { getPriceTierSymbol } from "@/lib/constants/currencies"
+// Price tier imports removed for healthier discovery experience
 import { BackButton } from "@/components/back-button"
 import { cn } from "@/lib/utils"
 import { FollowersList } from "@/components/social/followers-list"
@@ -136,11 +136,8 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
           <div className="p-8 space-y-8">
             {/* Studio Header */}
             <div className="space-y-4">
-              <div className="flex items-start justify-between">
+              <div>
                 <h1 className="text-4xl font-bold tracking-tight">{studio.name}</h1>
-                <span className="text-3xl font-light text-muted-foreground">
-                  {getPriceTierSymbol(studio.price_tier || 1)}
-                </span>
               </div>
               <div className="flex items-center gap-6 text-muted-foreground">
                 <div className="flex items-center gap-2">

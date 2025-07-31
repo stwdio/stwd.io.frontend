@@ -29,7 +29,6 @@ interface FollowersListProps {
 export function FollowersList({ userId, studioId, limit = 20 }: FollowersListProps) {
   const [followers, setFollowers] = useState<Follower[]>([])
   const [loading, setLoading] = useState(true)
-  const [totalCount, setTotalCount] = useState(0)
   const supabase = createClient()
 
   useEffect(() => {
@@ -81,10 +80,8 @@ export function FollowersList({ userId, studioId, limit = 20 }: FollowersListPro
             
             setFollowers(followersWithProfiles)
           }
-          setTotalCount(count || 0)
         } else {
           setFollowers([])
-          setTotalCount(0)
         }
       } catch (error) {
         console.error('Error:', error)
@@ -146,9 +143,6 @@ export function FollowersList({ userId, studioId, limit = 20 }: FollowersListPro
             <Users className="h-5 w-5" />
             Followers
           </div>
-          <span className="text-sm font-normal text-muted-foreground">
-            {totalCount} {totalCount === 1 ? 'follower' : 'followers'}
-          </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -181,9 +175,9 @@ export function FollowersList({ userId, studioId, limit = 20 }: FollowersListPro
                 </div>
               </Link>
             ))}
-            {totalCount > limit && (
+            {followers.length >= limit && (
               <Button variant="ghost" className="w-full" size="sm">
-                View all {totalCount} followers
+                View all
               </Button>
             )}
           </div>

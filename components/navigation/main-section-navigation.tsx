@@ -9,13 +9,14 @@ export function MainSectionNavigation() {
   
   // Determine which main section we're in
   const isDiscoverSection = pathname?.startsWith('/discover') || pathname?.startsWith('/profiles')
-  const isConnectSection = pathname?.startsWith('/connect') || pathname?.startsWith('/chat')
+  const isConnectSection = pathname?.startsWith('/connect')
   
   // Determine active sub-navigation states
   const isStudiosActive = pathname?.startsWith('/discover/studios') || pathname === '/discover'
   const isPeopleActive = pathname?.startsWith('/discover/people') || pathname?.startsWith('/profiles')
-  const isChatActive = pathname?.startsWith('/connect/chat') || pathname?.startsWith('/chat')
+  const isChatActive = pathname?.startsWith('/connect/chat')
   const isQuotesActive = pathname?.startsWith('/connect/quotes')
+  const isConnectionsActive = pathname?.startsWith('/connect/connections')
   
   return (
     <div className="hidden lg:block flex-shrink-0 bg-background">
@@ -64,15 +65,15 @@ export function MainSectionNavigation() {
             </Link>
             <span className="text-4xl text-muted-foreground font-light">|</span>
             <Link
-              href="/connect/quotes"
+              href="/connect/connections"
               className={cn(
                 "transition-all",
-                isQuotesActive 
+                isConnectionsActive 
                   ? "font-bold underline" 
                   : "font-light text-muted-foreground hover:text-foreground"
               )}
             >
-              QUOTES
+              CONNECTIONS
             </Link>
           </div>
         )}

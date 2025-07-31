@@ -42,7 +42,6 @@ interface FollowingListProps {
 export function FollowingList({ userId, limit = 20 }: FollowingListProps) {
   const [following, setFollowing] = useState<Following[]>([])
   const [loading, setLoading] = useState(true)
-  const [totalCount, setTotalCount] = useState(0)
   const [filter, setFilter] = useState<'all' | 'users' | 'studios'>('all')
   const supabase = createClient()
 
@@ -121,7 +120,6 @@ export function FollowingList({ userId, limit = 20 }: FollowingListProps) {
         )
         
         setFollowing(allFollowing.slice(0, limit))
-        setTotalCount(allFollowing.length)
       } catch (error) {
         console.error('Error:', error)
       } finally {
@@ -198,9 +196,6 @@ export function FollowingList({ userId, limit = 20 }: FollowingListProps) {
             <UserPlus className="h-5 w-5" />
             Following
           </div>
-          <span className="text-sm font-normal text-muted-foreground">
-            {totalCount} {totalCount === 1 ? 'follow' : 'follows'}
-          </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -300,9 +295,9 @@ export function FollowingList({ userId, limit = 20 }: FollowingListProps) {
                 )
               }
             })}
-            {totalCount > limit && (
+            {following.length >= limit && (
               <Button variant="ghost" className="w-full" size="sm">
-                View all {totalCount} follows
+                View all
               </Button>
             )}
           </div>

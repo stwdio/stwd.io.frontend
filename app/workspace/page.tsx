@@ -31,8 +31,20 @@ export default async function WorkspacePage() {
     .eq('user_id', user.id)
     .single()
   
-  // Only owners and admins can access workspace
-  if (!profile || !['owner', 'admin'].includes(profile.system_role || '')) {
+  // Check if user is an owner, admin, or studio team member
+  const isOwnerOrAdmin = profile && ['owner', 'admin'].includes(profile.system_role || '')
+  
+  // Check if user is a studio team member
+  const { data: studioMemberships } = await supabase
+    .from('studio_members')
+    .select('studio_id')
+    .eq('user_id', user.id)
+    .limit(1)
+  
+  const isStudioMember = studioMemberships && studioMemberships.length > 0
+  
+  // Only owners, admins, and studio team members can access workspace
+  if (!profile || (!isOwnerOrAdmin && !isStudioMember)) {
     redirect('/chat')
   }
   

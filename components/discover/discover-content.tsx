@@ -207,7 +207,7 @@ export function DiscoverContent() {
                 
                 <span className="text-muted-foreground mx-3">|</span>
                 <a
-                  href="/chat"
+                  href="/connect/chat"
                   className="font-medium text-muted-foreground hover:text-foreground transition-all"
                 >
                   CHAT

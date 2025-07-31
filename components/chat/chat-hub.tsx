@@ -13,7 +13,7 @@ type Profile = Database['public']['Tables']['profiles']['Row']
 type Conversation = Database['public']['Tables']['chat_conversations']['Row'] & {
   chat_participants: Array<{
     user_id: string
-    profiles: Profile
+    profiles?: Profile | null
   }>
   chat_messages: Array<{
     id: number
@@ -41,6 +41,14 @@ export function ChatHub({
   targetUserId,
   studioId
 }: ChatHubProps) {
+  console.log('ChatHub props:', {
+    userId,
+    profileUsername: profile.username,
+    initialConversationsCount: initialConversations.length,
+    initialSelectedConversationId,
+    targetUserId,
+    studioId
+  })
   const [conversations, setConversations] = useState(initialConversations)
   // Auto-select the first conversation if none selected, unless we have a target user
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(
@@ -326,7 +334,7 @@ export function ChatHub({
   const sidebar = (
     <ConversationList
       conversations={displayConversations}
-      selectedId={mockDraftConversation ? -1 : selectedConversationId}
+      selectedId={draftTargetUserId && !selectedConversationId ? -1 : selectedConversationId}
       onSelect={(id) => {
         if (id === -1) {
           // It's the draft conversation, do nothing as it's already selected

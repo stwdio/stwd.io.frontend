@@ -4,12 +4,28 @@ import { createClient } from "@/lib/supabase/client"
 import { Auth } from "@supabase/auth-ui-react"
 import { ThemeSupa } from "@supabase/auth-ui-shared"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
   const supabase = createClient()
+  const router = useRouter()
   const [redirectTo, setRedirectTo] = useState<string>("/auth/callback")
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
+    // Check if user is already authenticated
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        // User is already logged in, redirect to discover
+        router.push('/discover/studios')
+        return
+      }
+      setIsCheckingAuth(false)
+    }
+    
+    checkAuth()
+
     // Check if there's a redirect path stored
     const storedRedirect = localStorage.getItem('redirectAfterAuth')
     if (storedRedirect) {
@@ -21,6 +37,15 @@ export default function LoginPage() {
       setRedirectTo(`${window.location.origin}/auth/callback`)
     }
   }, [])
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 sm:px-6 lg:px-8">

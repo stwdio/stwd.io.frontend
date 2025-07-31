@@ -29,7 +29,6 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
   const [lastName, setLastName] = useState(profile.last_name || '')
   const [username, setUsername] = useState(profile.username || '')
   const [bio, setBio] = useState(profile.bio || '')
-  const [location, setLocation] = useState(profile.location || '')
   const [website, setWebsite] = useState(profile.website || '')
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url)
   
@@ -129,8 +128,8 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
           last_name: lastName.trim() || null,
           username: username.trim().toLowerCase(),
           bio: bio.trim() || null,
-          location: location.trim() || null,
           website: website.trim() || null,
+          avatar_url: avatarUrl,
         })
         .eq('id', profile.id)
 
@@ -253,17 +252,6 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
         <p className="text-sm text-muted-foreground">
           Brief description for your profile. Max 500 characters.
         </p>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
-        <Input
-          id="location"
-          type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="City, Country"
-        />
       </div>
 
       <div className="space-y-2">

@@ -275,7 +275,7 @@ export function StudioCardActions({
         disabled={isInBasket || hasEnquiry}
       >
         <Plus className="h-4 w-4 mr-1" />
-        {hasEnquiry ? 'Enquiry Sent' : isInBasket ? 'Added' : 'Add'}
+        {hasEnquiry ? 'Already Quoted' : isInBasket ? 'Added' : 'Add'}
       </Button>
     </div>
   )

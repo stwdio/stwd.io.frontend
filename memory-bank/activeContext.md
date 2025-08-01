@@ -5,13 +5,25 @@
 **Focus**: Chat Interface Improvements - Enquiry Chat Display
 
 ### Current Work: Chat Interface Improvements (February 2025)
-- **Problem**: Enquiry chats were showing repeated studio names in the chat header (e.g., "Studio Enquiry: Grunge Garden Studios")
-- **Solution**: Updated the chat header in message-thread.tsx to display participant names instead of studio names, matching the conversation list pattern
-- **Implementation**:
-  - Modified message-thread.tsx header to show participant names (e.g., "chantal_adam, Concierge")
-  - Added special handling for Studio Concierge to display as "Concierge"
-  - Maintained "Studio Enquiry" as subtitle with "View Studio" link
-  - Unified display logic between conversation list and chat header
+
+#### Chat Display Updates:
+- **Enquiry Chat Headers**: Reverted to show studio names with studio images
+  - Shows "Grunge Garden Studios" with studio logo instead of participant names
+  - Fixed studio image loading by extracting studio name from "Studio Enquiry: X" format
+  - Added studio's main image (first in photo_urls) as avatar
+
+#### Message Display Enhancements:
+- **Sender Names**: Added bold sender names above each message
+- **Profile Links**: Made sender names clickable to navigate to profiles
+- **Special Users**: Studio Concierge displays as "Concierge"
+
+#### Mobile UX Fixes:
+- **No Auto-Select on Mobile**: Desktop auto-selects first chat, mobile shows conversation list
+- **Mobile Detection**: Added responsive behavior using 768px (md) breakpoint
+- **Back Button**: Integrated into message thread header on mobile (removed duplicate header)
+- **Sticky Headers**: Made chat header sticky with z-index to stay visible during scroll
+- **Improved Scrolling**: Fixed ScrollArea overflow and ensured proper message scrolling
+- **Auto-Scroll**: Added initial scroll to bottom and maintained smooth scroll on new messages
 
 ## Recent Completions
 

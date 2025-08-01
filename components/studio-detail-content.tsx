@@ -86,21 +86,23 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
         </div>
       </div>
 
-      {/* Main Content Area - Two Column Grid */}
-      <div className="flex-1 grid grid-cols-[45%_55%] overflow-hidden">
-        {/* Left Column - Full Height Image Carousel */}
-        <StudioImageCarousel 
-          images={allImages}
-          studioName={studio.name}
-        />
+      {/* Main Content Area - Responsive Grid */}
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[45%_55%] overflow-hidden">
+        {/* Left Column - Fixed height on mobile, full height on desktop */}
+        <div className="h-80 flex-shrink-0 lg:h-full">
+          <StudioImageCarousel 
+            images={allImages}
+            studioName={studio.name}
+          />
+        </div>
 
         {/* Right Column - Scrollable Content */}
-        <div className="h-full overflow-y-auto">
-          <div className="p-8 space-y-8">
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
             {/* Studio Header */}
             <div className="space-y-4">
               <div>
-                <h1 className="text-4xl font-bold tracking-tight">{studio.name}</h1>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">{studio.name}</h1>
               </div>
               <div className="flex items-center gap-6 text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -122,7 +124,7 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 w-full">
+            <div className="w-full">
               <StudioDetailActions studio={studio} />
             </div>
 
@@ -131,7 +133,7 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
             {studio.gear && Object.keys(studio.gear).length > 0 && (
               <Collapsible open={gearOpen} onOpenChange={setGearOpen}>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
                         <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -141,7 +143,7 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
                       </Button>
                     </CollapsibleTrigger>
                     {gearOpen && (
-                      <div className="relative w-64">
+                      <div className="relative w-full max-w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           type="text"
@@ -192,10 +194,10 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
 
             {/* Reviews Section with Search */}
             <div className="space-y-4 pb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
                 <h3 className="text-lg font-semibold">Reviews</h3>
                 {reviews.length > 0 && (
-                  <div className="relative w-64">
+                  <div className="relative w-full max-w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="text"

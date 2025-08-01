@@ -239,10 +239,10 @@ export function ProfileContent({ profile }: ProfileContentProps) {
         </div>
       </div>
 
-      {/* Main Content Area - Two Column Grid */}
-      <div className="flex-1 grid grid-cols-[40%_60%] overflow-hidden">
-        {/* Left Column - Full Height Avatar Display */}
-        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden h-full flex items-center justify-center">
+      {/* Main Content Area - Responsive Grid */}
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[40%_60%] overflow-hidden">
+        {/* Left Column - Fixed height on mobile, full height on desktop */}
+        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden h-80 flex-shrink-0 lg:h-full flex items-center justify-center">
           <div className="relative w-full max-w-md aspect-square p-8">
             <div className="w-full h-full rounded-full bg-white dark:bg-gray-950 shadow-2xl flex items-center justify-center overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -256,12 +256,12 @@ export function ProfileContent({ profile }: ProfileContentProps) {
         </div>
 
         {/* Right Column - Scrollable Content */}
-        <div className="h-full overflow-y-auto">
-          <div className="p-8 space-y-8">
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
             {/* Profile Header */}
             <div className="space-y-4">
             <div className="flex items-start justify-between">
-              <h1 className="text-4xl font-bold tracking-tight">{getDisplayName()}</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">{getDisplayName()}</h1>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <span className="text-lg">@{profile.username}</span>
@@ -317,11 +317,11 @@ export function ProfileContent({ profile }: ProfileContentProps) {
 
           {/* Action Buttons */}
           {!isCurrentUser && (
-            <div className="flex gap-3 w-full">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
               {connectionStatus?.status === 'accepted' ? (
                 <Button 
                   onClick={handleMessage} 
-                  className="flex-1" 
+                  className="sm:flex-1" 
                   size="lg"
                 >
                   <MessageSquare className="h-5 w-5 mr-2" />
@@ -329,7 +329,7 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                 </Button>
               ) : connectionStatus?.status === 'pending' && connectionStatus.isSender ? (
                 <Button 
-                  className="flex-1" 
+                  className="sm:flex-1" 
                   size="lg"
                   variant="secondary"
                   disabled
@@ -340,7 +340,7 @@ export function ProfileContent({ profile }: ProfileContentProps) {
               ) : (
                 <Button 
                   onClick={handleConnection} 
-                  className="flex-1" 
+                  className="sm:flex-1" 
                   size="lg"
                   disabled={isSendingRequest}
                 >
@@ -373,7 +373,7 @@ export function ProfileContent({ profile }: ProfileContentProps) {
           {skills.length > 0 && (
             <Collapsible open={skillsOpen} onOpenChange={setSkillsOpen}>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
                       <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -383,7 +383,7 @@ export function ProfileContent({ profile }: ProfileContentProps) {
                     </Button>
                   </CollapsibleTrigger>
                   {skillsOpen && skills.length > 5 && (
-                    <div className="relative w-64">
+                    <div className="relative w-full max-w-64">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="text"

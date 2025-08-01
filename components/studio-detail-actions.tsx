@@ -109,9 +109,9 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
 
   if (loading) {
     return (
-      <div className="flex gap-3">
-        <div className="h-12 bg-muted animate-pulse rounded-md flex-1"></div>
-        <div className="h-12 bg-muted animate-pulse rounded-md flex-1"></div>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="h-12 bg-muted animate-pulse rounded-md sm:flex-1"></div>
+        <div className="h-12 bg-muted animate-pulse rounded-md sm:flex-1"></div>
       </div>
     )
   }
@@ -119,9 +119,9 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   // If user is not logged in
   if (!profile) {
     return (
-      <>
+      <div className="flex flex-col sm:flex-row gap-3">
         <Button 
-          className="flex-1" 
+          className="sm:flex-1" 
           size="lg"
           variant="outline"
           onClick={() => {
@@ -132,7 +132,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
           Enquire
         </Button>
         <Button 
-          className="flex-1"
+          className="sm:flex-1"
           size="lg"
           onClick={() => {
             authModal.open("Sign in to add studios", "Create an account to add studios to your basket and send enquiries.")
@@ -145,11 +145,12 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
           variant="outline"
           size="lg"
           onClick={handleFollow}
+          className="sm:flex-initial"
         >
           <UserPlus className="h-4 w-4 mr-2" />
           Follow
         </Button>
-      </>
+      </div>
     )
   }
 
@@ -169,9 +170,9 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
 
   // For creators - show Enquire, Quote and Follow buttons
   return (
-    <>
+    <div className="flex flex-col sm:flex-row gap-3">
       <Button 
-        className="flex-1" 
+        className="sm:flex-1" 
         size="lg"
         variant="outline"
         onClick={() => {
@@ -188,7 +189,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
       </Button>
       
       <Button 
-        className="flex-1"
+        className="sm:flex-1"
         size="lg"
         onClick={async () => {
           if (!isInBasket && !hasEnquiry) {
@@ -206,6 +207,7 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         size="lg"
         onClick={handleFollow}
         disabled={isFollowingPending || isUnfollowingPending}
+        className="sm:flex-initial"
       >
         {isFollowing ? (
           <>
@@ -219,6 +221,6 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
           </>
         )}
       </Button>
-    </>
+    </div>
   )
 }

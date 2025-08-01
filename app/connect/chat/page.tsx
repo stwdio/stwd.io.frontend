@@ -59,15 +59,15 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
             is_group
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
       
       if (existingConversations) {
         // Look for an enquiry conversation with this studio
         const enquiryConversation = existingConversations.find(conv => {
-          const c = conv.chat_conversations
-          return c.is_group && 
-            c.title?.toLowerCase().includes('studio enquiry:') && 
-            c.title?.toLowerCase().includes(studioData.name.toLowerCase())
+          const c = conv.chat_conversations as any
+          return c?.is_group && 
+            c?.title?.toLowerCase().includes('studio enquiry:') && 
+            c?.title?.toLowerCase().includes(studioData.name.toLowerCase())
         })
         
         if (enquiryConversation) {
@@ -91,10 +91,10 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
             console.log('User already has an inquiry with this studio')
             // Try to find the conversation associated with this inquiry
             const studioEnquiryConv = existingConversations.find(conv => {
-              const c = conv.chat_conversations
-              return c.is_group && 
-                c.title?.toLowerCase().includes('studio enquiry:') && 
-                c.title?.toLowerCase().includes(studioData.name.toLowerCase())
+              const c = conv.chat_conversations as any
+              return c?.is_group && 
+                c?.title?.toLowerCase().includes('studio enquiry:') && 
+                c?.title?.toLowerCase().includes(studioData.name.toLowerCase())
             })
             
             if (studioEnquiryConv) {
@@ -120,7 +120,7 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
               .insert({
                 is_group: true,
                 title: `Studio Enquiry: ${studioData.name}`,
-                created_by: user.id
+                created_by: user!.id
               })
               .select()
               .single()
@@ -138,7 +138,7 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
               ]
               
               // Add studio team members
-              const addedUserIds = new Set([user.id, conciergeId])
+              const addedUserIds = new Set([user!.id, conciergeId])
               if (studioMembers) {
                 studioMembers.forEach(member => {
                   if (!addedUserIds.has(member.user_id)) {
@@ -193,11 +193,11 @@ Concierge`
     
     // Check if users are connected
     if (targetUserId) {
-      console.log('Checking connection between:', user.id, 'and', targetUserId)
+      console.log('Checking connection between:', user!.id, 'and', targetUserId)
       const { data: connection, error: connError } = await supabase
         .from('connections')
         .select('status')
-        .or(`and(requester_id.eq.${user.id},receiver_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},receiver_id.eq.${user.id})`)
+        .or(`and(requester_id.eq.${user!.id},receiver_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},receiver_id.eq.${user!.id})`)
         .eq('status', 'accepted')
         .maybeSingle()
       
@@ -212,7 +212,7 @@ Concierge`
       const { data: myConversations } = await supabase
         .from('chat_participants')
         .select('conversation_id')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
       
       if (myConversations && myConversations.length > 0) {
         const conversationIds = myConversations.map(c => c.conversation_id)
@@ -248,9 +248,9 @@ Concierge`
   const { data: userConversations, error: participantsError } = await supabase
     .from('chat_participants')
     .select('conversation_id')
-    .eq('user_id', user.id)
+    .eq('user_id', user!.id)
   
-  console.log('Fetching conversations for user:', user.id)
+  console.log('Fetching conversations for user:', user!.id)
   console.log('User conversations query result:', userConversations)
   console.log('User conversations error:', participantsError)
   
@@ -326,7 +326,7 @@ Concierge`
 
   return (
     <ChatHub 
-      userId={user.id}
+      userId={user!.id}
       profile={profile}
       initialConversations={conversations || []}
       targetUserId={isConnected && !selectedConversationId ? targetUserId : undefined}

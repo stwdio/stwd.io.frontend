@@ -228,9 +228,9 @@ export function MessageThread({
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Header - sticky at top */}
-      <div className="h-[73px] p-4 border-b flex items-center flex-shrink-0 bg-background sticky top-0 z-10">
+    <div className="h-full flex flex-col">
+      {/* Header - non-scrollable */}
+      <div className="h-[73px] p-4 border-b flex items-center flex-shrink-0 bg-background">
         {/* Back button on mobile */}
         {onBackToList && (
           <Button 
@@ -352,7 +352,7 @@ export function MessageThread({
       </div>
       
       {/* Messages */}
-      <ScrollArea className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
         <div className="p-4 space-y-4">
           {messages.map((msg) => {
             const isCurrentUser = msg.sender_id === currentUserId
@@ -428,7 +428,7 @@ export function MessageThread({
           })}
           <div ref={scrollRef} />
         </div>
-      </ScrollArea>
+      </div>
       
       {/* Input - sticky at bottom */}
       <div className="p-4 border-t flex-shrink-0 bg-background">

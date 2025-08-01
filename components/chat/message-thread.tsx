@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { IconSend } from '@tabler/icons-react'
+import { IconSend, IconArrowLeft } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { cn, getAvatarImageUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -30,11 +30,13 @@ interface MessageThreadProps {
   conversation: Conversation
   currentUserId: string
   currentProfile: Profile
+  onBackToList?: () => void
 }
 
 export function MessageThread({ 
   conversation, 
-  currentUserId
+  currentUserId,
+  onBackToList
 }: MessageThreadProps) {
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -92,8 +94,16 @@ export function MessageThread({
   }, [conversation.id, conversation.title, supabase])
   
   useEffect(() => {
+    // Scroll to bottom when messages change
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+  
+  // Scroll to bottom on initial load
+  useEffect(() => {
+    setTimeout(() => {
+      scrollRef.current?.scrollIntoView({ behavior: 'auto' })
+    }, 100)
+  }, [])
   
   // Subscribe to realtime messages
   useEffect(() => {
@@ -218,10 +228,22 @@ export function MessageThread({
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="h-[73px] p-4 border-b flex items-center">
-        <div className="flex items-center gap-3">
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Header - sticky at top */}
+      <div className="h-[73px] p-4 border-b flex items-center flex-shrink-0 bg-background sticky top-0 z-10">
+        {/* Back button on mobile */}
+        {onBackToList && (
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={onBackToList}
+            className="md:hidden mr-2"
+          >
+            <IconArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+        
+        <div className="flex items-center gap-3 flex-1">
           {(() => {
             const isEnquiry = conversation.title && conversation.title.trim() !== ''
             const isGroupChat = conversation.is_group === true && !isEnquiry
@@ -330,8 +352,8 @@ export function MessageThread({
       </div>
       
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-4">
           {messages.map((msg) => {
             const isCurrentUser = msg.sender_id === currentUserId
             const sender = participantMap.get(msg.sender_id)
@@ -408,8 +430,8 @@ export function MessageThread({
         </div>
       </ScrollArea>
       
-      {/* Input */}
-      <div className="p-4 border-t">
+      {/* Input - sticky at bottom */}
+      <div className="p-4 border-t flex-shrink-0 bg-background">
         <div className="flex gap-2 items-center">
           <Input
             value={message}

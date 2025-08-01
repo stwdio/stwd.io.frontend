@@ -12,6 +12,7 @@ interface ConnectLayoutProps {
   isMobile?: boolean
   mobileTitle?: string
   onBackToList?: () => void
+  hideMobileHeader?: boolean
 }
 
 export function ConnectLayout({ 
@@ -20,7 +21,8 @@ export function ConnectLayout({
   emptyState,
   selectedId,
   mobileTitle = 'Messages',
-  onBackToList
+  onBackToList,
+  hideMobileHeader = false
 }: ConnectLayoutProps) {
   return (
     <div className="h-full flex flex-col">
@@ -44,18 +46,20 @@ export function ConnectLayout({
         {selectedId ? (
           <>
             {/* Mobile conversation view with back button */}
-            <div className="p-4 border-b flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={onBackToList}
-              >
-                <IconArrowLeft className="h-5 w-5" />
-              </Button>
-              <h2 className="font-semibold truncate flex-1">
-                {mobileTitle}
-              </h2>
-            </div>
+            {!hideMobileHeader && (
+              <div className="p-4 border-b flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={onBackToList}
+                >
+                  <IconArrowLeft className="h-5 w-5" />
+                </Button>
+                <h2 className="font-semibold truncate flex-1">
+                  {mobileTitle}
+                </h2>
+              </div>
+            )}
             <div className="flex-1 min-h-0">
               {content}
             </div>

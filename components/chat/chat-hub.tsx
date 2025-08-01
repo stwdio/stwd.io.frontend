@@ -53,9 +53,9 @@ export function ChatHub({
     studioId
   })
   const [conversations, setConversations] = useState(initialConversations)
-  // Auto-select the first conversation if none selected, unless we have a target user
+  // Don't auto-select on initial load - let the useEffect handle it for desktop only
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(
-    initialSelectedConversationId || (!targetUserId && initialConversations.length > 0 ? initialConversations[0].id : null)
+    initialSelectedConversationId || null
   )
   const [draftTargetUserId, setDraftTargetUserId] = useState<string | undefined>(
     targetUserId && !initialSelectedConversationId ? targetUserId : undefined
@@ -65,15 +65,27 @@ export function ChatHub({
   )
   const supabase = createClient()
   const router = useRouter()
+  const [isMobile, setIsMobile] = useState(false)
   
-  // Handle client-side redirect to first conversation
+  // Detect mobile screen
   useEffect(() => {
-    if (shouldRedirectToFirst && conversations.length > 0 && !selectedConversationId && !draftTargetUserId) {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768) // md breakpoint
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+  
+  // Handle client-side redirect to first conversation (desktop only)
+  useEffect(() => {
+    if (shouldRedirectToFirst && conversations.length > 0 && !selectedConversationId && !draftTargetUserId && !isMobile) {
       const firstConversation = conversations[0]
       // Select the first conversation without changing URL
       setSelectedConversationId(firstConversation.id)
     }
-  }, [shouldRedirectToFirst, conversations, selectedConversationId, draftTargetUserId])
+  }, [shouldRedirectToFirst, conversations, selectedConversationId, draftTargetUserId, isMobile])
   
   // Subscribe to realtime updates for conversations
   useEffect(() => {
@@ -341,6 +353,11 @@ export function ChatHub({
       conversation={selectedConversation}
       currentUserId={userId}
       currentProfile={profile}
+      onBackToList={() => {
+        setSelectedConversationId(null)
+        setDraftTargetUserId(undefined)
+        setDraftStudioId(undefined)
+      }}
     />
   ) : draftTargetUserId || draftStudioId ? (
     <DraftMessageThread
@@ -369,6 +386,7 @@ export function ChatHub({
             setDraftTargetUserId(undefined)
             setDraftStudioId(undefined)
           }}
+          hideMobileHeader={true}
         />
       </div>
     </div>

@@ -119,7 +119,7 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
             const { data: newConversation } = await supabase
               .rpc('create_chat_conversation', {
                 p_is_group: true,
-                p_title: `Studio Enquiry: ${studioData.name}`
+                p_title: studioData.name
               })
               .single()
             

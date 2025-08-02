@@ -11,6 +11,7 @@ import { cn, getAvatarImageUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/types/database'
 import Link from 'next/link'
+import { MarkdownMessage } from './markdown-message'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Conversation = Database['public']['Tables']['chat_conversations']['Row'] & {
@@ -412,7 +413,7 @@ export function MessageThread({
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
                   )}>
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    <MarkdownMessage content={msg.content} className="text-sm" />
                   </div>
                   
                   {/* Timestamp */}

@@ -32,14 +32,12 @@ export function GroupChatBasket({ selectedUsers, connections, onClear }: GroupCh
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Create a new conversation with type 'group'
+      // Create a new conversation with type 'group' using RPC function
       const { data: conversation, error: convError } = await supabase
-        .from('chat_conversations')
-        .insert({
-          is_group: true,
-          created_by: user.id
+        .rpc('create_chat_conversation', {
+          p_is_group: true,
+          p_title: null
         })
-        .select()
         .single()
 
       if (convError) throw convError

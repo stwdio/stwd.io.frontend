@@ -167,6 +167,76 @@ const { data: newMessage } = await supabase
   .single()
 ```
 
+### Group Chat Creation RLS Violation
+**Problem**: Creating group chats failed with RLS policy violation.
+
+**Error**: 
+```
+code: "42501"
+message: "new row violates row-level security policy for table 'chat_conversations'"
+```
+
+**Cause**: Frontend was directly inserting with `created_by: user.id`, but the RLS policy requires `created_by = auth.uid()`. There could be a mismatch between the frontend user object and the actual authenticated user.
+
+**Solution**: Use the `create_chat_conversation` RPC function instead of direct insert.
+
+**Before (Failed)**:
+```typescript
+// Direct insert - fails if user.id doesn't match auth.uid()
+const { data: conversation, error } = await supabase
+  .from('chat_conversations')
+  .insert({
+    is_group: true,
+    created_by: user.id  // This might not match auth.uid()!
+  })
+  .select()
+  .single()
+```
+
+**After (Working)**:
+```typescript
+// RPC function - always uses auth.uid() internally
+const { data: conversation, error } = await supabase
+  .rpc('create_chat_conversation', {
+    p_is_group: true,
+    p_title: null
+  })
+  .single()
+```
+
+**Why This Works**: The RPC function uses `auth.uid()` internally, ensuring the `created_by` field always matches the authenticated user, satisfying the RLS policy.
+
+### Studio Enquiry Chat Creation Failure
+**Problem**: Studio enquiry chats failed to create when clicking "Enquire" on a studio page.
+
+**Error**: Same RLS policy violation as group chats - direct insert with mismatched user ID.
+
+**Affected Files**:
+1. `/app/connect/chat/page.tsx` - Studio enquiry creation from URL parameter
+2. `/lib/store/quote-basket.ts` - Studio enquiry creation from quote basket
+3. `/components/connections/group-chat-basket.tsx` - Group chat from connections page
+
+**Solution**: Updated all three locations to use the `create_chat_conversation` RPC function.
+
+**Example Fix**:
+```typescript
+// Before - All three files had similar direct inserts
+const { data: conversation } = await supabase
+  .from('chat_conversations')
+  .insert({
+    is_group: true,
+    title: `Studio Enquiry: ${studioData.name}`,
+    created_by: user!.id  // Could mismatch auth.uid()
+  })
+
+// After - Consistent RPC usage
+const { data: conversation } = await supabase
+  .rpc('create_chat_conversation', {
+    p_is_group: true,
+    p_title: `Studio Enquiry: ${studioData.name}`
+  })
+```
+
 ## Key Learnings
 
 1. **RLS Policies Cannot Self-Reference**: Any policy that queries its own table creates recursion.

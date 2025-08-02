@@ -148,15 +148,12 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
               }
             }
             
-            // Create a new conversation
+            // Create a new conversation using RPC function
             const { data: conversation, error: convError } = await supabase
-              .from('chat_conversations')
-              .insert({
-                is_group: true,
-                title: studio.name,
-                created_by: user.id
+              .rpc('create_chat_conversation', {
+                p_is_group: true,
+                p_title: studio.name
               })
-              .select()
               .single()
             
             if (convError) {

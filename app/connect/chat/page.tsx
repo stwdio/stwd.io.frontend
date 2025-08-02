@@ -115,15 +115,12 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
           const { data: conciergeId } = await supabase.rpc('get_studio_concierge_id')
           
           if (conciergeId) {
-            // Create group conversation
+            // Create group conversation using RPC function
             const { data: newConversation } = await supabase
-              .from('chat_conversations')
-              .insert({
-                is_group: true,
-                title: `Studio Enquiry: ${studioData.name}`,
-                created_by: user!.id
+              .rpc('create_chat_conversation', {
+                p_is_group: true,
+                p_title: `Studio Enquiry: ${studioData.name}`
               })
-              .select()
               .single()
             
             if (newConversation) {

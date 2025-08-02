@@ -19,7 +19,6 @@ interface InquiryData {
   genre?: string
   budget_range?: string
   preferred_dates?: string
-  location_preference?: string
   custom_message?: string
 }
 
@@ -236,20 +235,63 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
             
             console.log('All participants after insert:', allParticipants)
             
+            // Helper function to format project type
+            const formatProjectType = (type: string): string => {
+              const typeMap: Record<string, string> = {
+                'record': 'Recording Session',
+                'mix': 'Mixing',
+                'master': 'Mastering',
+                'rehearsal': 'Rehearsal',
+                'other': 'Other'
+              }
+              return typeMap[type] || type
+            }
+            
+            // Helper function to format genre
+            const formatGenre = (genre: string): string => {
+              const genreMap: Record<string, string> = {
+                'pop': 'Pop',
+                'rock': 'Rock',
+                'hip-hop': 'Hip-Hop',
+                'r&b': 'R&B',
+                'electronic': 'Electronic',
+                'jazz': 'Jazz',
+                'classical': 'Classical',
+                'country': 'Country',
+                'metal': 'Metal',
+                'indie': 'Indie',
+                'folk': 'Folk',
+                'blues': 'Blues',
+                'reggae': 'Reggae',
+                'latin': 'Latin',
+                'world': 'World',
+                'experimental': 'Experimental',
+                'podcast': 'Podcast',
+                'audiobook': 'Audiobook',
+                'other': 'Other'
+              }
+              return genreMap[genre] || genre
+            }
+            
+            // Create a more descriptive title based on project type and genre
+            const projectTypeLabel = formatProjectType(inquiryData.project_type)
+            const genreLabel = inquiryData.genre ? formatGenre(inquiryData.genre) : ''
+            
+            let enquiryTitle = ''
+            if (genreLabel) {
+              enquiryTitle = `**${genreLabel} ${projectTypeLabel} Request**`
+            } else {
+              enquiryTitle = `**${projectTypeLabel} Request**`
+            }
+            
             // Send initial message from creator with inquiry details
             const messageContent = `
-🎵 **New Studio Enquiry**
+${enquiryTitle}
 
-**Project Type:** ${inquiryData.project_type}
-${inquiryData.genre ? `**Genre:** ${inquiryData.genre}` : ''}
+**Project Type:** ${projectTypeLabel}
+${inquiryData.genre ? `**Genre:** ${genreLabel}` : ''}
 ${inquiryData.budget_range ? `**Budget Range:** ${inquiryData.budget_range}` : ''}
-${inquiryData.preferred_dates ? `**Preferred Dates:** ${inquiryData.preferred_dates}` : ''}
-${inquiryData.location_preference ? `**Location Preference:** ${inquiryData.location_preference}` : ''}
-
-${inquiryData.custom_message ? `**Message:**\n${inquiryData.custom_message}` : ''}
-
----
-*This is an official studio enquiry facilitated by stwd.io Concierge.*
+${inquiryData.preferred_dates ? `**Preferred Dates:** ${inquiryData.preferred_dates}` : ''}${inquiryData.custom_message ? `\n\n**Message:**\n${inquiryData.custom_message}` : ''}
             `.trim()
             
             console.log('Attempting to send message with:', {

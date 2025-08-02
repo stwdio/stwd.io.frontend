@@ -7,7 +7,7 @@ interface GroupChatBasketStore {
   isOpen: boolean
   
   // Actions
-  addUser: (userId: string) => void
+  addUser: (userId: string, userName?: string) => void
   removeUser: (userId: string) => void
   clearBasket: () => void
   toggleBasket: () => void
@@ -22,11 +22,11 @@ export const useGroupChatBasket = create<GroupChatBasketStore>()(
       userIds: [],
       isOpen: false,
       
-      addUser: (userId: string) => {
+      addUser: (userId: string, userName?: string) => {
         const { userIds } = get()
         
         if (userIds.includes(userId)) {
-          toast.info('User Already Added To Group Chat')
+          toast.info(userName ? `${userName} Is Already Added To Group Chat` : 'User Already Added To Group Chat')
           return
         }
         
@@ -36,7 +36,7 @@ export const useGroupChatBasket = create<GroupChatBasketStore>()(
         }
         
         set({ userIds: [...userIds, userId] })
-        toast.success('Added To Group Chat')
+        toast.success(userName ? `Added ${userName} To Group Chat` : 'Added To Group Chat')
       },
       
       removeUser: (userId: string) => {
@@ -46,7 +46,7 @@ export const useGroupChatBasket = create<GroupChatBasketStore>()(
       },
       
       clearBasket: () => {
-        set({ userIds: [] })
+        set({ userIds: [], isOpen: false })
         toast.success('Group Chat Basket Cleared')
       },
       

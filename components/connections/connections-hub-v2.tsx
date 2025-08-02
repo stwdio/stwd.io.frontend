@@ -177,11 +177,11 @@ export function ConnectionsHubV2() {
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
 
-  const handleGroupChatToggle = useCallback((userId: string) => {
+  const handleGroupChatToggle = useCallback((userId: string, userName?: string) => {
     if (isUserInBasket(userId)) {
       removeUser(userId)
     } else {
-      addUser(userId)
+      addUser(userId, userName)
     }
   }, [addUser, removeUser, isUserInBasket])
 
@@ -414,7 +414,12 @@ export function ConnectionsHubV2() {
                     <ProfileCardCustomActions
                       profile={user}
                       isInBasket={isUserInBasket(user.user_id)}
-                      onToggleGroupChat={() => handleGroupChatToggle(user.user_id)}
+                      onToggleGroupChat={() => {
+                        const displayName = user.first_name && user.last_name 
+                          ? `${user.first_name} ${user.last_name}` 
+                          : user.username || 'User'
+                        handleGroupChatToggle(user.user_id, displayName)
+                      }}
                     />
                   }
                 />
@@ -446,7 +451,12 @@ export function ConnectionsHubV2() {
                   <ProfileCardCustomActions
                     profile={user}
                     isInBasket={isUserInBasket(user.user_id)}
-                    onToggleGroupChat={() => handleGroupChatToggle(user.user_id)}
+                    onToggleGroupChat={() => {
+                      const displayName = user.first_name && user.last_name 
+                        ? `${user.first_name} ${user.last_name}` 
+                        : user.username || 'User'
+                      handleGroupChatToggle(user.user_id, displayName)
+                    }}
                   />
                 )
               } else {

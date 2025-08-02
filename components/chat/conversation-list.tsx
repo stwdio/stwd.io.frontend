@@ -44,7 +44,7 @@ export function ConversationList({
   onSelect,
   currentUserId 
 }: ConversationListProps) {
-  const [filter, setFilter] = useState<'all' | 'enquiries' | 'messages'>('all')
+  const [filter, setFilter] = useState<'all' | 'enquiries' | 'messages' | 'groups'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [studioImages, setStudioImages] = useState<Record<string, string>>({})
   const supabase = createClient()
@@ -56,15 +56,14 @@ export function ConversationList({
   // Fetch studio images for enquiries
   useEffect(() => {
     const fetchStudioImages = async () => {
-      const enquiryConversations = conversations.filter(c => c.title && c.title.trim() !== '')
+      // Only fetch images for group chats with titles (enquiries)
+      const enquiryConversations = conversations.filter(c => c.is_group && c.title && c.title.trim() !== '')
       const studioNames = enquiryConversations.map(c => c.title).filter(Boolean) as string[]
       
       if (studioNames.length === 0) return
       
-      // Extract actual studio names from "Studio Enquiry: Name" format
-      const actualStudioNames = studioNames.map(name => 
-        name.replace('Studio Enquiry: ', '')
-      )
+      // Studio names are directly in the title
+      const actualStudioNames = studioNames
       
       const { data: studios } = await supabase
         .from('studios')
@@ -77,9 +76,8 @@ export function ConversationList({
           if (studio.photo_urls && studio.photo_urls.length > 0) {
             // Use optimized avatar size for list view (80x80)
             const imageUrl = getAvatarImageUrl(studio.photo_urls[0], 80) || studio.photo_urls[0]
-            // Map both the studio name and the full enquiry title
+            // Map the studio name
             imageMap[studio.name] = imageUrl
-            imageMap[`Studio Enquiry: ${studio.name}`] = imageUrl
           }
         })
         setStudioImages(imageMap)
@@ -92,10 +90,13 @@ export function ConversationList({
   // Filter conversations based on type and search
   const filteredConversations = conversations.filter(conversation => {
     const isEnquiry = conversation.title && conversation.title.trim() !== ''
+    const isGroup = conversation.is_group === true
+    const isRegularGroup = isGroup && !isEnquiry // Group chat that's not an enquiry
     
     // Type filter
     if (filter === 'enquiries' && !isEnquiry) return false
-    if (filter === 'messages' && isEnquiry) return false
+    if (filter === 'messages' && (isEnquiry || isRegularGroup)) return false
+    if (filter === 'groups' && !isRegularGroup) return false
     
     // Search filter
     if (searchQuery) {
@@ -167,6 +168,13 @@ export function ConversationList({
                 <IconMessage className="h-4 w-4 mr-2" />
                 Messages
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setFilter('groups')}
+                className={cn("cursor-pointer", filter === 'groups' && "bg-accent")}
+              >
+                <IconUsers className="h-4 w-4 mr-2" />
+                Groups
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -178,7 +186,7 @@ export function ConversationList({
           const otherParticipants = conversation.chat_participants.filter(
             p => p.user_id !== currentUserId
           )
-          const lastMessage = conversation.chat_messages[0]
+          const lastMessage = conversation.chat_messages?.[0]
           const otherUser = otherParticipants[0]?.profiles
           
           // Check if this is a studio enquiry
@@ -191,15 +199,14 @@ export function ConversationList({
           
           if (isEnquiry) {
             // For enquiries, show studio name
-            const studioName = conversation.title?.replace('Studio Enquiry: ', '') || 'Studio Enquiry'
-            displayName = studioName
+            displayName = conversation.title || 'Studio Enquiry'
             
             // Use studio image for enquiries
-            avatarUrl = studioImages[studioName] || studioImages[conversation.title || '']
+            avatarUrl = studioImages[displayName]
             
             // If no studio image yet, use a placeholder with studio initial
             if (!avatarUrl) {
-              avatarUrl = `https://api.dicebear.com/9.x/initials/svg?seed=${studioName}&backgroundColor=0ea5e9&fontSize=50`
+              avatarUrl = `https://api.dicebear.com/9.x/initials/svg?seed=${displayName}&backgroundColor=0ea5e9&fontSize=50`
             }
           } else if (isGroupChat) {
             // For regular group chats, show participant names (limit to 2)

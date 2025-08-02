@@ -932,18 +932,34 @@ The platform now has an enterprise-grade foundation with comprehensive security 
   - Old avatars automatically deleted when uploading new ones
   - 5MB file size limit enforced at bucket level
 
-### ✅ **CHAT CONVERSATIONS RLS RECURSION FIX - VERIFIED & DEPLOYED** (Updated January 30, 2025)
-- **✅ Identified RLS Recursion Issue**: More complex than initially thought - affects message insertion
-  - Error: "infinite recursion detected in policy for relation 'chat_conversations'"
-  - Actually occurs when inserting into `chat_messages`, not when creating conversations
-  - The `chat_messages` RLS policy checks if user is participant → references `chat_conversations` → creates circular dependency
-  - Similar pattern to previously fixed inquiries table issue but affects multiple operations
-- **✅ Implemented Frontend Solution**: Multi-strategy approach with graceful fallbacks
-  - Primary: Attempt to use RPC functions for both conversation creation and message sending
-  - Added `send_chat_message` RPC function attempt for message insertion
-  - Fallback: Direct insert if RPC doesn't exist or fails
-  - Enhanced error messaging with COMPLETE SQL migration instructions in console
-- **✅ Created Complete Database Migration Script**: Two RPC functions to bypass RLS recursion
+### ✅ **CHAT SYSTEM HYBRID RLS & RPC - DEFINITIVELY FIXED** (Updated February 2025)
+- **✅ Previous Issue**: RLS recursion errors (42P17) - "pure RLS" approach failed due to self-referencing
+- **✅ Root Cause**: chat_participants SELECT policy queried itself, creating inescapable recursion
+- **✅ HYBRID SOLUTION IMPLEMENTED**: RPC + RLS architecture (industry standard pattern)
+  - Step 1: Created `is_chat_participant()` SECURITY DEFINER function as core permission checker
+  - Step 2: Implemented simplified RLS policies that delegate to helper function
+  - Step 3: All policies now non-recursive, no self-referential queries
+- **✅ Implementation Details**:
+  - 1 master helper function: `is_chat_participant(conversation_id, user_id)`
+  - 7 simplified RLS policies (2 conversations, 2 participants, 3 messages)
+  - Helper function bypasses RLS to safely check membership
+  - RLS policies only enforce simple ownership rules
+- **✅ Architecture Benefits**:
+  - Zero recursion possible - helper function breaks circular dependencies
+  - Performance optimized - single function call vs complex policy chains
+  - Security maintained - SECURITY DEFINER with explicit search_path
+  - Frontend simplified - no more RPC fallback logic needed
+- **✅ Testing Status**: ALL CHAT TYPES VERIFIED WORKING
+  - 1:1 chats: No recursion, messages send/appear instantly
+  - Group chats: Creation works, all participants can message
+  - Studio enquiries: Creates with concierge and studio team
+- **✅ Frontend Updates**: 5 files updated to use RPC functions consistently
+- **✅ Documentation**: Complete solution guide and backend state docs created
+
+### ~~✅ **CHAT CONVERSATIONS RLS RECURSION FIX - VERIFIED & DEPLOYED**~~ (Superseded by Complete Refactor)
+- ~~**✅ Identified RLS Recursion Issue**: More complex than initially thought - affects message insertion~~
+- ~~**✅ Implemented Frontend Solution**: Multi-strategy approach with graceful fallbacks~~
+- ~~**✅ Created Complete Database Migration Script**: Two RPC functions to bypass RLS recursion~~
   ```sql
   CREATE OR REPLACE FUNCTION create_chat_conversation(
     p_is_group BOOLEAN DEFAULT false,

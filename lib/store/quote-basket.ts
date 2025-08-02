@@ -19,7 +19,6 @@ interface InquiryData {
   genre?: string
   budget_range?: string
   preferred_dates?: string
-  location_preference?: string
   custom_message?: string
 }
 
@@ -49,20 +48,20 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
         
         // Check if studio is already in basket
         if (studios.find(s => s.id === studio.id)) {
-          toast.info('Studio is already in your quote basket')
+          toast.info(`${studio.name} Is Already In Your Quote Basket`)
           return
         }
         
         // Only allow verified studios
         if (studio.verification_status !== 'verified') {
-          toast.error('Only verified studios can be added to quote basket')
+          toast.error('Only Verified Studios Can Be Added To Quote Basket')
           return
         }
         
         // We no longer check for existing inquiries since we're using chat-based enquiries
         
         set({ studios: [...studios, studio] })
-        toast.success(`${studio.name} added to quote basket`)
+        toast.success(`${studio.name} Added To Quote Basket`)
       },
       
       removeStudio: (studioId: number) => {
@@ -72,13 +71,13 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
         set({ studios: studios.filter(s => s.id !== studioId) })
         
         if (studio) {
-          toast.success(`${studio.name} removed from quote basket`)
+          toast.success(`${studio.name} Removed From Quote Basket`)
         }
       },
       
       clearBasket: () => {
         set({ studios: [], isOpen: false })
-        toast.success('Quote basket cleared')
+        toast.success('Quote Basket Cleared')
       },
       
       toggleBasket: () => {
@@ -94,7 +93,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
         const { studios } = get()
         
         if (studios.length === 0) {
-          toast.error('Please add at least one studio to your quote basket')
+          toast.error('Please Add At Least One Studio To Your Quote Basket')
           return false
         }
         
@@ -103,7 +102,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           const supabase = createClient()
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) {
-            toast.error('Please log in to submit an inquiry')
+            toast.error('Please Log In To Submit An Inquiry')
             return false
           }
           
@@ -114,7 +113,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
             .single()
           
           if (!profile) {
-            toast.error('Profile not found')
+            toast.error('Profile Not Found')
             return false
           }
           
@@ -124,7 +123,7 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           
           if (conciergeError || !conciergeId) {
             console.error('Failed to get concierge user:', conciergeError)
-            toast.error('Failed to connect with Concierge')
+            toast.error('Failed To Connect With Concierge')
             return false
           }
           
@@ -132,42 +131,28 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
           for (const studio of studios) {
             // Check if there's already an enquiry conversation for this studio
             const { data: existingConversations } = await supabase
-              .from('chat_participants')
-              .select(`
-                conversation_id,
-                chat_conversations!inner(
-                  id,
-                  title,
-                  is_group
-                )
-              `)
-              .eq('user_id', user.id)
+              .rpc('get_user_conversations')
             
             let existingEnquiryId = null
-            if (existingConversations) {
+            if (existingConversations && Array.isArray(existingConversations)) {
               const enquiryConversation = existingConversations.find(conv => {
-                const c = conv.chat_conversations
-                return c.is_group && 
-                  c.title?.toLowerCase().includes('studio enquiry:') && 
-                  c.title?.toLowerCase().includes(studio.name.toLowerCase())
+                return conv.is_group && 
+                  conv.title?.toLowerCase() === studio.name.toLowerCase()
               })
               
               if (enquiryConversation) {
-                existingEnquiryId = enquiryConversation.conversation_id
+                existingEnquiryId = enquiryConversation.id
                 console.log(`Found existing enquiry for ${studio.name}, skipping creation`)
                 continue // Skip creating a new conversation
               }
             }
             
-            // Create a new conversation
+            // Create a new conversation using RPC function
             const { data: conversation, error: convError } = await supabase
-              .from('chat_conversations')
-              .insert({
-                is_group: true,
-                title: `Studio Enquiry: ${studio.name}`,
-                created_by: user.id
+              .rpc('create_chat_conversation', {
+                p_is_group: true,
+                p_title: studio.name
               })
-              .select()
               .single()
             
             if (convError) {
@@ -250,20 +235,63 @@ export const useQuoteBasket = create<QuoteBasketStore>()(
             
             console.log('All participants after insert:', allParticipants)
             
+            // Helper function to format project type
+            const formatProjectType = (type: string): string => {
+              const typeMap: Record<string, string> = {
+                'record': 'Recording Session',
+                'mix': 'Mixing',
+                'master': 'Mastering',
+                'rehearsal': 'Rehearsal',
+                'other': 'Other'
+              }
+              return typeMap[type] || type
+            }
+            
+            // Helper function to format genre
+            const formatGenre = (genre: string): string => {
+              const genreMap: Record<string, string> = {
+                'pop': 'Pop',
+                'rock': 'Rock',
+                'hip-hop': 'Hip-Hop',
+                'r&b': 'R&B',
+                'electronic': 'Electronic',
+                'jazz': 'Jazz',
+                'classical': 'Classical',
+                'country': 'Country',
+                'metal': 'Metal',
+                'indie': 'Indie',
+                'folk': 'Folk',
+                'blues': 'Blues',
+                'reggae': 'Reggae',
+                'latin': 'Latin',
+                'world': 'World',
+                'experimental': 'Experimental',
+                'podcast': 'Podcast',
+                'audiobook': 'Audiobook',
+                'other': 'Other'
+              }
+              return genreMap[genre] || genre
+            }
+            
+            // Create a more descriptive title based on project type and genre
+            const projectTypeLabel = formatProjectType(inquiryData.project_type)
+            const genreLabel = inquiryData.genre ? formatGenre(inquiryData.genre) : ''
+            
+            let enquiryTitle = ''
+            if (genreLabel) {
+              enquiryTitle = `**${genreLabel} ${projectTypeLabel} Request**`
+            } else {
+              enquiryTitle = `**${projectTypeLabel} Request**`
+            }
+            
             // Send initial message from creator with inquiry details
             const messageContent = `
-🎵 **New Studio Enquiry**
+${enquiryTitle}
 
-**Project Type:** ${inquiryData.project_type}
-${inquiryData.genre ? `**Genre:** ${inquiryData.genre}` : ''}
+**Project Type:** ${projectTypeLabel}
+${inquiryData.genre ? `**Genre:** ${genreLabel}` : ''}
 ${inquiryData.budget_range ? `**Budget Range:** ${inquiryData.budget_range}` : ''}
-${inquiryData.preferred_dates ? `**Preferred Dates:** ${inquiryData.preferred_dates}` : ''}
-${inquiryData.location_preference ? `**Location Preference:** ${inquiryData.location_preference}` : ''}
-
-${inquiryData.custom_message ? `**Message:**\n${inquiryData.custom_message}` : ''}
-
----
-*This is an official studio enquiry facilitated by stwd.io Concierge.*
+${inquiryData.preferred_dates ? `**Preferred Dates:** ${inquiryData.preferred_dates}` : ''}${inquiryData.custom_message ? `\n\n**Message:**\n${inquiryData.custom_message}` : ''}
             `.trim()
             
             console.log('Attempting to send message with:', {
@@ -340,12 +368,12 @@ Concierge
           // Notify components that inquiries were submitted
           get()._notifyInquirySubmitted(submittedStudioIds)
           
-          toast.success(`Enquiries processed! Check your messages.`)
+          toast.success('Enquiries Sent! Check Your Messages')
           return true
           
         } catch (error) {
           console.error('Error submitting inquiry:', error)
-          toast.error('Failed to submit inquiry. Please try again.')
+          toast.error('Failed To Submit Inquiry. Please Try Again.')
           return false
         }
       },

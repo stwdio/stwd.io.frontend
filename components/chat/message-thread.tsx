@@ -11,6 +11,13 @@ import { cn, getAvatarImageUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/types/database'
 import Link from 'next/link'
+import { MarkdownMessage } from './markdown-message'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Conversation = Database['public']['Tables']['chat_conversations']['Row'] & {
@@ -43,6 +50,7 @@ export function MessageThread({
   const [messages, setMessages] = useState(conversation.chat_messages)
   const [studioImage, setStudioImage] = useState<string | null>(null)
   const [studioSlug, setStudioSlug] = useState<string | null>(null)
+  const [studioOwners, setStudioOwners] = useState<Profile[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   
@@ -69,13 +77,13 @@ export function MessageThread({
     }
     
     const loadStudioImage = async () => {
-      if (conversation.title && conversation.title.includes('Studio Enquiry:')) {
-        // Extract studio name from "Studio Enquiry: Name" format
-        const studioName = conversation.title.replace('Studio Enquiry: ', '')
+      if (conversation.title && conversation.is_group) {
+        // Extract studio name from title
+        const studioName = conversation.title
         
         const { data: studio } = await supabase
           .from('studios')
-          .select('photo_urls, slug')
+          .select('photo_urls, slug, id')
           .eq('name', studioName)
           .single()
         
@@ -85,6 +93,26 @@ export function MessageThread({
             setStudioImage(getAvatarImageUrl(studio.photo_urls[0], 80) || studio.photo_urls[0])
           }
           setStudioSlug(studio.slug)
+          
+          // Get studio owners
+          const { data: members } = await supabase
+            .from('studio_members')
+            .select('user_id, role')
+            .eq('studio_id', studio.id)
+            .eq('role', 'owner')
+          
+          if (members) {
+            // Get owner profiles
+            const ownerIds = members.map(m => m.user_id)
+            const { data: ownerProfiles } = await supabase
+              .from('profiles')
+              .select('*')
+              .in('user_id', ownerIds)
+            
+            if (ownerProfiles) {
+              setStudioOwners(ownerProfiles)
+            }
+          }
         }
       }
     }
@@ -243,40 +271,41 @@ export function MessageThread({
           </Button>
         )}
         
-        <div className="flex items-center gap-3 flex-1">
-          {(() => {
-            const isEnquiry = conversation.title && conversation.title.trim() !== ''
-            const isGroupChat = conversation.is_group === true && !isEnquiry
-            
-            // For studio enquiries, show studio info
-            if (isEnquiry) {
-              const studioName = conversation.title.replace('Studio Enquiry: ', '')
-              const avatarUrl = studioImage || undefined
+        <div className="flex items-center justify-between flex-1">
+          <div className="flex items-center gap-3">
+            {(() => {
+              const isEnquiry = conversation.title && conversation.title.trim() !== ''
+              const isGroupChat = conversation.is_group === true && !isEnquiry
               
-              return (
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={avatarUrl} alt={studioName} />
-                    <AvatarFallback>
-                      {studioName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h2 className="font-semibold">
-                      {studioSlug ? (
-                        <Link href={`/discover/studios/${studioSlug}`} className="hover:underline">
-                          {studioName}
-                        </Link>
-                      ) : (
-                        studioName
-                      )}
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      Studio Enquiry
-                    </p>
-                  </div>
-                </div>
-              )
+              // For studio enquiries, show studio info
+              if (isEnquiry) {
+                const studioName = conversation.title
+                const avatarUrl = studioImage || undefined
+                
+                return (
+                  <>
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={avatarUrl} alt={studioName} />
+                      <AvatarFallback>
+                        {studioName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h2 className="font-semibold">
+                        {studioSlug ? (
+                          <Link href={`/discover/studios/${studioSlug}`} className="hover:underline">
+                            {studioName}
+                          </Link>
+                        ) : (
+                          studioName
+                        )}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Studio Enquiry
+                      </p>
+                    </div>
+                  </>
+                )
             } else if (isGroupChat) {
               // For regular group chats, show participant names
               const participantNames = otherParticipants
@@ -298,7 +327,7 @@ export function MessageThread({
               const avatarUrl = otherParticipants[0]?.profiles?.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${conversation.id}-group&backgroundColor=ffffff&shapeColor=000000`
               
               return (
-                <div className="flex items-center gap-3">
+                <>
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={avatarUrl} alt="Group" />
                     <AvatarFallback>
@@ -313,7 +342,7 @@ export function MessageThread({
                       Group Chat
                     </p>
                   </div>
-                </div>
+                </>
               )
             } else {
               // For 1-on-1 chats, show single participant
@@ -325,7 +354,7 @@ export function MessageThread({
                 const avatarUrl = profile.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
                 
                 return (
-                  <div key={participant.user_id} className="flex items-center gap-3">
+                  <React.Fragment key={participant.user_id}>
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={avatarUrl} alt={displayName} />
                       <AvatarFallback>
@@ -343,18 +372,88 @@ export function MessageThread({
                         )}
                       </h2>
                     </div>
-                  </div>
+                  </React.Fragment>
                 )
               })
             }
           })()}
+          </div>
+          
+          {/* Participant Avatars */}
+          <div className="flex items-center -space-x-2">
+            <TooltipProvider>
+              {(() => {
+                const isEnquiry = conversation.title && conversation.title.trim() !== ''
+                
+                // Sort participants: studio owners first for enquiries
+                let sortedParticipants = [...conversation.chat_participants]
+                if (isEnquiry && studioOwners.length > 0) {
+                  const ownerIds = studioOwners.map(o => o.user_id)
+                  sortedParticipants.sort((a, b) => {
+                    const aIsOwner = ownerIds.includes(a.user_id)
+                    const bIsOwner = ownerIds.includes(b.user_id)
+                    if (aIsOwner && !bIsOwner) return -1
+                    if (!aIsOwner && bIsOwner) return 1
+                    return 0
+                  })
+                }
+                
+                // Show up to 3 participants
+                const displayParticipants = sortedParticipants.slice(0, 3)
+                const remainingCount = sortedParticipants.length - 3
+                
+                return (
+                  <>
+                    {displayParticipants.map((participant) => {
+                      const profile = participant.profiles
+                      const displayName = profile.first_name && profile.last_name 
+                        ? `${profile.first_name} ${profile.last_name}`.trim()
+                        : profile.username || 'Unknown User'
+                      const avatarUrl = profile.avatar_url || `https://api.dicebear.com/9.x/thumbs/svg?seed=${profile.user_id}&backgroundColor=ffffff&shapeColor=000000`
+                      const isOwner = studioOwners.some(o => o.user_id === participant.user_id)
+                      
+                      return (
+                        <Tooltip key={participant.user_id}>
+                          <TooltipTrigger asChild>
+                            <Avatar className="h-8 w-8 border-2 border-background">
+                              <AvatarImage src={avatarUrl} alt={displayName} />
+                              <AvatarFallback>
+                                {displayName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{displayName}{isOwner ? ' (Owner)' : ''}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    })}
+                    {remainingCount > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Avatar className="h-8 w-8 border-2 border-background">
+                            <AvatarFallback>
+                              +{remainingCount}
+                            </AvatarFallback>
+                          </Avatar>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{remainingCount} more {remainingCount === 1 ? 'participant' : 'participants'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </>
+                )
+              })()}
+            </TooltipProvider>
+          </div>
         </div>
       </div>
       
       {/* Messages */}
       <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
         <div className="p-4 space-y-4">
-          {messages.map((msg) => {
+          {messages?.map((msg) => {
             const isCurrentUser = msg.sender_id === currentUserId
             const sender = participantMap.get(msg.sender_id)
             let displayName = 'Unknown'
@@ -412,7 +511,7 @@ export function MessageThread({
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
                   )}>
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    <MarkdownMessage content={msg.content} className="text-sm" />
                   </div>
                   
                   {/* Timestamp */}

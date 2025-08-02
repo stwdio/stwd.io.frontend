@@ -126,9 +126,9 @@ export function ProfileCard({ profile, priority = false, linkToProfile = true, h
     if (!profile.user_id) return
     
     if (isFollowing) {
-      unfollowUser({ followingUserId: profile.user_id })
+      unfollowUser({ followingUserId: profile.user_id, userName: displayName })
     } else {
-      followUser({ followingUserId: profile.user_id })
+      followUser({ followingUserId: profile.user_id, userName: displayName })
     }
   }
 
@@ -144,7 +144,7 @@ export function ProfileCard({ profile, priority = false, linkToProfile = true, h
       return
     }
     
-    sendConnectionRequest(profile.user_id)
+    sendConnectionRequest({ receiverId: profile.user_id, receiverName: displayName })
   }
 
   const handleMessage = (e: React.MouseEvent) => {

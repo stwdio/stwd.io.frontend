@@ -73,9 +73,9 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
     }
     
     if (isFollowing) {
-      unfollowStudio({ followingStudioId: studio.id })
+      unfollowStudio({ followingStudioId: studio.id, studioName: studio.name })
     } else {
-      followStudio({ followingStudioId: studio.id })
+      followStudio({ followingStudioId: studio.id, studioName: studio.name })
     }
   }
 

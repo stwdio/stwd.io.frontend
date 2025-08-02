@@ -1,11 +1,12 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useEffect } from 'react'
 import { ProfileCard } from '@/components/cards/profile-card'
 import { GenericCardSkeleton } from '@/components/skeletons/generic-card-skeleton'
 import { GenericGrid } from '@/components/discover/generic-grid'
 import { useProfilesInfinite } from '@/lib/hooks/queries/auth'
 import { Database } from '@/lib/types/database'
+import { useQueryClient } from '@tanstack/react-query'
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   profile_roles?: Array<{
@@ -26,6 +27,8 @@ interface ProfilesGridProps {
 }
 
 export function ProfilesGrid({ category, searchQuery, roleFilters = [] }: ProfilesGridProps) {
+  const queryClient = useQueryClient()
+  
   // Combine all filters for the query
   const queryFilters = useMemo(() => ({
     search: searchQuery,
@@ -43,6 +46,11 @@ export function ProfilesGrid({ category, searchQuery, roleFilters = [] }: Profil
     error: profilesError,
     refetch: refetchProfiles
   } = useProfilesInfinite(queryFilters)
+  
+  // Invalidate cache on mount to ensure fresh data
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['profiles', 'infinite'] })
+  }, [])
 
   // Flatten pages to get all profiles and deduplicate
   const allProfiles = useMemo(() => {

@@ -2,9 +2,47 @@
 
 ## Current Work Session
 **Date**: February 2025
-**Focus**: Chat Interface Improvements - Enquiry Chat Display
+**Focus**: Chat System RLS Refactor
 
-### Current Work: Chat Interface Improvements (February 2025)
+### Current Work: Chat System Complete - All Issues Resolved (February 2025)
+
+#### Chat RLS Hybrid Architecture - FULLY IMPLEMENTED:
+- **✅ All Chat Types Working**: 1:1 chats, group chats, and studio enquiries all functioning
+- **✅ Root Cause Fixed**: Eliminated RLS recursion by implementing hybrid RPC + RLS architecture
+- **✅ Consistent Frontend**: All conversation creation uses RPC functions
+  
+#### Final Implementation:
+1. **Helper Function**: `is_chat_participant()` - SECURITY DEFINER function for membership checks
+2. **RPC Functions**:
+   - `create_chat_conversation()` - Returns conversation with ID and UUID
+   - `send_chat_message()` - Returns created message ID
+   - `get_studio_concierge_id()` - Gets system concierge user
+3. **Simplified RLS Policies**: 7 total policies with no self-references
+4. **Frontend Consistency**: Updated 5 files to use RPC functions:
+   - `/components/group-chat-basket-dialog.tsx`
+   - `/app/connect/chat/page.tsx`
+   - `/lib/store/quote-basket.ts`
+   - `/components/connections/group-chat-basket.tsx`
+   - `/components/chat/draft-message-thread.tsx`
+
+#### Documentation Created:
+- `/docs/chat-rls-recursion-solution.md` - Complete problem/solution guide
+- `/docs/chat-backend-state.md` - Full backend state for restoration
+
+### Previous Work: People Discovery Filtering (February 2025)
+
+#### People Section Updates:
+- **Filtered User Types**: Updated people discovery to exclude specific user types
+  - Excludes users with `system_role` of 'owner' or 'admin'
+  - Excludes the concierge user (identified by username 'studio_concierge')
+  - Excludes users with the 'studio-owner' professional role
+- **Query Updates**: Modified `useProfilesInfinite` hook with two-stage filtering:
+  1. Database-level filtering for system roles and concierge username
+  2. Client-side filtering to remove users with studio-owner professional role
+- **Purpose**: Ensures the people section only shows creators and industry professionals,
+  not studio owners, admins, or the platform concierge
+
+### Previous Work: Chat Interface Improvements (February 2025)
 
 #### Chat Display Updates:
 - **Enquiry Chat Headers**: Reverted to show studio names with studio images

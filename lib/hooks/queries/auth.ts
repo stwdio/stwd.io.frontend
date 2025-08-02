@@ -46,6 +46,9 @@ export function useProfilesInfinite(filters?: {
           )
         `, { count: 'exact' })
         .not('system_role', 'is', null) // Only show users who have completed onboarding
+        .not('system_role', 'eq', 'owner') // Exclude studio owners
+        .not('system_role', 'eq', 'admin') // Exclude admins
+        .not('username', 'eq', 'studio_concierge') // Exclude concierge
 
       // Apply search filter
       if (filters?.search) {
@@ -68,6 +71,46 @@ export function useProfilesInfinite(filters?: {
       // Client-side filtering by role (since we can't filter JSONB in the query directly)
       let filteredData = data || []
       
+      // Debug logging
+      console.log('Total profiles before filtering:', filteredData.length)
+      
+      // First, filter out users with studio-owner professional role
+      filteredData = filteredData.filter(profile => {
+        // Handle different formats of profile_roles
+        let roles: Array<{role: {id: number, name: string, slug: string}}> = []
+        
+        if (Array.isArray(profile.profile_roles)) {
+          roles = profile.profile_roles
+        } else if (profile.profile_roles && typeof profile.profile_roles === 'object' && 'role' in profile.profile_roles) {
+          // Single role as object
+          roles = [profile.profile_roles as {role: {id: number, name: string, slug: string}}]
+        }
+        
+        // Debug each profile
+        console.log('Profile:', profile.username, 'Parsed roles:', roles.map(r => r.role?.slug))
+        
+        // If no roles, still include them (they might be users without professional roles yet)
+        if (roles.length === 0) {
+          console.log('  -> Including (no professional role):', profile.username)
+          return true
+        }
+        
+        // Check if user has studio-owner role
+        const hasStudioOwnerRole = roles.some((pr) => pr.role?.slug === 'studio-owner')
+        
+        // Debug specific studio owners
+        if (hasStudioOwnerRole) {
+          console.log('  -> Excluding studio owner:', profile.username)
+        } else {
+          console.log('  -> Including:', profile.username)
+        }
+        
+        // Exclude if user has studio-owner role
+        return !hasStudioOwnerRole
+      })
+      
+      console.log('Profiles after studio-owner filtering:', filteredData.length)
+      
       // Apply category filter
       if (filters?.category && filters.category !== 'all' && filteredData.length > 0) {
         const categoryRoleFilters: Record<string, string[]> = {
@@ -77,23 +120,35 @@ export function useProfilesInfinite(filters?: {
         }
         
         const allowedRoles = categoryRoleFilters[filters.category] || []
-        filteredData = filteredData.filter(profile => 
-          Array.isArray(profile.profile_roles) && 
-          profile.profile_roles.some((pr) => 
-            allowedRoles.includes(pr.role?.slug || '')
-          )
-        )
+        filteredData = filteredData.filter(profile => {
+          // Handle different formats of profile_roles
+          let roles: Array<{role: {id: number, name: string, slug: string}}> = []
+          
+          if (Array.isArray(profile.profile_roles)) {
+            roles = profile.profile_roles
+          } else if (profile.profile_roles && typeof profile.profile_roles === 'object' && 'role' in profile.profile_roles) {
+            // Single role as object
+            roles = [profile.profile_roles as {role: {id: number, name: string, slug: string}}]
+          }
+          
+          return roles.some((pr) => allowedRoles.includes(pr.role?.slug || ''))
+        })
       }
       
       // Apply role filters from filter panel
       if (filters?.roleFilters && filters.roleFilters.length > 0 && filteredData.length > 0) {
         filteredData = filteredData.filter(profile => {
+          // Handle different formats of profile_roles
+          let roles: Array<{role: {id: number, name: string, slug: string}}> = []
+          
           if (Array.isArray(profile.profile_roles)) {
-            return profile.profile_roles.some((pr) => 
-              filters.roleFilters!.includes(pr.role?.slug || '')
-            )
+            roles = profile.profile_roles
+          } else if (profile.profile_roles && typeof profile.profile_roles === 'object' && 'role' in profile.profile_roles) {
+            // Single role as object
+            roles = [profile.profile_roles as {role: {id: number, name: string, slug: string}}]
           }
-          return false
+          
+          return roles.some((pr) => filters.roleFilters!.includes(pr.role?.slug || ''))
         })
       }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogPortal, DialogOverlay } from '@/components/ui/dialog'
 import * as DialogPrimitive from "@radix-ui/react-dialog"
@@ -16,16 +17,20 @@ import { X, MapPin, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { getPriceTierSymbol } from '@/lib/constants/currencies'
+import DateRangePicker from '@/components/date-picker/date-range-picker'
+import { format } from 'date-fns'
+import { type DateRange } from 'react-day-picker'
 
 export function QuoteBasketDialog() {
+  const router = useRouter()
   const { studios, isOpen, toggleBasket, removeStudio, clearBasket, submitInquiry } = useQuoteBasket()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [formData, setFormData] = useState({
     project_type: '',
     genre: '',
     budget_range: '',
     preferred_dates: '',
-    location_preference: '',
     custom_message: ''
   })
 
@@ -33,14 +38,40 @@ export function QuoteBasketDialog() {
     e.preventDefault()
     
     if (!formData.project_type) {
-      toast.error('Please select a project type')
+      toast.error('Please Select A Project Type')
       return
     }
+    
+    if (!formData.genre) {
+      toast.error('Please Select A Genre')
+      return
+    }
+    
+    if (!formData.budget_range) {
+      toast.error('Please Select A Budget Range')
+      return
+    }
+    
+    if (!dateRange?.from) {
+      toast.error('Please Select Preferred Dates')
+      return
+    }
+    
+    
+    // Format date range for submission
+    const dateRangeString = dateRange?.from 
+      ? dateRange.to 
+        ? `${format(dateRange.from, 'LLL dd, y')} - ${format(dateRange.to, 'LLL dd, y')}`
+        : format(dateRange.from, 'LLL dd, y')
+      : ''
     
     setIsSubmitting(true)
     
     try {
-      const success = await submitInquiry(formData)
+      const success = await submitInquiry({
+        ...formData,
+        preferred_dates: dateRangeString
+      })
       if (success) {
         // Reset form
         setFormData({
@@ -48,9 +79,12 @@ export function QuoteBasketDialog() {
           genre: '',
           budget_range: '',
           preferred_dates: '',
-          location_preference: '',
           custom_message: ''
         })
+        setDateRange(undefined)
+        
+        // Navigate to chat
+        router.push('/connect/chat')
       }
     } finally {
       setIsSubmitting(false)
@@ -72,6 +106,28 @@ export function QuoteBasketDialog() {
     { value: '$$$$', label: '$$$$ - Over $5,000' }
   ]
 
+  const genres = [
+    { value: 'pop', label: 'Pop' },
+    { value: 'rock', label: 'Rock' },
+    { value: 'hip-hop', label: 'Hip-Hop' },
+    { value: 'r&b', label: 'R&B' },
+    { value: 'electronic', label: 'Electronic' },
+    { value: 'jazz', label: 'Jazz' },
+    { value: 'classical', label: 'Classical' },
+    { value: 'country', label: 'Country' },
+    { value: 'metal', label: 'Metal' },
+    { value: 'indie', label: 'Indie' },
+    { value: 'folk', label: 'Folk' },
+    { value: 'blues', label: 'Blues' },
+    { value: 'reggae', label: 'Reggae' },
+    { value: 'latin', label: 'Latin' },
+    { value: 'world', label: 'World' },
+    { value: 'experimental', label: 'Experimental' },
+    { value: 'podcast', label: 'Podcast' },
+    { value: 'audiobook', label: 'Audiobook' },
+    { value: 'other', label: 'Other' }
+  ]
+
   return (
     <Dialog open={isOpen} onOpenChange={toggleBasket}>
       <DialogPortal>
@@ -91,9 +147,9 @@ export function QuoteBasketDialog() {
           </DialogPrimitive.Close>
           
           <DialogHeader>
-            <DialogTitle>Quote Basket ({studios.length})</DialogTitle>
+            <DialogTitle>Quote Basket</DialogTitle>
             <DialogDescription>
-              Send your project details to all selected studios at once
+              Send Your Project Details To All Selected Studios At Once
             </DialogDescription>
           </DialogHeader>
 
@@ -113,7 +169,7 @@ export function QuoteBasketDialog() {
               <Card>
                 <CardContent className="pt-6">
                   <p className="text-center text-muted-foreground">
-                    No studios selected. Browse studios and add them to your quote basket.
+                    No Studios Selected. Browse Studios And Add Them To Your Quote Basket.
                   </p>
                 </CardContent>
               </Card>
@@ -166,7 +222,7 @@ export function QuoteBasketDialog() {
                   onValueChange={(value) => setFormData(prev => ({ ...prev, project_type: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select project type" />
+                    <SelectValue placeholder="Select Project Type" />
                   </SelectTrigger>
                   <SelectContent>
                     {projectTypes.map((type) => (
@@ -179,23 +235,32 @@ export function QuoteBasketDialog() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="genre">Genre</Label>
-                <Input
-                  id="genre"
+                <Label htmlFor="genre">Genre *</Label>
+                <Select
                   value={formData.genre}
-                  onChange={(e) => setFormData(prev => ({ ...prev, genre: e.target.value }))}
-                  placeholder="e.g., Pop, Rock, Hip-Hop, Electronic"
-                />
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, genre: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {genres.map((genre) => (
+                      <SelectItem key={genre.value} value={genre.value}>
+                        {genre.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="budget_range">Budget Range</Label>
+                <Label htmlFor="budget_range">Budget Range *</Label>
                 <Select
                   value={formData.budget_range}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, budget_range: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select budget range" />
+                    <SelectValue placeholder="Select Budget Range" />
                   </SelectTrigger>
                   <SelectContent>
                     {budgetRanges.map((budget) => (
@@ -208,33 +273,37 @@ export function QuoteBasketDialog() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="preferred_dates">Preferred Dates</Label>
-                <Input
-                  id="preferred_dates"
-                  value={formData.preferred_dates}
-                  onChange={(e) => setFormData(prev => ({ ...prev, preferred_dates: e.target.value }))}
-                  placeholder="e.g., Next week, January 15-20, Flexible"
+                <Label>Preferred Dates *</Label>
+                <DateRangePicker 
+                  date={dateRange}
+                  onDateChange={setDateRange}
+                  className="w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location_preference">Location Preference</Label>
-                <Input
-                  id="location_preference"
-                  value={formData.location_preference}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location_preference: e.target.value }))}
-                  placeholder="e.g., Within 50 miles of downtown"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="custom_message">Additional Message</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="custom_message">Additional Message</Label>
+                  <span className={cn(
+                    "text-xs",
+                    formData.custom_message.length > 280 ? "text-destructive" : "text-muted-foreground"
+                  )}>
+                    {formData.custom_message.length}/280
+                  </span>
+                </div>
                 <Textarea
                   id="custom_message"
                   value={formData.custom_message}
-                  onChange={(e) => setFormData(prev => ({ ...prev, custom_message: e.target.value }))}
-                  placeholder="Tell the studios more about your project..."
+                  onChange={(e) => {
+                    if (e.target.value.length <= 280) {
+                      setFormData(prev => ({ ...prev, custom_message: e.target.value }))
+                    }
+                  }}
+                  placeholder="Tell The Studios More About Your Project..."
                   rows={4}
+                  className={cn(
+                    formData.custom_message.length > 260 && "focus:ring-amber-500"
+                  )}
                 />
               </div>
 

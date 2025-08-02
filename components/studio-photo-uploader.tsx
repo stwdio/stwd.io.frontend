@@ -104,12 +104,12 @@ export function StudioPhotoUploader({
         const newUrls = [...photoUrls, ...successfulUploads]
         onPhotosUpdate(newUrls)
         
-        toast.success(`Successfully uploaded ${successfulUploads.length} image${successfulUploads.length > 1 ? 's' : ''}!`)
+        toast.success(`Successfully Uploaded ${successfulUploads.length} Image${successfulUploads.length > 1 ? 's' : ''}!`)
       }
 
       if (successfulUploads.length < files.length) {
         const failedCount = files.length - successfulUploads.length
-        toast.error(`${failedCount} image${failedCount > 1 ? 's' : ''} failed to upload`)
+        toast.error(`${failedCount} Image${failedCount > 1 ? 's' : ''} Failed To Upload`)
       }
       
       // Clear file input

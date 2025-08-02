@@ -44,7 +44,7 @@ export function ConversationList({
   onSelect,
   currentUserId 
 }: ConversationListProps) {
-  const [filter, setFilter] = useState<'all' | 'enquiries' | 'messages'>('all')
+  const [filter, setFilter] = useState<'all' | 'enquiries' | 'messages' | 'groups'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [studioImages, setStudioImages] = useState<Record<string, string>>({})
   const supabase = createClient()
@@ -90,10 +90,13 @@ export function ConversationList({
   // Filter conversations based on type and search
   const filteredConversations = conversations.filter(conversation => {
     const isEnquiry = conversation.title && conversation.title.trim() !== ''
+    const isGroup = conversation.is_group === true
+    const isRegularGroup = isGroup && !isEnquiry // Group chat that's not an enquiry
     
     // Type filter
     if (filter === 'enquiries' && !isEnquiry) return false
-    if (filter === 'messages' && isEnquiry) return false
+    if (filter === 'messages' && (isEnquiry || isRegularGroup)) return false
+    if (filter === 'groups' && !isRegularGroup) return false
     
     // Search filter
     if (searchQuery) {
@@ -164,6 +167,13 @@ export function ConversationList({
               >
                 <IconMessage className="h-4 w-4 mr-2" />
                 Messages
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setFilter('groups')}
+                className={cn("cursor-pointer", filter === 'groups' && "bg-accent")}
+              >
+                <IconUsers className="h-4 w-4 mr-2" />
+                Groups
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

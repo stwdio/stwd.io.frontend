@@ -7,7 +7,9 @@ interface StudioInteractionStatus {
   hasConversation: boolean
   hasEnquiry: boolean
   conversationId?: number
+  conversationUuid?: string
   enquiryConversationId?: number
+  enquiryConversationUuid?: string
 }
 
 export function useStudioInteractionStatuses(studioIds: number[], userId: string | null) {
@@ -38,57 +40,44 @@ export function useStudioInteractionStatuses(studioIds: number[], userId: string
         .select('id, name, owner_id')
         .in('id', studioIds)
       
-      // Fetch all conversations for this user
-      const { data: userConversations } = await supabase
-        .from('chat_participants')
-        .select(`
-          conversation_id,
-          chat_conversations!inner(
-            id,
-            title,
-            is_group
-          )
-        `)
-        .eq('user_id', userId)
+      // Fetch all conversations for this user using the safe RPC
+      const { data: conversationsData } = await supabase
+        .rpc('get_user_conversations')
       
-      // For each conversation, get all participants
-      const conversationParticipants: Record<number, string[]> = {}
-      if (userConversations) {
-        const conversationIds = userConversations.map(uc => uc.conversation_id)
-        
-        const { data: allParticipants } = await supabase
-          .from('chat_participants')
-          .select('conversation_id, user_id')
-          .in('conversation_id', conversationIds)
-        
-        if (allParticipants) {
-          allParticipants.forEach(p => {
-            if (!conversationParticipants[p.conversation_id]) {
-              conversationParticipants[p.conversation_id] = []
-            }
-            conversationParticipants[p.conversation_id].push(p.user_id)
-          })
+      // Transform the RPC data to match the expected format
+      const userConversations = conversationsData?.map(conv => ({
+        conversation_id: conv.id,
+        chat_conversations: {
+          id: conv.id,
+          title: conv.title,
+          is_group: conv.is_group
         }
+      }))
+      
+      // Extract participants from the RPC data
+      const conversationParticipants: Record<number, string[]> = {}
+      if (conversationsData) {
+        conversationsData.forEach(conv => {
+          conversationParticipants[conv.id] = conv.chat_participants?.map(p => p.user_id) || []
+        })
       }
       
       // Match conversations to studios
-      const studioConversations: Record<number, number> = {}
-      const studioEnquiries: Record<number, number> = {}
+      const studioConversations: Record<number, {id: number, uuid: string}> = {}
+      const studioEnquiries: Record<number, {id: number, uuid: string}> = {}
       
-      if (userConversations && studios) {
-        userConversations.forEach(item => {
-          const conv = item.chat_conversations
+      if (conversationsData && studios) {
+        conversationsData.forEach(conv => {
           const participants = conversationParticipants[conv.id] || []
           
           // Check each studio to see if this conversation matches
           studios.forEach(studio => {
-            // Check if it's an enquiry conversation (group chat with specific title format)
+            // Check if it's an enquiry conversation (group chat with studio name as title)
             const isEnquiry = conv.is_group && 
-              conv.title?.toLowerCase().includes('studio enquiry:') && 
-              conv.title?.toLowerCase().includes(studio.name.toLowerCase())
+              conv.title?.toLowerCase() === studio.name.toLowerCase()
             
             if (isEnquiry && !studioEnquiries[studio.id]) {
-              studioEnquiries[studio.id] = conv.id
+              studioEnquiries[studio.id] = {id: conv.id, uuid: conv.uuid}
             }
             
             // Check if conversation title matches studio name (for direct chats)
@@ -96,7 +85,7 @@ export function useStudioInteractionStatuses(studioIds: number[], userId: string
               const titleMatch = conv.title?.toLowerCase() === studio.name.toLowerCase()
               
               if (titleMatch) {
-                studioConversations[studio.id] = conv.id
+                studioConversations[studio.id] = {id: conv.id, uuid: conv.uuid}
               }
             }
           })
@@ -108,16 +97,18 @@ export function useStudioInteractionStatuses(studioIds: number[], userId: string
       
       studioIds.forEach(studioId => {
         const hasInquiry = inquiries?.some(inq => inq.studio_id === studioId) || false
-        const conversationId = studioConversations[studioId]
-        const enquiryConversationId = studioEnquiries[studioId]
+        const conversation = studioConversations[studioId]
+        const enquiryConversation = studioEnquiries[studioId]
         
         statusMap[studioId] = {
           studioId,
           hasInquiry,
-          hasConversation: !!conversationId,
-          hasEnquiry: !!enquiryConversationId,
-          conversationId,
-          enquiryConversationId
+          hasConversation: !!conversation,
+          hasEnquiry: !!enquiryConversation,
+          conversationId: conversation?.id,
+          conversationUuid: conversation?.uuid,
+          enquiryConversationId: enquiryConversation?.id,
+          enquiryConversationUuid: enquiryConversation?.uuid
         }
       })
 

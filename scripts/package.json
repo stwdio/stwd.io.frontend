@@ -1,0 +1,13 @@
+{
+  "name": "avatar-upload-script",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Script to upload avatars for example.com users",
+  "main": "upload-avatars.js",
+  "scripts": {
+    "upload-avatars": "node upload-avatars.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3"
+  }
+}

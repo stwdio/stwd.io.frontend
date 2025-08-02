@@ -14,8 +14,9 @@ async function ChatPageContent({ searchParams }: ChatPageProps) {
   console.log('Raw search params:', params)
   const targetUsername = params?.user as string | undefined
   const conversationUuid = params?.c as string | undefined  // Use 'c' for conversation UUID
+  const conversationId = params?.conversation as string | undefined  // Backward compatibility with numeric IDs
   const studioId = params?.studio as string | undefined
-  console.log('Chat page loaded with target username:', targetUsername, 'conversation UUID:', conversationUuid, 'studio:', studioId)
+  console.log('Chat page loaded with target username:', targetUsername, 'conversation UUID:', conversationUuid, 'conversation ID:', conversationId, 'studio:', studioId)
   
   const supabase = await createServerComponentClient()
   
@@ -243,69 +244,23 @@ Concierge`
     }
   }
 
-  // Fetch initial conversations with participants and last message
-  // First get all conversation IDs where the user is a participant
-  const { data: userConversations, error: participantsError } = await supabase
-    .from('chat_participants')
-    .select('conversation_id')
-    .eq('user_id', user!.id)
-  
+  // Fetch initial conversations using the safe RPC function
   console.log('Fetching conversations for user:', user!.id)
-  console.log('User conversations query result:', userConversations)
-  console.log('User conversations error:', participantsError)
   
-  const conversationIds = userConversations?.map(uc => uc.conversation_id) || []
-  console.log('User conversations:', conversationIds)
+  const { data: conversationsData, error: convsError } = await supabase
+    .rpc('get_user_conversations')
   
-  // Then fetch those conversations with all participants and messages
+  console.log('Conversations RPC result:', conversationsData)
+  console.log('Conversations RPC error:', convsError)
+  
   let conversations = []
-  if (conversationIds.length > 0) {
-    const { data, error: convsError } = await supabase
-      .from('chat_conversations')
-      .select(`
-        *,
-        chat_participants (
-          user_id,
-          conversation_id
-        ),
-        chat_messages (
-          id,
-          content,
-          created_at,
-          sender_id
-        )
-      `)
-      .in('id', conversationIds)
-      .order('updated_at', { ascending: false })
+  if (conversationsData && Array.isArray(conversationsData)) {
+    const data = conversationsData
     
-    console.log('Conversations query result:', data)
-    console.log('Conversations query error:', convsError)
-    
-    if (data) {
-      // Now fetch profiles for all participants
-      const allParticipantIds = new Set<string>()
-      data.forEach(conv => {
-        conv.chat_participants?.forEach((p: any) => allParticipantIds.add(p.user_id))
-      })
-      
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('user_id', Array.from(allParticipantIds))
-      
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || [])
-      
-      // Map profiles to participants
-      conversations = data.map(conv => ({
-        ...conv,
-        chat_participants: conv.chat_participants?.map((p: any) => ({
-          ...p,
-          profiles: profileMap.get(p.user_id) || null
-        })) || []
-      }))
-    }
+    // The RPC function already includes profiles, so we just need to format the data
+    conversations = data
   } else {
-    console.log('No conversation IDs found, skipping conversation fetch')
+    console.log('No conversations found or error occurred')
   }
   
   console.log('Found conversations:', conversations.length)
@@ -318,6 +273,17 @@ Concierge`
     const targetConversation = conversations.find(c => c.uuid === conversationUuid)
     if (targetConversation) {
       selectedConversationId = targetConversation.id
+    }
+  }
+  
+  // Backward compatibility: if numeric conversation ID is provided
+  if (!selectedConversationId && conversationId && conversations.length > 0) {
+    const numericId = parseInt(conversationId)
+    if (!isNaN(numericId)) {
+      const targetConversation = conversations.find(c => c.id === numericId)
+      if (targetConversation) {
+        selectedConversationId = targetConversation.id
+      }
     }
   }
   

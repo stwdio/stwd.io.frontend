@@ -33,7 +33,7 @@ export function QuoteBasketDialog() {
     e.preventDefault()
     
     if (!formData.project_type) {
-      toast.error('Please select a project type')
+      toast.error('Please Select A Project Type')
       return
     }
     

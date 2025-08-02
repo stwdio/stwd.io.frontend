@@ -26,17 +26,17 @@ export const useGroupChatBasket = create<GroupChatBasketStore>()(
         const { userIds } = get()
         
         if (userIds.includes(userId)) {
-          toast.info('User already added to group chat')
+          toast.info('User Already Added To Group Chat')
           return
         }
         
         if (userIds.length >= MAX_USERS) {
-          toast.error(`Maximum ${MAX_USERS} users allowed in group chat`)
+          toast.error(`Maximum ${MAX_USERS} Users Allowed In Group Chat`)
           return
         }
         
         set({ userIds: [...userIds, userId] })
-        toast.success('Added to group chat')
+        toast.success('Added To Group Chat')
       },
       
       removeUser: (userId: string) => {
@@ -47,7 +47,7 @@ export const useGroupChatBasket = create<GroupChatBasketStore>()(
       
       clearBasket: () => {
         set({ userIds: [] })
-        toast.success('Group chat basket cleared')
+        toast.success('Group Chat Basket Cleared')
       },
       
       toggleBasket: () => {

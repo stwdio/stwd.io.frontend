@@ -6,18 +6,22 @@ import { toast } from 'sonner'
 
 interface FollowUserParams {
   followingUserId: string
+  userName?: string
 }
 
 interface UnfollowUserParams {
   followingUserId: string
+  userName?: string
 }
 
 interface FollowStudioParams {
   followingStudioId: number
+  studioName?: string
 }
 
 interface UnfollowStudioParams {
   followingStudioId: number
+  studioName?: string
 }
 
 export function useFollowUser() {
@@ -25,7 +29,7 @@ export function useFollowUser() {
   const supabase = createClient()
 
   return useMutation({
-    mutationFn: async ({ followingUserId }: FollowUserParams) => {
+    mutationFn: async ({ followingUserId, userName }: FollowUserParams) => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
@@ -39,10 +43,11 @@ export function useFollowUser() {
         .single()
 
       if (error) throw error
-      return data
+      return { ...data, userName }
     },
-    onSuccess: (_, variables) => {
-      toast.success('User followed successfully')
+    onSuccess: (data, variables) => {
+      const name = data.userName || 'User'
+      toast.success(`Now Following ${name}`)
       queryClient.invalidateQueries({ queryKey: ['is-following-user', variables.followingUserId] })
       queryClient.invalidateQueries({ queryKey: ['follower-count', variables.followingUserId] })
       queryClient.invalidateQueries({ queryKey: ['following-count'] })
@@ -51,7 +56,7 @@ export function useFollowUser() {
     },
     onError: (error) => {
       console.error('Error following user:', error)
-      toast.error('Failed to follow user')
+      toast.error('Failed To Follow User')
     }
   })
 }
@@ -61,7 +66,7 @@ export function useUnfollowUser() {
   const supabase = createClient()
 
   return useMutation({
-    mutationFn: async ({ followingUserId }: UnfollowUserParams) => {
+    mutationFn: async ({ followingUserId, userName }: UnfollowUserParams) => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
@@ -72,9 +77,11 @@ export function useUnfollowUser() {
         .eq('following_user_id', followingUserId)
 
       if (error) throw error
+      return { userName }
     },
-    onSuccess: (_, variables) => {
-      toast.success('User unfollowed successfully')
+    onSuccess: (data, variables) => {
+      const name = data?.userName || 'User'
+      toast.success(`Unfollowed ${name}`)
       queryClient.invalidateQueries({ queryKey: ['is-following-user', variables.followingUserId] })
       queryClient.invalidateQueries({ queryKey: ['follower-count', variables.followingUserId] })
       queryClient.invalidateQueries({ queryKey: ['following-count'] })
@@ -83,7 +90,7 @@ export function useUnfollowUser() {
     },
     onError: (error) => {
       console.error('Error unfollowing user:', error)
-      toast.error('Failed to unfollow user')
+      toast.error('Failed To Unfollow User')
     }
   })
 }
@@ -93,7 +100,7 @@ export function useFollowStudio() {
   const supabase = createClient()
 
   return useMutation({
-    mutationFn: async ({ followingStudioId }: FollowStudioParams) => {
+    mutationFn: async ({ followingStudioId, studioName }: FollowStudioParams) => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
@@ -107,10 +114,11 @@ export function useFollowStudio() {
         .single()
 
       if (error) throw error
-      return data
+      return { ...data, studioName }
     },
-    onSuccess: (_, variables) => {
-      toast.success('Studio followed successfully')
+    onSuccess: (data, variables) => {
+      const name = data.studioName || 'Studio'
+      toast.success(`Now Following ${name}`)
       queryClient.invalidateQueries({ queryKey: ['is-following-studio', variables.followingStudioId] })
       queryClient.invalidateQueries({ queryKey: ['studio-followers', variables.followingStudioId] })
       queryClient.invalidateQueries({ queryKey: ['follower-count', undefined, variables.followingStudioId] })
@@ -120,7 +128,7 @@ export function useFollowStudio() {
     },
     onError: (error) => {
       console.error('Error following studio:', error)
-      toast.error('Failed to follow studio')
+      toast.error('Failed To Follow Studio')
     }
   })
 }
@@ -130,7 +138,7 @@ export function useUnfollowStudio() {
   const supabase = createClient()
 
   return useMutation({
-    mutationFn: async ({ followingStudioId }: UnfollowStudioParams) => {
+    mutationFn: async ({ followingStudioId, studioName }: UnfollowStudioParams) => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
@@ -141,9 +149,11 @@ export function useUnfollowStudio() {
         .eq('following_studio_id', followingStudioId)
 
       if (error) throw error
+      return { studioName }
     },
-    onSuccess: (_, variables) => {
-      toast.success('Studio unfollowed successfully')
+    onSuccess: (data, variables) => {
+      const name = data?.studioName || 'Studio'
+      toast.success(`Unfollowed ${name}`)
       queryClient.invalidateQueries({ queryKey: ['is-following-studio', variables.followingStudioId] })
       queryClient.invalidateQueries({ queryKey: ['studio-followers', variables.followingStudioId] })
       queryClient.invalidateQueries({ queryKey: ['follower-count', undefined, variables.followingStudioId] })
@@ -153,7 +163,7 @@ export function useUnfollowStudio() {
     },
     onError: (error) => {
       console.error('Error unfollowing studio:', error)
-      toast.error('Failed to unfollow studio')
+      toast.error('Failed To Unfollow Studio')
     }
   })
 }

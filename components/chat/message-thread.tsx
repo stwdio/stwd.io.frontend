@@ -69,9 +69,9 @@ export function MessageThread({
     }
     
     const loadStudioImage = async () => {
-      if (conversation.title && conversation.title.includes('Studio Enquiry:')) {
-        // Extract studio name from "Studio Enquiry: Name" format
-        const studioName = conversation.title.replace('Studio Enquiry: ', '')
+      if (conversation.title && conversation.is_group) {
+        // Extract studio name from title
+        const studioName = conversation.title
         
         const { data: studio } = await supabase
           .from('studios')
@@ -250,7 +250,7 @@ export function MessageThread({
             
             // For studio enquiries, show studio info
             if (isEnquiry) {
-              const studioName = conversation.title.replace('Studio Enquiry: ', '')
+              const studioName = conversation.title
               const avatarUrl = studioImage || undefined
               
               return (
@@ -354,7 +354,7 @@ export function MessageThread({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
         <div className="p-4 space-y-4">
-          {messages.map((msg) => {
+          {messages?.map((msg) => {
             const isCurrentUser = msg.sender_id === currentUserId
             const sender = participantMap.get(msg.sender_id)
             let displayName = 'Unknown'

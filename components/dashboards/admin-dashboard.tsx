@@ -189,11 +189,11 @@ export function AdminDashboard() {
 
       if (error) throw error
 
-      toast.success(`Studio ${!currentPublished ? 'published' : 'unpublished'} successfully`)
+      toast.success(`Studio ${!currentPublished ? 'Published' : 'Unpublished'} Successfully`)
       fetchData()
     } catch (error) {
       console.error('Error toggling published status:', error)
-      toast.error('Failed to update published status')
+      toast.error('Failed To Update Published Status')
     }
   }
 
@@ -208,11 +208,11 @@ export function AdminDashboard() {
 
       if (error) throw error
 
-      toast.success(`Studio ${newStatus === 'verified' ? 'verified' : 'unverified'} successfully`)
+      toast.success(`Studio ${newStatus === 'verified' ? 'Verified' : 'Unverified'} Successfully`)
       fetchData()
     } catch (error) {
       console.error('Error toggling verification:', error)
-      toast.error('Failed to update verification status')
+      toast.error('Failed To Update Verification Status')
     }
   }
 

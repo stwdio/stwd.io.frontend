@@ -53,7 +53,9 @@ interface StudioCardActionsProps {
     hasConversation: boolean
     hasEnquiry: boolean
     conversationId?: number
+    conversationUuid?: string
     enquiryConversationId?: number
+    enquiryConversationUuid?: string
   }
 }
 
@@ -90,8 +92,13 @@ export function StudioCardActions({
   const isInBasket = isStudioInBasket(studio.id)
 
   const handleViewConversation = () => {
-    if (conversationId) {
-      router.push(`/connect/chat?conversation=${conversationId}`)
+    const uuid = hasEnquiry ? interactionStatus?.enquiryConversationUuid : interactionStatus?.conversationUuid
+    if (uuid) {
+      router.push(`/connect/chat?c=${uuid}`)
+    } else if (conversationId || enquiryConversationId) {
+      // Fallback to numeric ID if UUID not available (temporary)
+      const id = hasEnquiry ? enquiryConversationId : conversationId
+      router.push(`/connect/chat?conversation=${id}`)
     } else {
       // If we don't have a conversation ID, navigate to chat with studio context
       // This should create a new draft
@@ -115,42 +122,20 @@ export function StudioCardActions({
 
     setLocalHasInquiry((inquiryCheck && inquiryCheck.length > 0) || false)
     
-    // Check for existing conversations with this studio
-    // First get all conversations for this user
-    const { data: userConversations } = await supabase
-      .from('chat_participants')
-      .select(`
-        conversation_id,
-        chat_conversations!inner(
-          id,
-          title
-        )
-      `)
-      .eq('user_id', profileData.user_id)
+    // Check for existing conversations with this studio using safe RPC
+    const { data: conversationsData } = await supabase
+      .rpc('get_user_conversations')
     
-    if (userConversations) {
-      // Get all participants for these conversations
-      const conversationIds = userConversations.map(uc => uc.conversation_id)
-      const { data: allParticipants } = await supabase
-        .from('chat_participants')
-        .select('conversation_id, user_id')
-        .in('conversation_id', conversationIds)
-      
-      // Group participants by conversation
+    if (conversationsData) {
+      // Extract participants from RPC data
       const conversationParticipants: Record<number, string[]> = {}
-      if (allParticipants) {
-        allParticipants.forEach(p => {
-          if (!conversationParticipants[p.conversation_id]) {
-            conversationParticipants[p.conversation_id] = []
-          }
-          conversationParticipants[p.conversation_id].push(p.user_id)
-        })
-      }
+      conversationsData.forEach(conv => {
+        conversationParticipants[conv.id] = conv.chat_participants?.map(p => p.user_id) || []
+      })
       
       // Check if any conversation matches this studio
       let foundConversationId = null
-      const hasStudioConversation = userConversations.some(item => {
-        const conv = item.chat_conversations
+      const hasStudioConversation = conversationsData.some(conv => {
         const participants = conversationParticipants[conv.id] || []
         
         // Check if conversation title matches studio name (case insensitive)

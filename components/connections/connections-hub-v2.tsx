@@ -61,7 +61,7 @@ function ProfileCardCustomActions({ profile, isInBasket, onToggleGroupChat }: Pr
   )
 }
 
-function ReceivedRequestActions({ requestId }: { requestId: number }) {
+function ReceivedRequestActions({ requestId, userName }: { requestId: number; userName: string }) {
   const { mutate: acceptRequest, isPending: isAccepting } = useAcceptConnectionRequest()
   const { mutate: declineRequest, isPending: isDeclining } = useDeclineConnectionRequest()
   
@@ -77,7 +77,7 @@ function ReceivedRequestActions({ requestId }: { requestId: number }) {
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                acceptRequest(requestId)
+                acceptRequest({ connectionId: requestId, userName })
               }}
               disabled={isAccepting || isDeclining}
             >
@@ -96,7 +96,7 @@ function ReceivedRequestActions({ requestId }: { requestId: number }) {
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            declineRequest(requestId)
+            declineRequest({ connectionId: requestId, userName })
           }}
           disabled={isAccepting || isDeclining}
         >
@@ -107,7 +107,7 @@ function ReceivedRequestActions({ requestId }: { requestId: number }) {
   )
 }
 
-function SentRequestActions({ requestId }: { requestId: number }) {
+function SentRequestActions({ requestId, userName }: { requestId: number; userName: string }) {
   const { mutate: cancelRequest, isPending: isCanceling } = useCancelConnectionRequest()
   
   return (
@@ -143,7 +143,7 @@ function SentRequestActions({ requestId }: { requestId: number }) {
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            cancelRequest(requestId)
+            cancelRequest({ connectionId: requestId, userName })
           }}
           disabled={isCanceling}
         >
@@ -373,7 +373,12 @@ export function ConnectionsHubV2() {
                 linkToProfile={true}
                 hideFollowButton={true}
                 customActions={
-                  <ReceivedRequestActions requestId={request.id} />
+                  <ReceivedRequestActions 
+                    requestId={request.id} 
+                    userName={request.requester?.first_name && request.requester?.last_name 
+                      ? `${request.requester.first_name} ${request.requester.last_name}` 
+                      : request.requester?.username || 'User'} 
+                  />
                 }
               />
             ))
@@ -386,7 +391,12 @@ export function ConnectionsHubV2() {
                 linkToProfile={true}
                 hideFollowButton={true}
                 customActions={
-                  <SentRequestActions requestId={request.id} />
+                  <SentRequestActions 
+                    requestId={request.id} 
+                    userName={request.receiver?.first_name && request.receiver?.last_name 
+                      ? `${request.receiver.first_name} ${request.receiver.last_name}` 
+                      : request.receiver?.username || 'User'} 
+                  />
                 }
               />
             ))
@@ -420,10 +430,16 @@ export function ConnectionsHubV2() {
               let statusBadge = null
               
               if (receivedRequest) {
-                customActions = <ReceivedRequestActions requestId={receivedRequest.id} />
+                const displayName = user.first_name && user.last_name 
+                  ? `${user.first_name} ${user.last_name}` 
+                  : user.username
+                customActions = <ReceivedRequestActions requestId={receivedRequest.id} userName={displayName} />
                 statusBadge = { label: 'Pending', variant: 'secondary' as const }
               } else if (sentRequest) {
-                customActions = <SentRequestActions requestId={sentRequest.id} />
+                const displayName = user.first_name && user.last_name 
+                  ? `${user.first_name} ${user.last_name}` 
+                  : user.username
+                customActions = <SentRequestActions requestId={sentRequest.id} userName={displayName} />
                 statusBadge = { label: 'Requested', variant: 'outline' as const }
               } else if (isConnected) {
                 customActions = (

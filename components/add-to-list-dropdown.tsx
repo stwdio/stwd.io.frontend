@@ -60,7 +60,7 @@ export default function AddToListDropdown({
         : await addStudioToList(listId.toString(), studioId)
 
       if (result.success) {
-        const action = isInList ? 'removed from' : 'added to'
+        const action = isInList ? 'Removed From' : 'Added To'
         toast.success(`${studioName} ${action} ${listName}`)
         
         // Update local state
@@ -78,11 +78,11 @@ export default function AddToListDropdown({
         
         onSuccess?.()
       } else {
-        toast.error(result.error || 'Failed to update list')
+        toast.error(result.error || 'Failed To Update List')
       }
     } catch (error) {
       console.error('Error toggling studio in list:', error)
-      toast.error('An unexpected error occurred')
+      toast.error('An Unexpected Error Occurred')
     } finally {
       setActionLoadingStates(prev => {
         const updated = new Set(prev)

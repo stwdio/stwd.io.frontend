@@ -2,9 +2,47 @@
 
 ## Current Work Session
 **Date**: February 2025
-**Focus**: Chat Interface Improvements - Enquiry Chat Display
+**Focus**: Chat System RLS Refactor
 
-### Current Work: Chat Interface Improvements (February 2025)
+### Current Work: Hybrid RLS & RPC Recursion Fix (February 2025)
+
+#### Chat RLS Hybrid Architecture Implementation:
+- **Problem Solved**: Fixed persistent "infinite recursion detected in policy" errors (PostgreSQL error 42P17)
+- **Root Cause**: The "pure RLS" approach failed - chat_participants SELECT policy queried itself, creating recursion
+- **Solution Implemented**: Hybrid RLS & RPC architecture with SECURITY DEFINER function
+  
+#### Implementation Details:
+1. **Created Helper Function**: `is_chat_participant()` - SECURITY DEFINER function that safely checks membership
+2. **Simplified RLS Policies**:
+   - All complex permission checks delegated to the helper function
+   - RLS policies now only enforce simple, non-recursive rules
+   - Zero self-referential queries in any policy
+3. **Key Design Principle**: RPC functions handle complex logic, RLS handles simple ownership
+
+#### New Hybrid Structure:
+- **is_chat_participant()**: Master function that bypasses RLS to check membership
+- **chat_conversations**: SELECT uses helper function, INSERT checks auth.uid()
+- **chat_participants**: SELECT uses helper function, INSERT checks conversation creator
+- **chat_messages**: SELECT/INSERT use helper function, DELETE checks sender ownership
+
+#### Frontend Simplification:
+- Removing all RPC fallback logic from message sending
+- Direct Supabase client calls now work without recursion errors
+
+### Previous Work: People Discovery Filtering (February 2025)
+
+#### People Section Updates:
+- **Filtered User Types**: Updated people discovery to exclude specific user types
+  - Excludes users with `system_role` of 'owner' or 'admin'
+  - Excludes the concierge user (identified by username 'studio_concierge')
+  - Excludes users with the 'studio-owner' professional role
+- **Query Updates**: Modified `useProfilesInfinite` hook with two-stage filtering:
+  1. Database-level filtering for system roles and concierge username
+  2. Client-side filtering to remove users with studio-owner professional role
+- **Purpose**: Ensures the people section only shows creators and industry professionals,
+  not studio owners, admins, or the platform concierge
+
+### Previous Work: Chat Interface Improvements (February 2025)
 
 #### Chat Display Updates:
 - **Enquiry Chat Headers**: Reverted to show studio names with studio images

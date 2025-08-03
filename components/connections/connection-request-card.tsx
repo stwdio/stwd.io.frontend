@@ -102,7 +102,7 @@ export function ConnectionRequestCard({ request, type }: ConnectionRequestCardPr
 
   const handleProfileClick = () => {
     if (profile?.username) {
-      router.push(`/profile/${profile.username}`)
+      router.push(`/profiles/${profile.username}`)
     }
   }
 

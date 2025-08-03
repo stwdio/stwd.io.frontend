@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,9 +12,11 @@ import { StudioDetailActions } from "@/components/studio-detail-actions"
 import { BackButton } from "@/components/back-button"
 import { cn } from "@/lib/utils"
 import { FollowersList } from "@/components/social/followers-list"
+import { trackEvent } from "@/lib/analytics/ga-events"
 
 interface Studio {
   id: number
+  slug: string
   name: string
   description: string
   location: string
@@ -59,6 +61,11 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
   const [gearOpen, setGearOpen] = useState(true)
   const [gearSearchQuery, setGearSearchQuery] = useState('')
   const [reviewSearchQuery, setReviewSearchQuery] = useState('')
+  
+  // Track studio view when component mounts
+  useEffect(() => {
+    trackEvent.studioView(studio.slug)
+  }, [studio.slug])
   
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (

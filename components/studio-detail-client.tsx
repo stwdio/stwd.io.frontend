@@ -8,6 +8,7 @@ import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { Plus, Edit, MessageCircle, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 interface Profile {
   id: number
@@ -176,7 +177,14 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
   // For creators - show contact and either "View Inquiry" or "Quote"
   return (
     <>
-      <Button className="flex-1" size="lg">
+      <Button 
+        className="flex-1" 
+        size="lg"
+        onClick={() => {
+          trackEvent.studioEnquiry(studio.name)
+          // Add contact studio logic here
+        }}
+      >
         <MessageCircle className="h-4 w-4 mr-2" />
         Contact Studio
       </Button>
@@ -185,7 +193,10 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         <Button 
           variant="outline" 
           className="flex-1"
-          onClick={handleViewConversation}
+          onClick={() => {
+            trackEvent.studioView(studio.name)
+            handleViewConversation()
+          }}
         >
           <MessageSquare className="h-4 w-4 mr-2" />
           View Conversation
@@ -194,7 +205,12 @@ export function StudioDetailActions({ studio }: StudioDetailActionsProps) {
         <Button 
           variant="outline" 
           className="flex-1"
-          onClick={async () => await addStudio(studio)}
+          onClick={async () => {
+            if (!isInBasket) {
+              trackEvent.studioEnquiry(studio.name)
+              await addStudio(studio)
+            }
+          }}
           disabled={isInBasket}
         >
           <Plus className="h-4 w-4 mr-2" />

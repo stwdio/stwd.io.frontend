@@ -8,6 +8,7 @@ import { useQuoteBasket } from '@/lib/store/quote-basket'
 import { Plus, MessageSquare, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthModal } from '@/lib/hooks/use-auth-modal'
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 interface Profile {
   id: number
@@ -92,6 +93,9 @@ export function StudioCardActions({
   const isInBasket = isStudioInBasket(studio.id)
 
   const handleViewConversation = () => {
+    // Track studio enquiry action
+    trackEvent.studioEnquiry(studio.slug || studio.name)
+    
     const uuid = hasEnquiry ? interactionStatus?.enquiryConversationUuid : interactionStatus?.conversationUuid
     if (uuid) {
       router.push(`/connect/chat?c=${uuid}`)
@@ -236,6 +240,8 @@ export function StudioCardActions({
             // If conversation exists, navigate to it
             handleViewConversation()
           } else {
+            // Track studio enquiry action
+            trackEvent.studioEnquiry(studio.slug || studio.name)
             // Navigate to chat with studio context
             router.push(`/connect/chat?studio=${studio.slug || studio.id}`)
           }

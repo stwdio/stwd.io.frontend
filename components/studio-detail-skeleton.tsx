@@ -12,10 +12,10 @@ export function StudioDetailSkeleton() {
         </div>
       </div>
 
-      {/* Main Content Area - Two Column Grid */}
-      <div className="flex-1 grid grid-cols-[45%_55%] overflow-hidden">
-        {/* Left Column - Full Height Image Carousel */}
-        <div className="relative bg-black overflow-hidden h-full">
+      {/* Main Content Area - Responsive Grid */}
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden lg:grid lg:grid-cols-[45%_55%]">
+        {/* Mobile: Both columns scroll together; Desktop: Grid layout with fixed image */}
+        <div className="relative bg-black overflow-hidden h-80 lg:h-full">
           <div className="relative h-full w-full overflow-hidden">
             <Skeleton className="absolute inset-0 w-full h-full" />
           </div>
@@ -34,13 +34,13 @@ export function StudioDetailSkeleton() {
           </div>
         </div>
 
-        {/* Right Column - Scrollable Content */}
-        <div className="h-full overflow-y-auto">
-          <div className="p-8 space-y-8">
+        {/* Right Column - Always part of scrollable flow on mobile */}
+        <div className="lg:overflow-y-auto">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
             {/* Studio Header */}
             <div className="space-y-4">
               <div>
-                <Skeleton className="h-10 w-3/4 mb-4" /> {/* Studio name */}
+                <Skeleton className="h-8 sm:h-9 lg:h-10 w-3/4 mb-2" /> {/* Studio name */}
               </div>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">

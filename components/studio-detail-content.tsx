@@ -87,17 +87,17 @@ export function StudioDetailContent({ studio, amenities, reviews, averageRating,
       </div>
 
       {/* Main Content Area - Responsive Grid */}
-      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[45%_55%] overflow-hidden">
-        {/* Left Column - Fixed height on mobile, full height on desktop */}
-        <div className="h-80 flex-shrink-0 lg:h-full">
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden lg:grid lg:grid-cols-[45%_55%]">
+        {/* Mobile: Both columns scroll together; Desktop: Grid layout with fixed image */}
+        <div className="h-80 lg:h-full">
           <StudioImageCarousel 
             images={allImages}
             studioName={studio.name}
           />
         </div>
 
-        {/* Right Column - Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Right Column - Always part of scrollable flow on mobile */}
+        <div className="lg:overflow-y-auto">
           <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
             {/* Studio Header */}
             <div className="space-y-4">

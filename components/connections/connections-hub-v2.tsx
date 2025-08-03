@@ -250,7 +250,12 @@ export function ConnectionsHubV2() {
     )
   }
 
-  if (!connections || connections.length === 0) {
+  // Show empty state only if there are no connections AND no pending requests
+  const hasNoConnections = (!connections || connections.length === 0) && 
+                           (!pendingRequests || pendingRequests.length === 0) && 
+                           (!sentRequests || sentRequests.length === 0)
+  
+  if (hasNoConnections) {
     return (
       <div className="h-full flex flex-col">
         {/* Search and Filter Bar */}

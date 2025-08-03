@@ -240,9 +240,9 @@ export function ProfileContent({ profile }: ProfileContentProps) {
       </div>
 
       {/* Main Content Area - Responsive Grid */}
-      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[40%_60%] overflow-hidden">
-        {/* Left Column - Fixed height on mobile, full height on desktop */}
-        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden h-80 flex-shrink-0 lg:h-full flex items-center justify-center">
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden lg:grid lg:grid-cols-[40%_60%]">
+        {/* Mobile: Both columns scroll together; Desktop: Grid layout with fixed image */}
+        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden h-80 lg:h-full flex items-center justify-center">
           <div className="relative w-full max-w-md aspect-square p-8">
             <div className="w-full h-full rounded-full bg-white dark:bg-gray-950 shadow-2xl flex items-center justify-center overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -255,8 +255,8 @@ export function ProfileContent({ profile }: ProfileContentProps) {
           </div>
         </div>
 
-        {/* Right Column - Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Right Column - Always part of scrollable flow on mobile */}
+        <div className="lg:overflow-y-auto">
           <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
             {/* Profile Header */}
             <div className="space-y-4">

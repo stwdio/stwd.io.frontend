@@ -17,8 +17,7 @@ export function useConnectionStatus(userId: string | null) {
       const { data, error } = await supabase
         .from('connections')
         .select('*')
-        .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+        .or(`and(requester_id.eq.${user.id},receiver_id.eq.${userId}),and(requester_id.eq.${userId},receiver_id.eq.${user.id})`)
         .single()
 
       if (error) {

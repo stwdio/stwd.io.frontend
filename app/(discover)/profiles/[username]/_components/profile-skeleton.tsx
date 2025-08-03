@@ -10,22 +10,22 @@ export function PublicProfileSkeleton() {
         </div>
       </div>
 
-      {/* Main Content Area - Two Column Grid */}
-      <div className="flex-1 grid grid-cols-[40%_60%] overflow-hidden">
-        {/* Left Column - Full Height Avatar Display */}
-        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden h-full flex items-center justify-center">
+      {/* Main Content Area - Responsive Grid */}
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden lg:grid lg:grid-cols-[40%_60%]">
+        {/* Mobile: Both columns scroll together; Desktop: Grid layout with fixed image */}
+        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden h-80 lg:h-full flex items-center justify-center">
           <div className="relative w-full max-w-md aspect-square p-8">
             <Skeleton className="w-full h-full rounded-full" />
           </div>
         </div>
 
-        {/* Right Column - Scrollable Content */}
-        <div className="h-full overflow-y-auto">
-          <div className="p-8 space-y-8">
+        {/* Right Column - Always part of scrollable flow on mobile */}
+        <div className="lg:overflow-y-auto">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
             {/* Profile Header */}
             <div className="space-y-4">
               <div className="flex items-start justify-between">
-                <Skeleton className="h-10 w-64" /> {/* Name */}
+                <Skeleton className="h-8 sm:h-9 lg:h-10 w-3/4" /> {/* Name */}
               </div>
               <div className="flex items-center gap-2">
                 <Skeleton className="h-6 w-32" /> {/* @username */}

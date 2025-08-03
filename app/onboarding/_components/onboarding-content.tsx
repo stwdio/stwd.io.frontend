@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Music, Mic, Radio, Briefcase, Wrench, Users, Building, ChevronRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 const roleIcons = {
   'musician': Music,
@@ -38,6 +39,10 @@ export function OnboardingContent({ roles, profileId }: OnboardingContentProps) 
   const supabase = createClient()
 
   const handleRoleSelect = (roleId: number) => {
+    const role = roles.find(r => r.id === roleId)
+    if (role) {
+      trackEvent.roleSelected(role.slug)
+    }
     setSelectedRole(roleId)
   }
 
@@ -88,6 +93,12 @@ export function OnboardingContent({ roles, profileId }: OnboardingContentProps) 
         })
         setLoading(false)
         return
+      }
+
+      // Track onboarding completion
+      const role = roles.find(r => r.id === selectedRole)
+      if (role) {
+        trackEvent.onboardingComplete(role.slug)
       }
 
       toast({

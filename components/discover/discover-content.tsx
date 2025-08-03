@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { BrowseStudiosContent } from '@/components/browse-studios-content'
 import { ProfilesGrid } from '@/components/discover/profiles-grid'
 import { FilterPanel } from '@/components/discover/filter-panel'
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 type DiscoverView = 'studios' | 'people'
 type PeopleSubView = 'all' | 'artists' | 'engineers' | 'industry'
@@ -107,6 +108,10 @@ export function DiscoverContent() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery)
+      // Track search when user stops typing
+      if (searchQuery) {
+        trackEvent.searchPerformed(searchQuery)
+      }
     }, 300) // 300ms debounce for search
 
     return () => clearTimeout(timeoutId)
@@ -123,6 +128,8 @@ export function DiscoverContent() {
 
   const handlePeopleSubViewChange = (subView: PeopleSubView) => {
     setPeopleSubView(subView)
+    // Track filter application
+    trackEvent.filterApply('people_type', subView)
     if (subView === 'all') {
       router.push('/discover/people')
     } else {

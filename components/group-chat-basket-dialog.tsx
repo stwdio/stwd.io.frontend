@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import type { Database } from '@/lib/types/database'
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -129,6 +130,9 @@ export function GroupChatBasketDialog() {
         if (partError) throw partError
       }
 
+      // Track group chat creation
+      trackEvent.messageStart('group')
+      
       // Clear basket and close dialog
       clearBasket()
       toggleBasket()

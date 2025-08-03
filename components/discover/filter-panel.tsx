@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { IconSearch } from "@tabler/icons-react"
 // Price tier imports removed for healthier discovery experience
 import { useAmenities, useAvailableGear } from "@/lib/hooks/queries/studios"
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 interface FilterState {
   location: string
@@ -88,6 +89,17 @@ export function FilterPanel({
   }, [filteredGear])
 
   const handleApply = () => {
+    // Track filter applications
+    if (localFilters.location) {
+      trackEvent.filterApply('location', localFilters.location)
+    }
+    if (localFilters.selectedAmenities.length > 0) {
+      trackEvent.filterApply('amenities', localFilters.selectedAmenities.join(','))
+    }
+    if (localFilters.selectedGear.length > 0) {
+      trackEvent.filterApply('gear', localFilters.selectedGear.join(','))
+    }
+    
     onFiltersChange(localFilters)
     onApply()
     onOpenChange(false)

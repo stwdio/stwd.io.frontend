@@ -18,6 +18,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { imagePresets } from "@/lib/utils/image-transformations"
 import { MobileSidebar } from "@/components/mobile-sidebar"
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 interface SiteHeaderProps {
   className?: string
@@ -31,6 +32,8 @@ export function SiteHeader({ className }: SiteHeaderProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleSignOut = async () => {
+    // Track sign out
+    trackEvent.logout()
     await signOut()
     router.push('/auth/login')
   }

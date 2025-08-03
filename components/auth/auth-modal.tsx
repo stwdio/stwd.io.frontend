@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { LogIn, UserPlus } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 interface AuthModalProps {
   open: boolean
@@ -26,6 +27,8 @@ export function AuthModal({
   const router = useRouter()
 
   const handleSignIn = () => {
+    // Track sign in attempt
+    trackEvent.login('email')
     // Store current path for redirect after auth
     const currentPath = window.location.pathname + window.location.search
     localStorage.setItem('redirectAfterAuth', currentPath)
@@ -33,6 +36,8 @@ export function AuthModal({
   }
 
   const handleSignUp = () => {
+    // Track sign up attempt
+    trackEvent.signup('email')
     // Store current path for redirect after auth
     const currentPath = window.location.pathname + window.location.search
     localStorage.setItem('redirectAfterAuth', currentPath)

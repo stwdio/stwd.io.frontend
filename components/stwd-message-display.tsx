@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Send, Download, DollarSign, Clock } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 interface STWDMessageItemProps {
   message: STWDMessage
@@ -160,6 +161,11 @@ export function STWDChatArea({
     e.preventDefault()
     if (!newMessage.trim() || !isConnected) return
 
+    // Track message sent
+    const conversationType = conversationTitle.includes('Enquiry') ? 'enquiry' : 
+                          conversationTitle.includes('Group') ? 'group' : 'direct'
+    trackEvent.messageSent(conversationType)
+    
     onSendMessage(newMessage)
     setNewMessage('')
   }

@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, AlertCircle } from 'lucide-react'
 import { AvatarUpload } from '@/components/settings/avatar-upload'
 import type { Database } from '@/lib/types/database'
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -137,6 +138,9 @@ export function ProfileSettingsForm({ profile }: ProfileSettingsFormProps) {
         throw error
       }
 
+      // Track profile edit
+      trackEvent.profileEdit()
+      
       toast({
         title: 'Success',
         description: 'Profile updated successfully!',

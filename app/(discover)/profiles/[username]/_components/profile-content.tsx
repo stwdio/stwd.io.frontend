@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -39,6 +39,7 @@ import { useFollowUser, useUnfollowUser } from '@/lib/hooks/mutations/social'
 import { useIsFollowingUser } from '@/lib/hooks/queries/social'
 import { useConnectionStatus } from '@/lib/hooks/queries/connections'
 import { useSendConnectionRequest, useAcceptConnectionRequest, useCancelConnectionRequest } from '@/lib/hooks/mutations/connections'
+import { trackEvent } from '@/lib/analytics/ga-events'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Role = Database['public']['Tables']['roles']['Row']
@@ -83,6 +84,13 @@ export function ProfileContent({ profile }: ProfileContentProps) {
   const [portfolioOpen, setPortfolioOpen] = useState(true)
   const [socialOpen, setSocialOpen] = useState(true)
   const [skillSearchQuery, setSkillSearchQuery] = useState('')
+
+  // Track profile view when component mounts
+  useEffect(() => {
+    if (profile.username) {
+      trackEvent.profileView(profile.username)
+    }
+  }, [profile.username])
   
   // Follow functionality
   const { data: isFollowing } = useIsFollowingUser(profile.user_id)
@@ -137,6 +145,8 @@ export function ProfileContent({ profile }: ProfileContentProps) {
       return
     }
     
+    // Track message start event
+    trackEvent.messageStart('direct')
     router.push(`/connect/chat?user=${profile.username}`)
   }
   
@@ -171,12 +181,14 @@ export function ProfileContent({ profile }: ProfileContentProps) {
     
     if (connectionStatus?.status === 'pending' && connectionStatus.isReceiver) {
       // Accept the request
+      trackEvent.connectionAccept(profile.username || profile.user_id)
       acceptConnectionRequest(connectionStatus.id)
     } else if (connectionStatus?.status === 'pending' && connectionStatus.isSender) {
       // Cancel the request
       cancelConnectionRequest(connectionStatus.id)
     } else if (!connectionStatus || connectionStatus.status === 'rejected') {
       // Send new request
+      trackEvent.connectionRequest(profile.username || profile.user_id)
       sendConnectionRequest(profile.user_id)
     }
   }

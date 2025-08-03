@@ -4,7 +4,21 @@
 **Date**: February 2025
 **Focus**: Chat System RLS Refactor
 
-### Current Work: Chat System Complete - All Issues Resolved (February 2025)
+### Current Work: Connection and Chat System Bug Fixes (August 2025)
+
+#### Connection Request Fixes:
+- **Fixed Connection Query Logic**: Corrected SQL queries in connection hooks that were preventing proper connection creation
+  - Fixed `useSendConnectionRequest` to check for connections between specific users, not any connection involving either user
+  - Fixed `useConnectionStatus` with similar correction
+- **Fixed Empty State Display**: Updated ConnectionsHubV2 to check for pending requests before showing "No connections yet"
+- **Recipients Can Now See Requests**: Connection requests now properly display on the recipient's side
+
+#### Chat System Fixes:
+- **Fixed React Import Error**: Added React import to message-thread.tsx to fix runtime error
+- **Fixed TypeScript Errors**: Properly typed RPC function returns in chat page for `create_chat_conversation`
+- **Maintained RLS Architecture**: All fixes maintain the hybrid RPC + RLS architecture documented in chat system docs
+
+### Previous Work: Chat System Complete - All Issues Resolved (February 2025)
 
 #### Chat RLS Hybrid Architecture - FULLY IMPLEMENTED:
 - **✅ All Chat Types Working**: 1:1 chats, group chats, and studio enquiries all functioning

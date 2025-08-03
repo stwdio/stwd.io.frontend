@@ -20,6 +20,10 @@ const nextConfig = {
       bodySizeLimit: '5mb'
     }
   },
+  // Remove console logs in production builds
+  compiler: {
+    removeConsole: true,
+  },
 }
 
 export default nextConfig

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface Profile {
   id: number
@@ -73,6 +74,7 @@ export function AuthProvider({
 
   const router = useRouter()
   const supabase = createClient()
+  const queryClient = useQueryClient()
 
   // 3. This useEffect only listens for auth STATE CHANGES (e.g., SIGNED_IN, SIGNED_OUT)
   // that happen on the client. It does NOT run on initial page load to fetch data.
@@ -118,6 +120,8 @@ export function AuthProvider({
         setSession(null)
         setProfile(null)
         setProfessionalRoles([])
+        // Clear all React Query caches on logout
+        queryClient.clear()
         router.push('/auth/login')
       } else if (event === 'TOKEN_REFRESHED' && session) {
         setSession(session)
@@ -128,7 +132,7 @@ export function AuthProvider({
     })
 
     return () => subscription.unsubscribe()
-  }, [user?.id, router, supabase])
+  }, [user?.id, router, supabase, queryClient])
 
   const refreshProfile = async () => {
     if (!user?.id) return

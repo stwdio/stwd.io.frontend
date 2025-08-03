@@ -13,12 +13,11 @@ export function useSendConnectionRequest() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Check if connection already exists
+      // Check if connection already exists between these two users
       const { data: existing } = await supabase
         .from('connections')
         .select('*')
-        .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .or(`requester_id.eq.${receiverId},receiver_id.eq.${receiverId}`)
+        .or(`and(requester_id.eq.${user.id},receiver_id.eq.${receiverId}),and(requester_id.eq.${receiverId},receiver_id.eq.${user.id})`)
         .single()
 
       if (existing) {

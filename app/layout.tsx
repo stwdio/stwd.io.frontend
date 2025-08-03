@@ -7,6 +7,7 @@ import { ClientLayout } from "@/components/client-layout";
 import { Toaster } from "@/components/ui/sonner";
 import { ReactQueryProvider } from "@/lib/react-query/provider";
 import { createServerComponentClient } from "@/lib/supabase/server";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -72,6 +73,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <body className={`${inter.className} h-full`} suppressHydrationWarning>
+        <GoogleAnalytics gaId="G-543DFPKN0X" />
         <ReactQueryProvider>
           <AuthProvider initialUser={user} initialProfile={profile} initialRoles={professionalRoles}>
             <RouteGuard>

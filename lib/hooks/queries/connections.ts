@@ -3,13 +3,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 
-export function useConnectionStatus(userId: string | null) {
+export function useConnectionStatus(userId: string | null | undefined) {
   const supabase = createClient()
 
   return useQuery({
     queryKey: ['connection-status', userId],
     queryFn: async () => {
-      if (!userId) return null
+      if (!userId || userId === 'undefined') return null
       
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return null
@@ -18,13 +18,14 @@ export function useConnectionStatus(userId: string | null) {
         .from('connections')
         .select('*')
         .or(`and(requester_id.eq.${user.id},receiver_id.eq.${userId}),and(requester_id.eq.${userId},receiver_id.eq.${user.id})`)
-        .single()
+        .maybeSingle()
 
       if (error) {
-        if (error.code === 'PGRST116') { // No rows found
-          return null
-        }
         console.error('Error checking connection status:', error)
+        return null
+      }
+
+      if (!data) {
         return null
       }
 
@@ -34,7 +35,9 @@ export function useConnectionStatus(userId: string | null) {
         isReceiver: data.receiver_id === user.id
       }
     },
-    enabled: !!userId
+    enabled: !!userId && userId !== 'undefined',
+    staleTime: 0, // Always consider data stale
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   })
 }
 

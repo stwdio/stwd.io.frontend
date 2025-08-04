@@ -1203,4 +1203,81 @@ export function GenericCardSkeleton() {
 - [ ] Min-heights prevent content from changing card size
 - [ ] Hydration errors resolved (server/client render match)
 
-**Last Updated**: February 2025 
+### 14. ✅ **Connection System Error Handling Pattern - CRITICAL FIX** (Added August 2025)
+**Pattern**: Proper handling of undefined values in connection queries and mutations
+- ✅ **UUID Validation**: Check for undefined or 'undefined' string values before SQL queries
+- ✅ **Mutation Parameters**: Always pass objects with proper structure to mutation functions
+- ✅ **Property Consistency**: Use correct property names that match backend response
+
+**UUID Error Prevention Pattern**:
+```typescript
+// ❌ WRONG: Can cause SQL syntax errors
+export function useConnectionStatus(userId: string | null) {
+  const { data } = await supabase
+    .from('connections')
+    .select('*')
+    .or(`requester_id.eq.${userId}`) // userId might be 'undefined' string
+}
+
+// ✅ CORRECT: Validate before query
+export function useConnectionStatus(userId: string | null | undefined) {
+  return useQuery({
+    queryFn: async () => {
+      if (!userId || userId === 'undefined') return null // Guard against undefined
+      
+      const { data } = await supabase
+        .from('connections')
+        .select('*')
+        .or(`requester_id.eq.${userId}`) // Safe to use
+    },
+    enabled: !!userId && userId !== 'undefined' // Prevent query when invalid
+  })
+}
+```
+
+**Mutation Call Pattern**:
+```typescript
+// ❌ WRONG: Passing raw values
+sendConnectionRequest(userId)
+acceptConnectionRequest(connectionId)
+
+// ✅ CORRECT: Pass structured objects
+sendConnectionRequest({ 
+  receiverId: userId, 
+  receiverName: displayName 
+})
+acceptConnectionRequest({ 
+  connectionId: connectionId, 
+  userName: displayName 
+})
+```
+
+**Supabase Query Pattern**:
+```typescript
+// ❌ WRONG: Using .single() when row might not exist
+const { data, error } = await supabase
+  .from('connections')
+  .select('*')
+  .eq('id', someId)
+  .single() // Throws 406 error if no rows found
+
+// ✅ CORRECT: Using .maybeSingle() for optional data
+const { data, error } = await supabase
+  .from('connections')
+  .select('*')
+  .eq('id', someId)
+  .maybeSingle() // Returns null if no rows found
+
+// Usage guideline:
+// - Use .single() when row MUST exist (e.g., after insert)
+// - Use .maybeSingle() when row might not exist (e.g., checking connections)
+```
+
+**Common Mistakes to Avoid**:
+- ❌ Not checking for undefined values before string interpolation in SQL
+- ❌ Passing primitive values to mutations expecting objects
+- ❌ Using wrong property names (e.g., `isSender` vs `isRequester`)
+- ❌ Not enabling/disabling queries based on valid data
+- ❌ Using `.single()` when checking for data that might not exist
+
+**Last Updated**: August 2025 

@@ -28,6 +28,7 @@ import {
   UserX,
   Clock
 } from 'lucide-react'
+import { IconPlugConnected } from '@tabler/icons-react'
 import type { Database } from '@/lib/types/database'
 import { FollowersList } from '@/components/social/followers-list'
 import { FollowingList } from '@/components/social/following-list'
@@ -182,14 +183,23 @@ export function ProfileContent({ profile }: ProfileContentProps) {
     if (connectionStatus?.status === 'pending' && connectionStatus.isReceiver) {
       // Accept the request
       trackEvent.connectionAccept(profile.username || profile.user_id)
-      acceptConnectionRequest(connectionStatus.id)
-    } else if (connectionStatus?.status === 'pending' && connectionStatus.isSender) {
+      acceptConnectionRequest({ 
+        connectionId: connectionStatus.id, 
+        userName: getDisplayName() 
+      })
+    } else if (connectionStatus?.status === 'pending' && connectionStatus.isRequester) {
       // Cancel the request
-      cancelConnectionRequest(connectionStatus.id)
+      cancelConnectionRequest({ 
+        connectionId: connectionStatus.id, 
+        userName: getDisplayName() 
+      })
     } else if (!connectionStatus || connectionStatus.status === 'rejected') {
       // Send new request
       trackEvent.connectionRequest(profile.username || profile.user_id)
-      sendConnectionRequest(profile.user_id)
+      sendConnectionRequest({ 
+        receiverId: profile.user_id, 
+        receiverName: getDisplayName() 
+      })
     }
   }
   
@@ -197,18 +207,18 @@ export function ProfileContent({ profile }: ProfileContentProps) {
     if (!connectionStatus || connectionStatus.status === 'rejected') {
       return {
         label: 'Connect',
-        icon: UserPlus,
+        icon: IconPlugConnected,
         variant: 'default' as const,
         disabled: isSendingRequest
       }
     }
     
-    if (connectionStatus.status === 'pending' && connectionStatus.isSender) {
+    if (connectionStatus.status === 'pending' && connectionStatus.isRequester) {
       return {
-        label: 'Pending',
-        icon: Clock,
+        label: 'Requested',
+        icon: IconPlugConnected,
         variant: 'secondary' as const,
-        disabled: isCancelingRequest
+        disabled: true
       }
     }
     
@@ -330,39 +340,40 @@ export function ProfileContent({ profile }: ProfileContentProps) {
           {/* Action Buttons */}
           {!isCurrentUser && (
             <div className="flex flex-col sm:flex-row gap-3 w-full">
-              {connectionStatus?.status === 'accepted' ? (
-                <Button 
-                  onClick={handleMessage} 
-                  className="sm:flex-1" 
-                  size="lg"
-                >
-                  <MessageSquare className="h-5 w-5 mr-2" />
-                  Message
-                </Button>
-              ) : connectionStatus?.status === 'pending' && connectionStatus.isSender ? (
-                <Button 
-                  className="sm:flex-1" 
-                  size="lg"
-                  variant="secondary"
-                  disabled
-                >
-                  <Clock className="h-5 w-5 mr-2" />
-                  Requested
-                </Button>
-              ) : (
-                <Button 
-                  onClick={handleConnection} 
-                  className="sm:flex-1" 
-                  size="lg"
-                  disabled={isSendingRequest}
-                >
-                  <UserPlus className="h-5 w-5 mr-2" />
-                  Connect
-                </Button>
-              )}
+              {(() => {
+                const buttonProps = getConnectionButtonProps()
+                const Icon = buttonProps.icon
+                
+                if (connectionStatus?.status === 'accepted') {
+                  return (
+                    <Button 
+                      onClick={handleMessage} 
+                      className="sm:flex-1" 
+                      size="lg"
+                    >
+                      <MessageSquare className="h-5 w-5 mr-2" />
+                      Message
+                    </Button>
+                  )
+                }
+                
+                return (
+                  <Button 
+                    onClick={handleConnection} 
+                    className="sm:flex-1" 
+                    size="lg"
+                    variant={buttonProps.variant}
+                    disabled={buttonProps.disabled}
+                  >
+                    <Icon className="h-5 w-5 mr-2" />
+                    {buttonProps.label}
+                  </Button>
+                )
+              })()}
               <Button 
                 variant={isFollowing ? "secondary" : "outline"} 
                 size="lg"
+                className="sm:flex-1"
                 onClick={handleFollow}
                 disabled={isFollowingPending || isUnfollowingPending}
               >

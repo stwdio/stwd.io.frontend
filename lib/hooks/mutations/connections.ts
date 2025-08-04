@@ -18,7 +18,7 @@ export function useSendConnectionRequest() {
         .from('connections')
         .select('*')
         .or(`and(requester_id.eq.${user.id},receiver_id.eq.${receiverId}),and(requester_id.eq.${receiverId},receiver_id.eq.${user.id})`)
-        .single()
+        .maybeSingle()
 
       if (existing) {
         throw new Error('Connection request already exists')
@@ -41,6 +41,7 @@ export function useSendConnectionRequest() {
       const name = data.receiverName || 'User'
       toast.success(`Connection Request Sent To ${name}`)
       // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['connection-status', data.receiver_id] })
       queryClient.invalidateQueries({ queryKey: ['connection-status'] })
       queryClient.invalidateQueries({ queryKey: ['sent-requests'] })
     },

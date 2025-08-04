@@ -4,7 +4,43 @@
 **Date**: August 2025
 **Focus**: Google Analytics Integration
 
-### Current Work: Google Analytics Integration (August 2025)
+### Current Work: Connection System Bug Fixes (August 2025)
+
+#### Fixed Connection Errors on Profile Detail Page:
+- **Fixed UUID Error**: Updated `useConnectionStatus` hook to properly handle undefined userId values
+  - Added check for `userId === 'undefined'` string to prevent SQL syntax errors
+  - Updated TypeScript types to accept `undefined` values
+  - Fixed "invalid input syntax for type uuid: 'undefined'" error
+- **Fixed Mutation Calls**: Corrected connection mutation function calls in profile-content.tsx
+  - `acceptConnectionRequest` now receives `{ connectionId, userName }` object
+  - `cancelConnectionRequest` now receives `{ connectionId, userName }` object  
+  - `sendConnectionRequest` now receives `{ receiverId, receiverName }` object
+  - Fixed "null value in column 'receiver_id'" error
+- **Fixed Property Names**: Changed `connectionStatus.isSender` to `connectionStatus.isRequester` to match actual data structure
+- **Fixed 406 Error**: Changed `.single()` to `.maybeSingle()` in connection queries
+  - `.single()` throws error when no rows found (406 status)
+  - `.maybeSingle()` returns null when no rows found (expected behavior)
+  - Applied fix to both `useConnectionStatus` hook and `useSendConnectionRequest` mutation
+- **Fixed Connection Status Consistency**: Ensured profile page shows same status as discover page
+  - Changed "Pending" label to "Requested" to match discover page UI
+  - Added `staleTime: 0` to connection status query to always fetch fresh data
+  - Improved cache invalidation to include specific userId when connection request sent
+- **Fixed Profile Page Connection Button**: Refactored button rendering to use getConnectionButtonProps
+  - Profile page was not using the getConnectionButtonProps function properly
+  - Updated JSX to centrally use the function that handles all connection states
+  - Now properly shows "Requested" for pending connections where user is requester
+  - Verified with actual database: connection ID 29 exists with status "pending"
+- **Updated Connection Button Icons**: Matched profile page icons with discover page
+  - Changed from Clock icon to IconPlugConnected (link icon) for consistency
+  - Both "Connect" and "Requested" states now use the same link icon
+  - Matches the exact style shown on profile cards in discover page
+- **Fixed Button Width Consistency**: Made connection and follow buttons equal width
+  - Added `sm:flex-1` class to follow button to match connection button
+  - Both buttons now expand equally on small screens and up
+  - Maintains responsive stacking on mobile devices
+- **Result**: Profile pages now load without errors and connection functionality works correctly
+
+### Previous Work: Google Analytics Integration (August 2025)
 
 #### Google Analytics Implementation:
 - **Added Google Analytics**: Integrated GA using Next.js third-parties library
